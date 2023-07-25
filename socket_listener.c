@@ -34,8 +34,9 @@ typedef struct SocketTaskArgs_st {
 
 static void ListenSocketTask(mint asyncObjID, void* vtarg)
 {
-    SOCKET clients[64]; 
+    SOCKET *clients = (SOCKET*)malloc(2 * sizeof(SOCKET)); 
     int clientsLength = 0;
+    int clientsMaxLength = 2; 
 
     int iResult; 
     int iMode = 1; 
@@ -71,19 +72,29 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
             ioLibrary->DataStore_addInteger(ds, clientSocket);
             clients[clientsLength++] = clientSocket; 
             ioLibrary->raiseAsyncEvent(asyncObjID, "ACCEPT_SOCKET", ds);
+
+            if (clientsLength == clientsMaxLength){
+                clientsMaxLength *= 2; 
+                clients = (SOCKET*)realloc(clients, clientsMaxLength * sizeof(SOCKET)); 
+            }
         }
 
         for (size_t i = 0; i < clientsLength; i++)
         {
             iResult = recv(clients[i], buf, buflen, 0); 
             if (iResult > 0){
+                printf("CURRENT NUMBER OF CLIENTS: %d\n", clientsLength);
+                printf("MAX NUMBER OF CLIENTS: %d\n", clientsMaxLength);
                 printf("RECEIVED %d BYTES\n", iResult);
-                printf("RECEIVED %d BYTES &\n", &iResult);
                 dims[0] = iResult; 
                 numericLibrary->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
                 memcpy(numericLibrary->MNumericArray_getData(data), buf, iResult);
+                
                 ds = ioLibrary->createDataStore();
-                ioLibrary->DataStore_addMNumericArray(ds, data); 
+                ioLibrary->DataStore_addInteger(ds, listenSocket);
+                ioLibrary->DataStore_addInteger(ds, clients[i]);
+                ioLibrary->DataStore_addMNumericArray(ds, data);
+
                 ioLibrary->raiseAsyncEvent(asyncObjID, "RECEIVED_BYTES", ds);
             }
         }
