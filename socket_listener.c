@@ -12,6 +12,7 @@
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
+#include "WolframNumericArrayLibrary.h"
 
 DLLEXPORT mint WolframLibrary_getVersion( ) {
     return WolframLibraryVersion;
@@ -26,6 +27,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 }
 
 typedef struct SocketTaskArgs_st {
+    WolframNumericArrayLibrary_Functions numericLibrary;
     WolframIOLibrary_Functions ioLibrary;
     SOCKET listentSocket; 
 }* SocketTaskArgs; 
@@ -38,13 +40,16 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
     int iResult; 
     int iMode = 1; 
 
-    char buf[512]; 
-    int buflen = 512; 
+    BYTE buf[512]; 
+    size_t buflen = 512; 
+    mint dims[1]; 
+    MNumericArray data;
 
     SOCKET clientSocket = INVALID_SOCKET;
 	SocketTaskArgs targ = (SocketTaskArgs)vtarg;
     SOCKET listenSocket = targ->listentSocket; 
 	WolframIOLibrary_Functions ioLibrary = targ->ioLibrary;
+    WolframNumericArrayLibrary_Functions numericLibrary = targ->numericLibrary;
     printf("ACCEPT_SOCKET_TASK\n");
 
 	DataStore ds;
@@ -73,8 +78,12 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
             iResult = recv(clients[i], buf, buflen, 0); 
             if (iResult > 0){
                 printf("RECEIVED %d BYTES\n", iResult);
+                printf("RECEIVED %d BYTES &\n", &iResult);
+                dims[0] = iResult; 
+                numericLibrary->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
+                memcpy(numericLibrary->MNumericArray_getData(data), buf, iResult);
                 ds = ioLibrary->createDataStore();
-                ioLibrary->DataStore_addString(ds, buf);
+                ioLibrary->DataStore_addMNumericArray(ds, data); 
                 ioLibrary->raiseAsyncEvent(asyncObjID, "RECEIVED_BYTES", ds);
             }
         }
@@ -100,6 +109,7 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     char* listenPortName = MArgument_getUTF8String(Args[0]); 
     SOCKET listenSocket = INVALID_SOCKET; 
     WolframIOLibrary_Functions ioLibrary = libData->ioLibraryFunctions; 
+    WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions;
     printf("INIT\n");
 
     /* -------------------------------------------------------------------- */
@@ -181,6 +191,7 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     SocketTaskArgs threadArg = (SocketTaskArgs)malloc(sizeof(struct SocketTaskArgs_st));
     threadArg->ioLibrary=ioLibrary; 
     threadArg->listentSocket=listenSocket;
+    threadArg->numericLibrary=numericLibrary;
     mint asyncObjID;
     asyncObjID = ioLibrary->createAsynchronousTaskWithThread(ListenSocketTask, threadArg);
 

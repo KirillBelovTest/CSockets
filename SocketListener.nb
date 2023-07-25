@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     27347,        547]
-NotebookOptionsPosition[     25802,        513]
-NotebookOutlinePosition[     26232,        530]
-CellTagsIndexPosition[     26189,        527]
+NotebookDataLength[     32139,        613]
+NotebookOptionsPosition[     30685,        580]
+NotebookOutlinePosition[     31115,        597]
+CellTagsIndexPosition[     31072,        594]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -113,14 +113,14 @@ DeveloperKit\\\\Windows-x86-64\\\\CompilerAdditions\\\" \
 \\\"C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\socket_listener.c\\\
 \" /link  \
 /implib:\\\"C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-\
-tuf-11308-10696-1\\\\socket_listener.lib\\\"  /LIBPATH:\\\"C:\\\\Program \
-Files\\\\Wolfram \
+tuf-7928-19188-1\\\\socket_listener.lib\\\"  /LIBPATH:\\\"C:\\\\Program Files\
+\\\\Wolfram \
 Research\\\\Mathematica\\\\13.3\\\\SystemFiles\\\\Links\\\\MathLink\\\\\
 DeveloperKit\\\\Windows-x86-64\\\\CompilerAdditions\\\" \
 /LIBPATH:\\\"C:\\\\Program Files\\\\Wolfram Research\\\\Mathematica\\\\13.3\\\
 \\SystemFiles\\\\Libraries\\\\Windows-x86-64\\\"  \\\"ml64i4m.lib\\\"  \
 /out:\\\"C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-\
-11308-10696-1\\\\socket_listener.dll\\\"\"\>"], "Print",
+7928-19188-1\\\\socket_listener.dll\\\"\"\>"], "Print",
  CellChangeTimes->{
   3.8991937034050484`*^9, 3.899194526582946*^9, 3.8991950660620317`*^9, 
    3.899195114895986*^9, 3.8991975153146486`*^9, 3.899197564796116*^9, 
@@ -132,13 +132,21 @@ DeveloperKit\\\\Windows-x86-64\\\\CompilerAdditions\\\" \
    3.8992268308894024`*^9, 3.899227186293097*^9, 3.8992274962098308`*^9, {
    3.899249500098177*^9, 3.8992495297969637`*^9}, 3.8992500858302903`*^9, 
    3.899250156248618*^9, 3.899250332596752*^9, 3.8992515665384293`*^9, 
-   3.8992524219163713`*^9, 3.8992526076231728`*^9, 3.899254185951625*^9},
+   3.8992524219163713`*^9, 3.8992526076231728`*^9, 3.899254185951625*^9, 
+   3.8992543329727764`*^9, 3.899275786586542*^9, 3.89927606700356*^9, 
+   3.8992764299191027`*^9, 3.8992766319036875`*^9, 3.8992767871104083`*^9, 
+   3.8992770063844643`*^9, 3.8992770942935085`*^9, 3.8992773131549273`*^9, 
+   3.8992773605742235`*^9, 3.8992781312038116`*^9, 3.8992783877976065`*^9, 
+   3.8992785739568768`*^9, 3.899278609711812*^9, 3.8992786611196156`*^9, 
+   3.8992787199363475`*^9, 3.899278766833229*^9, 3.899278798683072*^9, 
+   3.899278837935726*^9, {3.8992788910356617`*^9, 3.8992789194797316`*^9}, 
+   3.899279037960797*^9, 3.8992790769407496`*^9},
  CellLabel->
   "During evaluation of \
-In[5]:=",ExpressionUUID->"560dc25d-896f-4793-8604-90887dc19a6c"],
+In[5]:=",ExpressionUUID->"5065fb4a-cb6d-4ef6-95b1-18bf8a8ef6b1"],
 
 Cell[BoxData["\<\"\\nC:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\\
-Working-tuf-11308-10696-1>call \\\"C:\\\\Program Files\\\\Microsoft Visual \
+Working-tuf-7928-19188-1>call \\\"C:\\\\Program Files\\\\Microsoft Visual \
 Studio\\\\2022\\\\Community\\\\VC\\\\Auxiliary\\\\Build\\\\vcvarsall.bat\\\" \
 amd64 \\n*********************************************************************\
 *\\n** Visual Studio 2022 Developer Command Prompt v17.6.3\\n** Copyright (c) \
@@ -157,7 +165,7 @@ Corporation\\n****************************************************************\
 \[AGrave]\[NonBreakingSpace]\[Cent]\[NonBreakingSpace] \[Section]\
 \[NonBreakingSpace]\[EAcute]\[DoubleDot]\[EAcute]\[Yen]\[DiscretionaryHyphen]\
 \[EDoubleDot].\\n\\nsocket_listener.c\\nC:\\\\Users\\\\Kirill\\\\Projects\\\\\
-SocketListener\\\\socket_listener.c(64): warning C4477: \\\"printf\\\": \
+SocketListener\\\\socket_listener.c(68): warning C4477: \\\"printf\\\": \
 \[Cent] \[AAcute]\[AHat]\[AGrave]\[RegisteredTrademark]\.aa\[Yen] \
 \[ADoubleDot]\[RegisteredTrademark]\[AGrave]\[Not]\[NonBreakingSpace]\[AHat]\
 \[DoubleDot]\[AGrave]\[RegisteredTrademark]\[Cent]\[NonBreakingSpace]\
@@ -171,7 +179,7 @@ SocketListener\\\\socket_listener.c(64): warning C4477: \\\"printf\\\": \
 \[AGrave]\[Sterling]\[ATilde]\[Not]\[Yen]\[DiscretionaryHyphen]\[AHat] \
 \\\"1\\\" \[DoubleDot]\[Not]\[Yen]\[Yen]\[AHat] \[AHat]\[DoubleDot]\.af \
 \\\"SOCKET\\\"\\nC:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\\
-socket_listener.c(64): note: \[AGrave]\[Yen]\.aa\[RegisteredTrademark]\[Not]\
+socket_listener.c(68): note: \[AGrave]\[Yen]\.aa\[RegisteredTrademark]\[Not]\
 \[Yen]\[DiscretionaryHyphen]\[Currency]\[ATilde]\[Yen]\[AHat]\[AAcute]\
 \[IDoubleDot] \[DoubleDot]\[AAcute]\.af\[RegisteredTrademark]\[LeftGuillemet]\
 \[IGrave]\[Section]\[RegisteredTrademark]\[Cent]\[NonBreakingSpace]\[AHat]\
@@ -180,7 +188,7 @@ socket_listener.c(64): note: \[AGrave]\[Yen]\.aa\[RegisteredTrademark]\[Not]\
 \[RegisteredTrademark]\[AGrave]\[Not]\[NonBreakingSpace]\[AHat]\[DoubleDot]\
 \[AGrave]\[RegisteredTrademark]\[Cent]\[NonBreakingSpace]\
 \[DiscretionaryHyphen]\[DoubleDot]\[IDoubleDot]\\nC:\\\\Users\\\\Kirill\\\\\
-Projects\\\\SocketListener\\\\socket_listener.c(64): note: \
+Projects\\\\SocketListener\\\\socket_listener.c(68): note: \
 \[AGrave]\[Yen]\.aa\[RegisteredTrademark]\[Not]\[Yen]\[DiscretionaryHyphen]\
 \[Currency]\[ATilde]\[Yen]\[AHat]\[AAcute]\[IDoubleDot] \[DoubleDot]\[AAcute]\
 \.af\[RegisteredTrademark]\[LeftGuillemet]\[IGrave]\[Section]\
@@ -189,7 +197,7 @@ Projects\\\\SocketListener\\\\socket_listener.c(64): note: \
 \[ADoubleDot]\[RegisteredTrademark]\[AGrave]\[Not]\[NonBreakingSpace]\[AHat]\
 \[DoubleDot]\[AGrave]\[RegisteredTrademark]\[Cent]\[NonBreakingSpace]\
 \[DiscretionaryHyphen]\[DoubleDot]\[IDoubleDot]\\nC:\\\\Users\\\\Kirill\\\\\
-Projects\\\\SocketListener\\\\socket_listener.c(64): note: \
+Projects\\\\SocketListener\\\\socket_listener.c(68): note: \
 \[AGrave]\[Yen]\.aa\[RegisteredTrademark]\[Not]\[Yen]\[DiscretionaryHyphen]\
 \[Currency]\[ATilde]\[Yen]\[AHat]\[AAcute]\[IDoubleDot] \[DoubleDot]\[AAcute]\
 \.af\[RegisteredTrademark]\[LeftGuillemet]\[IGrave]\[Section]\
@@ -197,12 +205,51 @@ Projects\\\\SocketListener\\\\socket_listener.c(64): note: \
 \\\"%I64d\\\" \[Cent] \[AAcute]\[AHat]\[AGrave]\[RegisteredTrademark]\.aa\
 \[Yen] \[ADoubleDot]\[RegisteredTrademark]\[AGrave]\[Not]\[NonBreakingSpace]\
 \[AHat]\[DoubleDot]\[AGrave]\[RegisteredTrademark]\[Cent]\[NonBreakingSpace]\
-\[DiscretionaryHyphen]\[DoubleDot]\[IDoubleDot]\\nMicrosoft (R) Incremental \
-Linker Version 14.36.32534.0\\nCopyright (C) Microsoft Corporation.  All \
-rights reserved.\\n\\n/out:socket_listener.dll \\n/dll \
-\\n/implib:socket_listener.lib \\n/debug \
+\[DiscretionaryHyphen]\[DoubleDot]\[IDoubleDot]\\nC:\\\\Users\\\\Kirill\\\\\
+Projects\\\\SocketListener\\\\socket_listener.c(80): warning C4477: \
+\\\"printf\\\": \[Cent] \[AAcute]\[AHat]\[AGrave]\[RegisteredTrademark]\.aa\
+\[Yen] \[ADoubleDot]\[RegisteredTrademark]\[AGrave]\[Not]\[NonBreakingSpace]\
+\[AHat]\[DoubleDot]\[AGrave]\[RegisteredTrademark]\[Cent]\[NonBreakingSpace]\
+\[DiscretionaryHyphen]\[DoubleDot]\[IDoubleDot] \\\"%d\\\" \[AHat]\[AGrave]\
+\[Yen]\[DownExclamation]\[ATilde]\[Yen]\[AHat]\[AAcute]\[IDoubleDot] \
+\[NonBreakingSpace]\[AGrave]\[Sterling]\[ATilde]\[Not]\[Yen]\
+\[DiscretionaryHyphen]\[AHat] \[AHat]\[DoubleDot]\.af\[NonBreakingSpace] \
+\\\"int\\\", \[DiscretionaryHyphen]\[RegisteredTrademark] \[Cent]\
+\[NonBreakingSpace]\[AGrave]\[DoubleDot]\[NonBreakingSpace]\[AHat]\[DoubleDot]\
+\[Cent]\[DiscretionaryHyphen]\[EDoubleDot]\[Copyright] \[NonBreakingSpace]\
+\[AGrave]\[Sterling]\[ATilde]\[Not]\[Yen]\[DiscretionaryHyphen]\[AHat] \
+\\\"1\\\" \[DoubleDot]\[Not]\[Yen]\[Yen]\[AHat] \[AHat]\[DoubleDot]\.af \
+\\\"int *\\\"\\nC:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\socket_\
+listener.c(80): warning C4313: printf: \.aa\[RegisteredTrademark]\
+\[DiscretionaryHyphen]\[ADoubleDot]\[LeftGuillemet]\[DoubleDot]\.aa\[AHat] \\\
+\"%d\\\" \[Cent] \[AAcute]\[AHat]\[AGrave]\[RegisteredTrademark]\.aa\[Yen] \
+\[ADoubleDot]\[RegisteredTrademark]\[AGrave]\[Not]\[NonBreakingSpace]\[AHat]\
+\[NonBreakingSpace] \[AAcute] \
+\[NonBreakingSpace]\[AGrave]\[Sterling]\[ATilde]\[Not]\[Yen]\
+\[DiscretionaryHyphen]\[AHat]\[RegisteredTrademark]\[Not] 1 \[AHat]\
+\[DoubleDot]\.af\[NonBreakingSpace] \\\"int \
+*\\\"\\nC:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\socket_\
+listener.c(81): warning C4133: \[ADoubleDot]\[ATilde]\[DiscretionaryHyphen]\
+\.aa\[AE]\[DoubleDot]\[IDoubleDot]: \[DiscretionaryHyphen]\[Yen]\[AAcute]\
+\[RegisteredTrademark]\[Cent]\[Not]\[Yen]\[AAcute]\[AHat]\[DoubleDot]\[Not]\
+\[EDoubleDot]\[Yen] \[AHat]\[DoubleDot]\.af\[EDoubleDot] - \[DoubleDot]\
+\[Section] \\\"int *\\\" \[Cent] \\\"const mint *\\\"\\nC:\\\\Users\\\\Kirill\
+\\\\Projects\\\\SocketListener\\\\socket_listener.c(207): warning C4047: \
+\[DoubleDot]\[DiscretionaryHyphen]\[DoubleDot]\[AE]\[DoubleDot]\
+\[NonBreakingSpace]\[LeftGuillemet]\[DoubleDot]\[Section]\[NonBreakingSpace]\
+\[AE]\[DoubleDot]\[IDoubleDot]: \\\"mint\\\" \[RegisteredTrademark]\[AHat]\
+\[LeftGuillemet]\[DoubleDot]\[CCedilla]\[NonBreakingSpace]\[Yen]\[AHat]\
+\[AAcute]\[IDoubleDot] \.af\[RegisteredTrademark] \[ATilde]\[AGrave]\
+\[RegisteredTrademark]\[Cent]\[DiscretionaryHyphen]\[IDoubleDot]\[Not] \.aa\
+\[RegisteredTrademark]\[AAcute]\[Cent]\[Yen]\[DiscretionaryHyphen]\
+\[DiscretionaryHyphen]\[RegisteredTrademark]\[Sterling]\[RegisteredTrademark] \
+\[RegisteredTrademark]\[DownExclamation]\[AGrave]\[NonBreakingSpace]\[EAcute]\
+\[Yen]\[DiscretionaryHyphen]\[DoubleDot]\[IDoubleDot] \[RegisteredTrademark]\
+\[AHat] \\\"char *\\\"\\nMicrosoft (R) Incremental Linker Version \
+14.36.32534.0\\nCopyright (C) Microsoft Corporation.  All rights reserved.\\n\
+\\n/out:socket_listener.dll \\n/dll \\n/implib:socket_listener.lib \\n/debug \
 \\n/implib:C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-\
-11308-10696-1\\\\socket_listener.lib \\n\\\"/LIBPATH:C:\\\\Program \
+7928-19188-1\\\\socket_listener.lib \\n\\\"/LIBPATH:C:\\\\Program \
 Files\\\\Wolfram \
 Research\\\\Mathematica\\\\13.3\\\\SystemFiles\\\\Links\\\\MathLink\\\\\
 DeveloperKit\\\\Windows-x86-64\\\\CompilerAdditions\\\" \
@@ -210,16 +257,16 @@ DeveloperKit\\\\Windows-x86-64\\\\CompilerAdditions\\\" \
 Research\\\\Mathematica\\\\13.3\\\\SystemFiles\\\\Libraries\\\\Windows-x86-64\
 \\\" \\nml64i4m.lib \
 \\n/out:C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-\
-11308-10696-1\\\\socket_listener.dll \\nsocket_listener.obj \\n   \.91\
+7928-19188-1\\\\socket_listener.dll \\nsocket_listener.obj \\n   \.91\
 \[RegisteredTrademark]\[Section]\[Currency]\[NonBreakingSpace]\[Yen]\[AHat]\
 \[AAcute]\[IDoubleDot] \[DownExclamation]\[DoubleDot]\[DownExclamation]\
 \[LeftGuillemet]\[DoubleDot]\[RegisteredTrademark]\[AHat]\[Yen]\.aa\
 \[NonBreakingSpace] \
-C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-11308-\
-10696-1\\\\socket_listener.lib \[DoubleDot] \[RegisteredTrademark]\
-\[DownExclamation]\[EHat]\[Yen]\.aa\[AHat] \
-C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-11308-\
-10696-1\\\\socket_listener.exp\"\>"], "Print",
+C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-7928-19188-\
+1\\\\socket_listener.lib \[DoubleDot] \
+\[RegisteredTrademark]\[DownExclamation]\[EHat]\[Yen]\.aa\[AHat] \
+C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-7928-19188-\
+1\\\\socket_listener.exp\"\>"], "Print",
  CellChangeTimes->{
   3.8991937034050484`*^9, 3.899194526582946*^9, 3.8991950660620317`*^9, 
    3.899195114895986*^9, 3.8991975153146486`*^9, 3.899197564796116*^9, 
@@ -231,10 +278,18 @@ C:\\\\Users\\\\Kirill\\\\Projects\\\\SocketListener\\\\Working-tuf-11308-\
    3.8992268308894024`*^9, 3.899227186293097*^9, 3.8992274962098308`*^9, {
    3.899249500098177*^9, 3.8992495297969637`*^9}, 3.8992500858302903`*^9, 
    3.899250156248618*^9, 3.899250332596752*^9, 3.8992515665384293`*^9, 
-   3.8992524219163713`*^9, 3.8992526076231728`*^9, 3.8992541884361563`*^9},
+   3.8992524219163713`*^9, 3.8992526076231728`*^9, 3.899254185951625*^9, 
+   3.8992543329727764`*^9, 3.899275786586542*^9, 3.89927606700356*^9, 
+   3.8992764299191027`*^9, 3.8992766319036875`*^9, 3.8992767871104083`*^9, 
+   3.8992770063844643`*^9, 3.8992770942935085`*^9, 3.8992773131549273`*^9, 
+   3.8992773605742235`*^9, 3.8992781312038116`*^9, 3.8992783877976065`*^9, 
+   3.8992785739568768`*^9, 3.899278609711812*^9, 3.8992786611196156`*^9, 
+   3.8992787199363475`*^9, 3.899278766833229*^9, 3.899278798683072*^9, 
+   3.899278837935726*^9, {3.8992788910356617`*^9, 3.8992789194797316`*^9}, 
+   3.899279037960797*^9, 3.899279078610281*^9},
  CellLabel->
   "During evaluation of \
-In[5]:=",ExpressionUUID->"bc2d58ff-b68e-49e8-bc9e-ecac6aef92fd"]
+In[5]:=",ExpressionUUID->"f1b11297-2a05-44ea-90c0-64b800a2d448"]
 }, Open  ]]
 }, Open  ]],
 
@@ -258,18 +313,31 @@ Cell[BoxData[
  InterpretationBox[
   RowBox[{"AsynchronousTaskObject", "[", "\<\"\"\>", ",", "1", ",", 
    RowBox[{" ", "<>"}], "]"}],
-  AsynchronousTaskObject["", 1, 22939427758658501831]]], "Output",
- CellChangeTimes->{3.8992541887595882`*^9},
- CellLabel->"Out[8]=",ExpressionUUID->"bbdf0a3a-68f1-4f09-b5b3-3740edb7438e"]
+  AsynchronousTaskObject["", 1, 22939590838102850232]]], "Output",
+ CellChangeTimes->{
+  3.8992541887595882`*^9, 3.899254335831058*^9, 3.8992757898800163`*^9, 
+   3.899276069143746*^9, 3.8992764318767133`*^9, 3.899276637630906*^9, 
+   3.899276792118821*^9, 3.89927700978129*^9, 3.899277096227837*^9, 
+   3.8992773170034385`*^9, 3.899277362463887*^9, 3.8992781349454412`*^9, 
+   3.8992783894791937`*^9, 3.8992785762334547`*^9, 3.8992786135834737`*^9, 
+   3.8992786632488523`*^9, 3.8992787217723885`*^9, 3.8992787686955805`*^9, 
+   3.899278800576614*^9, 3.8992788398343115`*^9, {3.899278892847746*^9, 
+   3.899278921542289*^9}, 3.8992790401202602`*^9, 3.8992790787320213`*^9},
+ CellLabel->"Out[8]=",ExpressionUUID->"df455eb3-2494-4bfe-84b9-cb15f6d65a97"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
+Cell[BoxData[{
  RowBox[{"c1", " ", "=", " ", 
-  RowBox[{"SocketConnect", "[", "8000", "]"}]}]], "Input",
- CellChangeTimes->{{3.8992542039325366`*^9, 3.899254210689642*^9}},
- CellLabel->"In[9]:=",ExpressionUUID->"07a8089a-10f2-4b3a-a50b-895f4c4edf35"],
+  RowBox[{"SocketConnect", "[", "8000", "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"WriteString", "[", 
+  RowBox[{"c1", ",", "\"\<hello\>\""}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"WriteString", "[", 
+  RowBox[{"c1", ",", "\"\<hello\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.8992761025109615`*^9, 3.899276113071066*^9}, {
+  3.8992773716707373`*^9, 3.899277372378339*^9}},
+ CellLabel->"In[9]:=",ExpressionUUID->"11fa56de-f564-48c0-9267-ab83f361dccd"],
 
 Cell[BoxData[
  InterpretationBox[
@@ -368,7 +436,7 @@ Cell[BoxData[
                  TagBox["\"UUID: \"", "SummaryItemAnnotation"], 
                  "\[InvisibleSpace]", 
                  TagBox[
-                 "\"c9a43555-cc50-4e2c-b5d4-be4070d499f4\"", "SummaryItem"]}],
+                 "\"c8eb63c7-3e0c-4410-8838-78b02994ce70\"", "SummaryItem"]}],
                 "\[SpanFromLeft]", "\[SpanFromLeft]"}}, 
              GridBoxAlignment -> {
               "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
@@ -473,7 +541,7 @@ Cell[BoxData[
                  TagBox["\"UUID: \"", "SummaryItemAnnotation"], 
                  "\[InvisibleSpace]", 
                  TagBox[
-                 "\"c9a43555-cc50-4e2c-b5d4-be4070d499f4\"", "SummaryItem"]}],
+                 "\"c8eb63c7-3e0c-4410-8838-78b02994ce70\"", "SummaryItem"]}],
                 "\[SpanFromLeft]", "\[SpanFromLeft]"}, {
                RowBox[{
                  TagBox["\"Endpoint: \"", "SummaryItemAnnotation"], 
@@ -497,19 +565,18 @@ Cell[BoxData[
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  SocketObject["c9a43555-cc50-4e2c-b5d4-be4070d499f4"],
+  SocketObject["c8eb63c7-3e0c-4410-8838-78b02994ce70"],
   Editable->False,
   SelectWithContents->True,
   Selectable->False]], "Output",
- CellChangeTimes->{3.899254213036841*^9},
- CellLabel->"Out[9]=",ExpressionUUID->"85aec72d-354e-4a06-b72d-a706fc8c92e6"]
-}, Open  ]],
-
-Cell[BoxData[
- RowBox[{"WriteString", "[", 
-  RowBox[{"c1", ",", " ", "\"\<hello\>\""}], "]"}]], "Input",
- CellChangeTimes->{{3.8992542154446726`*^9, 3.899254220927894*^9}},
- CellLabel->"In[10]:=",ExpressionUUID->"95ec2451-96e4-4468-b33e-14520b5eda9f"]
+ CellChangeTimes->{
+  3.8992773787246046`*^9, 3.899278138648226*^9, 3.89927838993883*^9, 
+   3.899278576818762*^9, 3.899278614071006*^9, 3.8992786637144365`*^9, 
+   3.899278722222363*^9, 3.8992787691448374`*^9, 3.8992788010773196`*^9, 
+   3.899278840279811*^9, {3.899278893317624*^9, 3.8992789219923363`*^9}, 
+   3.8992790405459924`*^9, 3.899279079193795*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"94309cd0-575b-4d6e-a182-78abc10a9911"]
+}, Open  ]]
 },
 WindowSize->{958, 980},
 WindowMargins->{{Automatic, -7}, {Automatic, 0}},
@@ -536,19 +603,18 @@ Cell[1426, 44, 282, 7, 56, "Code",ExpressionUUID->"8dee5efd-81eb-4c03-ba79-24906
 Cell[CellGroupData[{
 Cell[1733, 55, 2395, 46, 190, "Code",ExpressionUUID->"0886999e-13fc-42a0-8002-c68562c3a083"],
 Cell[CellGroupData[{
-Cell[4153, 105, 2089, 32, 234, "Print",ExpressionUUID->"560dc25d-896f-4793-8604-90887dc19a6c"],
-Cell[6245, 139, 6690, 97, 690, "Print",ExpressionUUID->"bc2d58ff-b68e-49e8-bc9e-ecac6aef92fd"]
+Cell[4153, 105, 2658, 40, 234, "Print",ExpressionUUID->"5065fb4a-cb6d-4ef6-95b1-18bf8a8ef6b1"],
+Cell[6814, 147, 10122, 144, 842, "Print",ExpressionUUID->"f1b11297-2a05-44ea-90c0-64b800a2d448"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[12984, 242, 632, 12, 56, "Code",ExpressionUUID->"c9bd0472-3c9e-4525-b3ff-7a871616b4a5"],
-Cell[13619, 256, 322, 6, 35, "Output",ExpressionUUID->"bbdf0a3a-68f1-4f09-b5b3-3740edb7438e"]
+Cell[16985, 297, 632, 12, 56, "Code",ExpressionUUID->"c9bd0472-3c9e-4525-b3ff-7a871616b4a5"],
+Cell[17620, 311, 886, 14, 35, "Output",ExpressionUUID->"df455eb3-2494-4bfe-84b9-cb15f6d65a97"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[13978, 267, 249, 4, 31, "Input",ExpressionUUID->"07a8089a-10f2-4b3a-a50b-895f4c4edf35"],
-Cell[14230, 273, 11301, 231, 65, "Output",ExpressionUUID->"85aec72d-354e-4a06-b72d-a706fc8c92e6"]
-}, Open  ]],
-Cell[25546, 507, 252, 4, 31, "Input",ExpressionUUID->"95ec2451-96e4-4468-b33e-14520b5eda9f"]
+Cell[18543, 330, 504, 9, 74, "Input",ExpressionUUID->"11fa56de-f564-48c0-9267-ab83f361dccd"],
+Cell[19050, 341, 11619, 236, 65, "Output",ExpressionUUID->"94309cd0-575b-4d6e-a182-78abc10a9911"]
+}, Open  ]]
 }
 ]
 *)
