@@ -191,3 +191,12 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     MArgument_setInteger(Res, asyncObjID); 
     return LIBRARY_NO_ERROR; 
 }
+
+DLLEXPORT int socker_write(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    mint clientId = MArgument_getInteger(Args[0]); 
+    char *bytes = MArgument_getUTF8String(Args[1]); 
+    mint bytesLen = MArgument_getUTF8String(Args[2]); 
+    send(clientId, bytes, bytesLen, 0); 
+    MArgument_setInteger(Res, 0); 
+    return LIBRARY_NO_ERROR; 
+}
