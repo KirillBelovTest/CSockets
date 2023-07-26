@@ -78,7 +78,7 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
         for (size_t i = 0; i < clientsLength; i++)
         {
             iResult = recv(clients[i], buf, buflen, 0); 
-            if (iResult > 0){
+            if (iResult > 0){            
                 printf("CURRENT NUMBER OF CLIENTS: %d\n", clientsLength);
                 printf("MAX NUMBER OF CLIENTS: %d\n", clientsMaxLength);
                 printf("RECEIVED %d BYTES\n", iResult);
