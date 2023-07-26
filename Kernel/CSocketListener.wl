@@ -58,6 +58,10 @@ CSocketListener[<|
 |>]; 
 
 
+CSocketListener /: DeleteObject[CSocketListener[assoc_Association]] := 
+StopAsynchronousTask[assoc["Task"]]; 
+
+
 (* ::Section:: *)
 (*Internal*)
 
@@ -79,6 +83,9 @@ If[!FileExistsQ[$libFile],
 
 
 createServer = LibraryFunctionLoad[$libFile, "create_server", {String}, Integer]; 
+
+
+stopServer = LibraryFunctionLoad[$libFile, "stop_server", {Integer}, Integer]; 
 
 
 socketWrite = LibraryFunctionLoad[$libFile, "socket_write", {Integer, "ByteArray", Integer}, Integer]; 

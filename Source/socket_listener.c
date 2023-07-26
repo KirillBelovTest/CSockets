@@ -96,12 +96,15 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
         }
 	}
 
+    printf("STOP ASYNCHRONOUS TASK");
     closesocket(listenSocket);
-    for (size_t i = 0; i < clientsLength; i++)
-    {
-        closesocket(clients[i]);
-    }
-    
+    //for (size_t i = 0; i < clientsLength; i++)
+    //{
+    //    closesocket(clients[i]);
+    //}
+
+    free(clients);
+    free(buf);
 }
 
 DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) 
@@ -200,7 +203,7 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
     int iResult; 
     WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions; 
     SOCKET clientId = MArgument_getInteger(Args[0]); 
-    char *text = numericLibrary->MNumericArray_getData(MArgument_getUTF8String(Args[1]));      
+    char *text = MArgument_getUTF8String(Args[1]);      
     int textLen = MArgument_getInteger(Args[2]); 
 
     iResult = send(clientId, text, textLen, 0); 
@@ -219,5 +222,11 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
 DLLEXPORT int close_socket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET s = MArgument_getInteger(Args[0]);
     MArgument_setInteger(Res, closesocket(s));
+    return LIBRARY_NO_ERROR; 
+}
+
+DLLEXPORT int stop_server(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    mint taskId = MArgument_getInteger(Args[0]); 
+    MArgument_setInteger(Res, libData->ioLibraryFunctions->removeAsynchronousTask(taskId)); 
     return LIBRARY_NO_ERROR; 
 }
