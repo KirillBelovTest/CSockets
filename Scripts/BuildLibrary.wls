@@ -1,4 +1,4 @@
-#!/usr/bin/env wolframscript
+wolf#!/usr/bin/env wolframscript
 (* ::Package:: *)
 
 Get["CCompilerDriver`"]; 
