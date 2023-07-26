@@ -2,7 +2,7 @@
 (* ::Package:: *)
 
 Get["CCompilerDriver`"]; 
-libSrc = File["socket_listener.c"]; 
+libSrc = File[FileNameJoin[{"Source","socket_listener.c"}]]; 
 If[Head[createServer] == LibraryFunction, LibraryFunctionUnload[createServer]]; 
 libBin = CreateLibrary[libSrc, "socket_listener", 
 	"Debug" -> True, 

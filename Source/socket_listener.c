@@ -118,9 +118,13 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
 	DataStore ds;
     free(targ); 
     
+    #ifdef _WIN32 
     iResult = ioctlsocket(listenSocket, FIONBIO, &iMode); 
+    #else
+    iResult = fcntl(listenSocket, O_NONBLOCK, &iMode); 
+    #endif
     if (iResult != NO_ERROR) {
-        printf("ioctlsocket failed with error: %ld\n", iResult);
+        printf("ioctlsocket failed with error: %d\n", iResult);
     }
 	
 	while(ioLibrary->asynchronousTaskAliveQ(asyncObjID))
@@ -189,12 +193,18 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     /* Загружаем библиотеку */
     
+    #ifdef __linux__ 
+
+    #elif _WIN32
     WSADATA wsaData; 
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != 0) {
         printf("WSAStartup failed with error: %d\n", iResult);
         return 1;
     }
+    #else
+
+    #endif
 
     /* -------------------------------------------------------------------- */
 
@@ -212,7 +222,7 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     iResult = getaddrinfo(NULL, listenPortName, &addressHints, &address); 
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
-        WSACleanup();
+        WSACLEANUP;
         return 1;
     }
 
@@ -221,10 +231,10 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     /* Создание сокета для прослушивания */
     
     listenSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-    if (listenSocket == INVALID_SOCKET) {
-        printf("socket failed with error: %ld\n", WSAGetLastError());
+    if (!ISVALIDSOCKET(listenSocket)) {
+        printf("socket failed with error: %d\n", GETSOCKETERRNO());
         freeaddrinfo(address);
-        WSACleanup();
+        WSACLEANUP;
         return 1;
     }
 
@@ -234,10 +244,10 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     iResult = bind(listenSocket, address->ai_addr, (int)address->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        printf("bind failed with error: %d\n", WSAGetLastError());
+        printf("bind failed with error: %d\n", GETSOCKETERRNO());
         freeaddrinfo(address);
-        closesocket(listenSocket);
-        WSACleanup();
+        CLOSESOCKET(listenSocket);
+        WSACLEANUP;
         return 1;
     }
 
@@ -249,9 +259,9 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     iResult = listen(listenSocket, SOMAXCONN);
     if (iResult == SOCKET_ERROR) {
-        printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(listenSocket);
-        WSACleanup();
+        printf("listen failed with error: %d\n", GETSOCKETERRNO());
+        CLOSESOCKET(listenSocket);
+        WSACLEANUP;
         return 1;
     }
 
