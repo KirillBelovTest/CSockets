@@ -64,14 +64,9 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
 	while(ioLibrary->asynchronousTaskAliveQ(asyncObjID))
 	{
         clientSocket = accept(listenSocket, NULL, NULL);
-        if (clientSocket == INVALID_SOCKET) {
-            //printf("accept failed with error: %d\n", WSAGetLastError());
-        } else {
+        if (clientSocket != INVALID_SOCKET) {
             printf("NEW CLIENT: %d\n", clientSocket);
-            //ds = ioLibrary->createDataStore();
-            //ioLibrary->DataStore_addInteger(ds, clientSocket);
             clients[clientsLength++] = clientSocket; 
-            //ioLibrary->raiseAsyncEvent(asyncObjID, "ACCEPT_SOCKET", ds);
 
             if (clientsLength == clientsMaxLength){
                 clientsMaxLength *= 2; 
@@ -101,31 +96,14 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
 	}
 }
 
-/**
- * Создает сервер
- * - Инициализируем 
- * - Загружаем библиотеку
- * - Создаем адрес
- * - Создем сокет для прослушивания
- * - Привязка сокета к адресу
- * - Запуск отдельного потока где происходит принятие соединений
- * - 
-*/
 DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) 
 {
-
-    /* Инициализируем */
-
     int iResult; 
     char* listenPortName = MArgument_getUTF8String(Args[0]); 
     SOCKET listenSocket = INVALID_SOCKET; 
     WolframIOLibrary_Functions ioLibrary = libData->ioLibraryFunctions; 
     WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions;
     printf("INIT\n");
-
-    /* -------------------------------------------------------------------- */
-
-    /* Загружаем библиотеку */
     
     WSADATA wsaData; 
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -133,10 +111,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
         printf("WSAStartup failed with error: %d\n", iResult);
         return 1;
     }
-
-    /* -------------------------------------------------------------------- */
-
-    /* Создаем адрес */
     
     struct addrinfo *address = NULL; 
     struct addrinfo addressHints; 
@@ -153,10 +127,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
         WSACleanup();
         return 1;
     }
-
-    /* -------------------------------------------------------------------- */
-
-    /* Создание сокета для прослушивания */
     
     listenSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
     if (listenSocket == INVALID_SOCKET) {
@@ -165,10 +135,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
         WSACleanup();
         return 1;
     }
-
-    /* -------------------------------------------------------------------- */
-
-    /* Привязка сокета к адресу */
 
     iResult = bind(listenSocket, address->ai_addr, (int)address->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
@@ -181,10 +147,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     freeaddrinfo(address);
 
-    /* -------------------------------------------------------------------- */
-
-    /* Перевод сокета в состояние прослушивания */
-
     iResult = listen(listenSocket, SOMAXCONN);
     if (iResult == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
@@ -195,20 +157,12 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     printf("LISTEN SOCKET\n"); 
 
-    /* -------------------------------------------------------------------- */
-
-    /* Запуск отдельного потока где происходит принятие соединений и чтение данных */
-
     SocketTaskArgs threadArg = (SocketTaskArgs)malloc(sizeof(struct SocketTaskArgs_st));
     threadArg->ioLibrary=ioLibrary; 
     threadArg->listentSocket=listenSocket;
     threadArg->numericLibrary=numericLibrary;
     mint asyncObjID;
     asyncObjID = ioLibrary->createAsynchronousTaskWithThread(ListenSocketTask, threadArg);
-
-    /* -------------------------------------------------------------------- */
-
-    /* Возвращение идентификатора асинхронной задачи в качестве результата */
 
     MArgument_setInteger(Res, asyncObjID); 
     return LIBRARY_NO_ERROR; 
