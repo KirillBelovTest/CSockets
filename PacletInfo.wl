@@ -9,19 +9,27 @@ PacletObject[
     "PublisherID" -> "KirillBelov",
     "Version" -> "1.0.0",
     "WolframVersion" -> "13+",
+    "PrimaryContext" -> "KirillBelov`CSocketListener`",
     "Extensions" -> {
       {
         "Kernel",
         "Root" -> "Kernel",
         "Context" -> {"KirillBelov`CSocketListener`"},
-        "Symbols" -> {}
+        "Symbols" -> {
+          "KirillBelov`CSocketListener`CSocket",
+          "KirillBelov`CSocketListener`CSocketListen",
+          "KirillBelov`CSocketListener`CSocketListener"
+        }
       },
       {"Documentation", "Language" -> "English"},
+      {"LibraryLink", "Root" -> "LibraryResources"},
       {
         "Asset",
         "Assets" -> {
           {"License", "./LICENSE"},
-          {"ReadMe", "./README.md"}
+          {"ReadMe", "./README.md"},
+          {"Source", "./Source"},
+          {"Scripts", "./Scripts"}
         }
       }
     }
