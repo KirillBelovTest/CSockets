@@ -63,6 +63,7 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
 	
 	while(ioLibrary->asynchronousTaskAliveQ(asyncObjID))
 	{
+        Sleep(1);
         clientSocket = accept(listenSocket, NULL, NULL);
         if (clientSocket != INVALID_SOCKET) {
             printf("NEW CLIENT: %d\n", clientSocket);
