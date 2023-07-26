@@ -1328,36 +1328,145 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"listener", " ", "=", " ", 
   RowBox[{"CSocketListen", "[", 
-   RowBox[{"8001", ",", " ", "handler"}], "]"}]}]], "Input",
+   RowBox[{"8000", ",", " ", "handler"}], "]"}]}]], "Input",
  CellChangeTimes->{{3.899358844661832*^9, 3.8993588680733356`*^9}, {
-  3.8993598174598722`*^9, 3.899359817538039*^9}},
+   3.8993598174598722`*^9, 3.899359817538039*^9}, {3.899360455045938*^9, 
+   3.8993604552976036`*^9}, {3.8993605887036047`*^9, 3.8993605888777556`*^9}, 
+   3.899361669768077*^9},
  CellTags->"DefaultContent",
- CellLabel->"In[9]:=",
+ CellLabel->"In[4]:=",
  CellID->593829399,ExpressionUUID->"c58b142f-14de-4bb8-b6ef-a197a6e656d5"],
 
 Cell[BoxData[
  RowBox[{"CSocketListener", "[", 
   RowBox[{"\[LeftAssociation]", 
    RowBox[{
-    RowBox[{"\<\"Port\"\>", "\[Rule]", "8001"}], ",", 
+    RowBox[{"\<\"Port\"\>", "\[Rule]", "8000"}], ",", 
     RowBox[{"\<\"Handler\"\>", "\[Rule]", "handler"}], ",", 
     RowBox[{"\<\"Task\"\>", "\[Rule]", 
      InterpretationBox[
-      RowBox[{"AsynchronousTaskObject", "[", "\<\"\"\>", ",", "2", ",", 
+      RowBox[{"AsynchronousTaskObject", "[", "\<\"\"\>", ",", "1", ",", 
        RowBox[{" ", "<>"}], "]"}],
-      AsynchronousTaskObject["", 2, 22940118834963626212]]}]}], 
+      AsynchronousTaskObject["", 1, 22940132598954878071]]}]}], 
    "\[RightAssociation]"}], "]"}]], "Output",
  CellChangeTimes->{
   3.899358869558104*^9, 3.899359431144286*^9, {3.899359741187821*^9, 
-   3.899359763365835*^9}, 3.8993598180890102`*^9},
+   3.899359763365835*^9}, 3.8993598180890102`*^9, 3.899360283146767*^9, 
+   3.899360342787674*^9, 3.8993604620781107`*^9, 3.8993605893496904`*^9, 
+   3.899361241409216*^9, 3.8993613399702578`*^9, 3.8993614974537153`*^9, 
+   3.899361672668584*^9, 3.899361735777977*^9},
  CellTags->"DefaultContent",
- CellLabel->"Out[9]=",
- CellID->10530492,ExpressionUUID->"5a617594-2213-4e0b-955e-b5735b0be1cb"]
+ CellLabel->"Out[4]=",
+ CellID->34751975,ExpressionUUID->"dc1970c0-4c60-49db-b853-b032bb2b80e3"]
 }, Open  ]],
 
 Cell["Define handler:", "Text",
  CellChangeTimes->{{3.899358877809697*^9, 3.8993588829339056`*^9}},
  CellID->56777643,ExpressionUUID->"59ed7f7c-92e9-449e-8e5b-4401ed1ef5bb"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"AbsoluteTiming", "[", 
+  RowBox[{
+   RowBox[{"imgStr", " ", "=", " ", 
+    RowBox[{"ExportString", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"Plot", "[", 
+       RowBox[{
+        RowBox[{"{", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"Sin", "[", "x", "]"}], ",", " ", "\[IndentingNewLine]", 
+          RowBox[{"Cos", "[", "x", "]"}], ",", " ", "\[IndentingNewLine]", 
+          RowBox[{"Sin", "[", 
+           RowBox[{"2", "x"}], "]"}], ",", " ", "\[IndentingNewLine]", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"2", "x"}], "]"}], ",", " ", "\[IndentingNewLine]", 
+          RowBox[{"Sin", "[", 
+           RowBox[{"2", "x", " ", "*", " ", 
+            RowBox[{"Cos", "[", "x", "]"}]}], "]"}], ",", " ", 
+          "\[IndentingNewLine]", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"2", "x", " ", "*", " ", 
+            RowBox[{"Sin", "[", "x", "]"}]}], "]"}], ",", " ", 
+          "\[IndentingNewLine]", 
+          RowBox[{"BesselJ", "[", 
+           RowBox[{"1", ",", " ", "x"}], "]"}], ",", " ", 
+          "\[IndentingNewLine]", 
+          RowBox[{"BesselJ", "[", 
+           RowBox[{"2", ",", " ", "x"}], "]"}], ",", " ", 
+          "\[IndentingNewLine]", 
+          RowBox[{"BesselJ", "[", 
+           RowBox[{"3", ",", " ", "x"}], "]"}], ",", " ", 
+          "\[IndentingNewLine]", 
+          RowBox[{"BesselJ", "[", 
+           RowBox[{"4", ",", " ", "x"}], "]"}]}], "\[IndentingNewLine]", 
+         "}"}], ",", " ", 
+        RowBox[{"{", 
+         RowBox[{"x", ",", " ", "1", ",", " ", "10"}], "}"}], ",", " ", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Filling", "->", "Bottom"}], ",", " ", "\[IndentingNewLine]", 
+        RowBox[{"ImageSize", "->", "Large"}], ",", " ", "\[IndentingNewLine]", 
+        RowBox[{"PlotTheme", "->", "\"\<Detailed\>\""}], ",", " ", 
+        "\[IndentingNewLine]", 
+        RowBox[{"PlotPoints", "->", "1200"}]}], "\[IndentingNewLine]", "]"}], 
+      ",", " ", "\[IndentingNewLine]", "\"\<SVG\>\""}], "\[IndentingNewLine]",
+      "]"}]}], ";"}], " ", "]"}]], "Input",
+ CellChangeTimes->{{3.8993621104023156`*^9, 3.8993621171405087`*^9}, {
+  3.8993622409637775`*^9, 3.8993622527290974`*^9}, {3.899362283987605*^9, 
+  3.8993623639561167`*^9}},
+ CellLabel->"In[36]:=",
+ CellID->73602492,ExpressionUUID->"248b1448-c716-491d-ba61-1a33fcbd0df0"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1.9320519`", ",", "Null"}], "}"}]], "Output",
+ CellChangeTimes->{3.899362366368786*^9},
+ CellLabel->"Out[36]=",
+ CellID->737686992,ExpressionUUID->"1fd3e3fe-e1b4-491c-95e6-5274f139e875"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"AbsoluteTiming", "[", 
+  RowBox[{
+   RowBox[{"resp", " ", "=", " ", 
+    RowBox[{"StringToByteArray", "[", 
+     RowBox[{
+     "\"\<HTTP/1.1 200 OK\\r\\nConnection: Keep-Alive\\r\\nContent-Type: \
+text/xml\\r\\nContent-Length: \>\"", "<>", 
+      RowBox[{"ToString", "[", 
+       RowBox[{"StringLength", "[", "imgStr", "]"}], "]"}], "<>", 
+      "\"\<\\r\\n\\r\\n\>\"", " ", "<>", " ", "imgStr"}], "]"}]}], ";"}], " ",
+   "]"}]], "Input",
+ CellChangeTimes->{{3.899362158968785*^9, 3.8993621770355067`*^9}, {
+  3.8993623675334883`*^9, 3.899362370695675*^9}},
+ CellLabel->"In[37]:=",
+ CellID->468645215,ExpressionUUID->"02fb43ee-d7f3-4698-bcc7-a90a3cdedaaf"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0.0016211`", ",", "Null"}], "}"}]], "Output",
+ CellChangeTimes->{3.8993623724584694`*^9},
+ CellLabel->"Out[37]=",
+ CellID->256546053,ExpressionUUID->"125fe87f-54d6-4e6a-8363-9473eaaee50a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Length", "[", "resp", "]"}]], "Input",
+ CellChangeTimes->{{3.899362266983906*^9, 3.899362269422612*^9}},
+ CellLabel->"In[38]:=",
+ CellID->459675646,ExpressionUUID->"82f50d1f-58da-4ed6-8c51-2bbce1dfb69f"],
+
+Cell[BoxData["1019861"], "Output",
+ CellChangeTimes->{{3.8993622696109204`*^9, 3.8993623109366274`*^9}, {
+  3.8993623569483857`*^9, 3.8993623744096327`*^9}},
+ CellLabel->"Out[38]=",
+ CellID->527507466,ExpressionUUID->"db7f0ae5-42d6-4ed2-a00f-848a065bb2a8"]
+}, Open  ]],
 
 Cell[BoxData[
  RowBox[{
@@ -1366,8 +1475,9 @@ Cell[BoxData[
   RowBox[{"Module", "[", 
    RowBox[{
     RowBox[{"{", 
-     RowBox[{"client", ",", " ", "request", ",", " ", "response"}], "}"}], 
-    ",", " ", "\[IndentingNewLine]", 
+     RowBox[{
+     "client", ",", " ", "request", ",", " ", "response", ",", " ", "img"}], 
+     "}"}], ",", " ", "\[IndentingNewLine]", 
     RowBox[{
      RowBox[{"client", " ", "=", " ", 
       RowBox[{"assoc", "[", "\"\<SourceSocket\>\"", "]"}]}], ";", 
@@ -1376,21 +1486,21 @@ Cell[BoxData[
       RowBox[{"ByteArrayToString", "[", 
        RowBox[{"assoc", "[", "\"\<DataByteArray\>\"", "]"}], "]"}]}], ";", 
      " ", "\[IndentingNewLine]", 
-     RowBox[{
-     "response", " ", "=", 
-      "\"\<HTTP/1.1 200 OK\\r\\nContent-Length: 5\\r\\n\\r\\nhello\>\""}], 
-     ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     RowBox[{"response", " ", "=", "resp"}], ";", "\[IndentingNewLine]", 
+     "\[IndentingNewLine]", 
      RowBox[{"Echo", "[", 
       RowBox[{"request", ",", " ", "\"\<Request\>\""}], "]"}], ";", 
      "\[IndentingNewLine]", 
      RowBox[{"Echo", "[", 
       RowBox[{"response", ",", " ", "\"\<Response\>\""}], "]"}], ";", " ", 
      "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"WriteString", "[", 
+     RowBox[{"BinaryWrite", "[", 
       RowBox[{"client", ",", " ", "response"}], "]"}], ";"}]}], " ", 
    "\[IndentingNewLine]", "]"}]}]], "Input",
- CellChangeTimes->{{3.8993588858087807`*^9, 3.899359069889078*^9}},
- CellLabel->"In[5]:=",
+ CellChangeTimes->{{3.8993588858087807`*^9, 3.899359069889078*^9}, {
+  3.8993617853475122`*^9, 3.8993620628458033`*^9}, {3.899362107644659*^9, 
+  3.8993622156285543`*^9}},
+ CellLabel->"In[39]:=",
  CellID->279566803,ExpressionUUID->"633e7bc8-d405-4f64-aeed-ba937d73a77d"],
 
 Cell[TextData[{
