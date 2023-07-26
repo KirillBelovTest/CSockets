@@ -95,6 +95,13 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
             }
         }
 	}
+
+    closesocket(listenSocket);
+    for (size_t i = 0; i < clientsLength; i++)
+    {
+        closesocket(clients[i]);
+    }
+    
 }
 
 DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) 
@@ -206,5 +213,11 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
     
     printf("WRITE %d BYTES\n", textLen);
     MArgument_setInteger(Res, 0); 
+    return LIBRARY_NO_ERROR; 
+}
+
+DLLEXPORT int close_socket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET s = MArgument_getInteger(Args[0]);
+    MArgument_setInteger(Res, closesocket(s));
     return LIBRARY_NO_ERROR; 
 }
