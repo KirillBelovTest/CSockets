@@ -978,7 +978,6 @@ BgAAAKAWXJoGAAAAoDa6mmbq3xYAAAAApDD17wkAAAAAcvH/AY6ug6A=
   ImageSizeRaw->{565., 331.},
   PlotRange->{{0, 565.}, {0, 331.}}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{3.8993586300085683`*^9},
  CellTags->"DefaultContent",
  CellID->445097320,ExpressionUUID->"b6bf4252-fa2f-4656-ab52-b246cf5a7d56"]
 }, Open  ]],
@@ -1260,7 +1259,6 @@ Cell[BoxData[
    RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}]], "Input", "Excluded",
  TaggingRules->{},
  InitializationCell->True,
- CellChangeTimes->{{3.899335882025107*^9, 3.8993358911469707`*^9}},
  CellLabel->"In[1]:=",
  CellID->996717066,ExpressionUUID->"d6811127-5787-49d3-8431-e0527fe54e56"],
 
@@ -1270,7 +1268,6 @@ Cell[BoxData[
    RowBox[{"Directory", "[", "]"}], "]"}], ";"}]], "Input", "Excluded",
  TaggingRules->{},
  InitializationCell->True,
- CellChangeTimes->{{3.899335882025107*^9, 3.8993359174896283`*^9}},
  CellLabel->"In[2]:=",
  CellID->139310320,ExpressionUUID->"78c5f200-3f9b-47e3-b24c-913672c7f888"],
 
@@ -1280,7 +1277,6 @@ Cell[BoxData[
   ";"}]], "Input", "Excluded",
  TaggingRules->{},
  InitializationCell->True,
- CellChangeTimes->{{3.899335921502594*^9, 3.8993359218959265`*^9}},
  CellLabel->"In[3]:=",
  CellID->172764492,ExpressionUUID->"52c4525e-4716-4604-a68d-4221144da0b8"]
 }, Open  ]],
@@ -1289,12 +1285,10 @@ Cell[CellGroupData[{
 
 Cell["Build library", "Subsection",
  TaggingRules->{},
- CellChangeTimes->{{3.899335865418043*^9, 3.8993358687339144`*^9}},
  CellID->59376267,ExpressionUUID->"86fc4fc2-05a9-400b-867f-9f3e2d80e8a9"],
 
 Cell["Library source file:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899335939141693*^9, 3.8993359621944094`*^9}},
  CellID->647495725,ExpressionUUID->"3ba7e68b-9d53-4f27-9e19-56573a1faa4c"],
 
 Cell[CellGroupData[{
@@ -1308,7 +1302,6 @@ Cell[BoxData[
       RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<Source\>\"", ",", 
       "\"\<socket_listener.c\>\""}], "}"}], "]"}], "]"}]}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993359947692404`*^9, 3.8993360119071493`*^9}},
  CellLabel->"In[4]:=",
  CellID->532368834,ExpressionUUID->"178f63bf-a489-4d82-9b8c-3438400a6ef5"],
 
@@ -1319,15 +1312,12 @@ Cell[BoxData[
 socket_listener.c\""},
    "FileArgument"], "]"}]], "Output",
  TaggingRules->{},
- CellChangeTimes->{3.899336012376028*^9, 3.8993586831365676`*^9, 
-  3.89935941272546*^9, 3.8993602691212797`*^9},
  CellLabel->"Out[4]=",
  CellID->603563124,ExpressionUUID->"26b01537-deb8-44c4-aaff-14b12ab8ffca"]
 }, Open  ]],
 
 Cell["Library output directory:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899336028754878*^9, 3.8993360371030984`*^9}},
  CellID->598308237,ExpressionUUID->"47b9434e-9e2a-4198-9149-9d2c489bc2e6"],
 
 Cell[CellGroupData[{
@@ -1340,22 +1330,18 @@ Cell[BoxData[
      RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<LibraryResources\>\"",
       ",", "$SystemID"}], "}"}], "]"}]}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993360379023404`*^9, 3.8993360436700387`*^9}},
  CellLabel->"In[5]:=",
  CellID->51317003,ExpressionUUID->"2530a0e8-afb7-4e46-af61-bfa245380ae4"],
 
 Cell[BoxData["\<\"C:\\\\Users\\\\Kirill\\\\Projects\\\\CSocketListener\\\\\
 LibraryResources\\\\Windows-x86-64\"\>"], "Output",
  TaggingRules->{},
- CellChangeTimes->{3.899336047062253*^9, 3.899358685695511*^9, 
-  3.8993594166788025`*^9, 3.899360270592411*^9},
  CellLabel->"Out[5]=",
  CellID->664536055,ExpressionUUID->"e6b0683d-d4f4-4bce-b570-9fba87894107"]
 }, Open  ]],
 
 Cell["Create if does not exist:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.8993360629631824`*^9, 3.8993360774520736`*^9}},
  CellID->410275721,ExpressionUUID->"3b2ba455-3d84-4bff-904c-1c489ad7d2d4"],
 
 Cell[BoxData[
@@ -1366,26 +1352,22 @@ Cell[BoxData[
      RowBox[{"FileExistsQ", "[", "$libDir", "]"}]}], ",", 
     RowBox[{"CreateDirectory", "[", "]"}]}], "]"}], ";"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993360781861744`*^9, 3.8993360782017984`*^9}},
  CellLabel->"In[6]:=",
  CellID->267915377,ExpressionUUID->"90d6ac4e-31ac-4925-b8eb-bf0b6533f75e"],
 
 Cell["Get compiler:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899336091346347*^9, 3.899336095270964*^9}},
  CellID->86033523,ExpressionUUID->"f8b227bc-fdf5-412b-8409-609e58b1c351"],
 
 Cell[BoxData[
  RowBox[{
   RowBox[{"Get", "[", "\"\<CCompilerDriver`\>\"", "]"}], ";"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993360964711733`*^9, 3.8993360964711733`*^9}},
  CellLabel->"In[7]:=",
  CellID->161858208,ExpressionUUID->"e34e0bfb-70d9-4a09-9419-42c83d8cfb13"],
 
 Cell["Create dynamic lbrary:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.8993361060586805`*^9, 3.899336113016167*^9}},
  CellID->25656263,ExpressionUUID->"8917e7fa-1c83-48a0-a9fe-1843fb085289"],
 
 Cell[BoxData[
@@ -1395,7 +1377,6 @@ Cell[BoxData[
     RowBox[{"\"\<TargetDirectory\>\"", "->", "$libDir"}]}], "]"}], 
   ";"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.899336113890867*^9, 3.8993361139064884`*^9}},
  CellLabel->"In[8]:=",
  CellID->569537579,ExpressionUUID->"fadb611a-b307-4b82-8b2d-fb0042708a5c"]
 }, Open  ]],
@@ -1408,7 +1389,6 @@ Cell["Basic Examples", "Subsection",
 
 Cell["Create listener:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899358830252765*^9, 3.899358834412635*^9}},
  CellTags->"DefaultContent",
  CellID->319073343,ExpressionUUID->"ed2e592f-5aa6-4c3b-a208-da41a08fd28a"],
 
@@ -1419,10 +1399,6 @@ Cell[BoxData[
   RowBox[{"CSocketListen", "[", 
    RowBox[{"8000", ",", " ", "handler"}], "]"}]}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.899358844661832*^9, 3.8993588680733356`*^9}, {
-   3.8993598174598722`*^9, 3.899359817538039*^9}, {3.899360455045938*^9, 
-   3.8993604552976036`*^9}, {3.8993605887036047`*^9, 3.8993605888777556`*^9}, 
-   3.899361669768077*^9},
  CellTags->"DefaultContent",
  CellLabel->"In[4]:=",
  CellID->593829399,ExpressionUUID->"c58b142f-14de-4bb8-b6ef-a197a6e656d5"],
@@ -1435,17 +1411,11 @@ Cell[BoxData[
     RowBox[{"\<\"Handler\"\>", "\[Rule]", "handler"}], ",", 
     RowBox[{"\<\"Task\"\>", "\[Rule]", 
      InterpretationBox[
-      RowBox[{"AsynchronousTaskObject", "[", "\<\"\"\>", ",", "1", ",", 
-       RowBox[{" ", "<>"}], "]"}],
+      RowBox[{"AsynchronousTaskObject", "[", 
+       RowBox[{"\<\"\"\>", ",", "1", ",", " ", "<>"}], "]"}],
       AsynchronousTaskObject["", 1, 22940132598954878071]]}]}], 
    "\[RightAssociation]"}], "]"}]], "Output",
  TaggingRules->{},
- CellChangeTimes->{
-  3.899358869558104*^9, 3.899359431144286*^9, {3.899359741187821*^9, 
-   3.899359763365835*^9}, 3.8993598180890102`*^9, 3.899360283146767*^9, 
-   3.899360342787674*^9, 3.8993604620781107`*^9, 3.8993605893496904`*^9, 
-   3.899361241409216*^9, 3.8993613399702578`*^9, 3.8993614974537153`*^9, 
-   3.899361672668584*^9, 3.899361735777977*^9},
  CellTags->"DefaultContent",
  CellLabel->"Out[4]=",
  CellID->34751975,ExpressionUUID->"dc1970c0-4c60-49db-b853-b032bb2b80e3"]
@@ -1453,7 +1423,6 @@ Cell[BoxData[
 
 Cell["Define handler:", "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899358877809697*^9, 3.8993588829339056`*^9}},
  CellID->56777643,ExpressionUUID->"59ed7f7c-92e9-449e-8e5b-4401ed1ef5bb"],
 
 Cell[CellGroupData[{
@@ -1505,9 +1474,6 @@ Cell[BoxData[
       ",", " ", "\[IndentingNewLine]", "\"\<SVG\>\""}], "\[IndentingNewLine]",
       "]"}]}], ";"}], " ", "]"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993621104023156`*^9, 3.8993621171405087`*^9}, {
-  3.8993622409637775`*^9, 3.8993622527290974`*^9}, {3.899362283987605*^9, 
-  3.8993623639561167`*^9}},
  CellLabel->"In[36]:=",
  CellID->73602492,ExpressionUUID->"248b1448-c716-491d-ba61-1a33fcbd0df0"],
 
@@ -1515,7 +1481,6 @@ Cell[BoxData[
  RowBox[{"{", 
   RowBox[{"1.9320519`", ",", "Null"}], "}"}]], "Output",
  TaggingRules->{},
- CellChangeTimes->{3.899362366368786*^9},
  CellLabel->"Out[36]=",
  CellID->737686992,ExpressionUUID->"1fd3e3fe-e1b4-491c-95e6-5274f139e875"]
 }, Open  ]],
@@ -1535,8 +1500,6 @@ text/xml\\r\\nContent-Length: \>\"", "<>",
       "\"\<\\r\\n\\r\\n\>\"", " ", "<>", " ", "imgStr"}], "]"}]}], ";"}], " ",
    "]"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.899362158968785*^9, 3.8993621770355067`*^9}, {
-  3.8993623675334883`*^9, 3.899362370695675*^9}},
  CellLabel->"In[37]:=",
  CellID->468645215,ExpressionUUID->"02fb43ee-d7f3-4698-bcc7-a90a3cdedaaf"],
 
@@ -1544,7 +1507,6 @@ Cell[BoxData[
  RowBox[{"{", 
   RowBox[{"0.0016211`", ",", "Null"}], "}"}]], "Output",
  TaggingRules->{},
- CellChangeTimes->{3.8993623724584694`*^9},
  CellLabel->"Out[37]=",
  CellID->256546053,ExpressionUUID->"125fe87f-54d6-4e6a-8363-9473eaaee50a"]
 }, Open  ]],
@@ -1554,14 +1516,11 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"Length", "[", "resp", "]"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.899362266983906*^9, 3.899362269422612*^9}},
  CellLabel->"In[38]:=",
  CellID->459675646,ExpressionUUID->"82f50d1f-58da-4ed6-8c51-2bbce1dfb69f"],
 
 Cell[BoxData["1019861"], "Output",
  TaggingRules->{},
- CellChangeTimes->{{3.8993622696109204`*^9, 3.8993623109366274`*^9}, {
-  3.8993623569483857`*^9, 3.8993623744096327`*^9}},
  CellLabel->"Out[38]=",
  CellID->527507466,ExpressionUUID->"db7f0ae5-42d6-4ed2-a00f-848a065bb2a8"]
 }, Open  ]],
@@ -1596,9 +1555,6 @@ Cell[BoxData[
       RowBox[{"client", ",", " ", "response"}], "]"}], ";"}]}], " ", 
    "\[IndentingNewLine]", "]"}]}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993588858087807`*^9, 3.899359069889078*^9}, {
-  3.8993617853475122`*^9, 3.8993620628458033`*^9}, {3.899362107644659*^9, 
-  3.8993622156285543`*^9}},
  CellLabel->"In[39]:=",
  CellID->279566803,ExpressionUUID->"633e7bc8-d405-4f64-aeed-ba937d73a77d"],
 
@@ -1612,14 +1568,11 @@ Cell[TextData[{
  ":"
 }], "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899359084576386*^9, 3.8993591089483824`*^9}, 
-   3.8993632097675695`*^9},
  CellID->433591845,ExpressionUUID->"02ac959d-6b9e-40f6-a945-0b05aebab83f"],
 
 Cell[BoxData[
  RowBox[{"SystemOpen", "[", "\"\<http://localhost:8000\>\"", "]"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993594579020443`*^9, 3.8993594707849417`*^9}},
  CellLabel->"In[6]:=",
  CellID->203678165,ExpressionUUID->"de0af75e-da1e-4b7d-8784-200ce4fd45ff"],
 
@@ -1659,14 +1612,11 @@ Cell[TextData[{
  ":"
 }], "Text",
  TaggingRules->{},
- CellChangeTimes->{{3.899359479792398*^9, 3.8993595072691417`*^9}, {
-  3.8993632138738832`*^9, 3.8993632159803767`*^9}},
  CellID->140663134,ExpressionUUID->"74eeb880-ca12-47fc-8e1b-1478bf3ac82e"],
 
 Cell[BoxData[
  RowBox[{"DeleteObject", "[", "listener", "]"}]], "Input",
  TaggingRules->{},
- CellChangeTimes->{{3.8993595088742514`*^9, 3.899359519680854*^9}},
  CellLabel->"In[7]:=",
  CellID->14040470,ExpressionUUID->"35627e47-2bc4-4874-b909-70617692d9bf"]
 }, Open  ]]
@@ -1875,6 +1825,7 @@ CC0-1.0"}, "HyperlinkURL"]}, "RowDefault"], FontSize -> 12, Editable -> False,
               EvaluationCell[], {TaggingRules, "RadioButtonValue"}]], {
             "None"}], "\" \"", 
            StyleBox[
+            
             TemplateBox[{
              "\"None\"", 
               "\"A license is not required for personal deployments\""}, 
@@ -2224,8 +2175,6 @@ Cell[BoxData[
 D3OYma5peckpaeCrIZKP1PKKPUA+YbotsDgqzKTsCQxi3UVyRpCSLV+\
 PwXkIlPiGCYK7Cwowu4Mn5exvtmJOR/MHd70lCD4AidngdWcTj1eE3NewiDnY27wHy4PQCF/\
 4nlKcnM1sewZ0MUi4JJ8fjELq2d8zZ7IK06eYLV9301GV"},
- CellChangeTimes->{{3.899362790772896*^9, 3.8993628066919413`*^9}, {
-  3.899363035246364*^9, 3.89936303760155*^9}},
  CellTags->{"Categories", "Categories-Checkboxes", "CheckboxCell"},
  CellID->508531351,ExpressionUUID->"fb561ce2-943e-4f92-9a6b-3e35554645c9"]
 }, Open  ]],
@@ -3557,7 +3506,6 @@ O1AyXBJg8eyhJKhaUrLpNjnT0daSQ3rJC9S0GBL9a8HK398T7493iLtpWBd/hqf/Yu0rK5xd+K/\
 tkrql16Al2e0sazrbm4ZyxYMIlm2prp9/9K0rZ26a/zdjfb07q+F5kmWaNwQSo93C5/\
 UUoiC0vaJznl2hUCP3WGQITmOND2GVfBbo38HsfHSaLJ1poDFnZ7lKT2fk2Lm9PiRbys9D1EVONj5B\
 0BEqb0="},
- CellChangeTimes->{{3.899363158369302*^9, 3.8993631584579926`*^9}},
  CellTags->{
   "CheckboxCell", "Disclosures-LocalSystemInteractions", 
    "LocalSystemInteractions", "LocalSystemInteractions-Checkboxes"},
@@ -3671,8 +3619,8 @@ Cell["Additional information about limitations, issues, etc.", "Text",
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{958, 980},
-WindowMargins->{{Automatic, -7}, {Automatic, 0}},
+WindowSize->{958, 973},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
 WindowTitle->"CSocketListener | Definition Notebook",
 DockedCells->{
   Cell[
@@ -3749,6 +3697,7 @@ Aw+2PnJdpC2FMAAhIgFRgxGkycgGlM9TeOK3Xs4XKWNCRQBZKnKGvxzQ6g==
       "]]}},
 CreateCellID->True,
 DynamicEvaluationTimeout->60,
+TrackCellChangeTimes->False,
 FrontEndVersion->"13.3 for Microsoft Windows (64-bit) (June 3, 2023)",
 StyleDefinitions->Notebook[{
    Cell[
