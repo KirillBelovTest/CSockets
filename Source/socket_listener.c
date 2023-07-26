@@ -41,8 +41,8 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
     int iResult; 
     int iMode = 1; 
 
-    BYTE buf[512]; 
-    size_t buflen = 512; 
+    BYTE buf[8192]; 
+    size_t buflen = 8192; 
     mint dims[1]; 
     MNumericArray data;
 
@@ -68,10 +68,10 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
             //printf("accept failed with error: %d\n", WSAGetLastError());
         } else {
             printf("NEW CLIENT: %d\n", clientSocket);
-            ds = ioLibrary->createDataStore();
-            ioLibrary->DataStore_addInteger(ds, clientSocket);
+            //ds = ioLibrary->createDataStore();
+            //ioLibrary->DataStore_addInteger(ds, clientSocket);
             clients[clientsLength++] = clientSocket; 
-            ioLibrary->raiseAsyncEvent(asyncObjID, "ACCEPT_SOCKET", ds);
+            //ioLibrary->raiseAsyncEvent(asyncObjID, "ACCEPT_SOCKET", ds);
 
             if (clientsLength == clientsMaxLength){
                 clientsMaxLength *= 2; 
@@ -214,11 +214,42 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     return LIBRARY_NO_ERROR; 
 }
 
-DLLEXPORT int socker_write(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mint clientId = MArgument_getInteger(Args[0]); 
-    char *bytes = MArgument_getUTF8String(Args[1]); 
-    mint bytesLen = MArgument_getUTF8String(Args[2]); 
-    send(clientId, bytes, bytesLen, 0); 
+DLLEXPORT int socket_write(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    int iResult; 
+    WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions; 
+    SOCKET clientId = MArgument_getInteger(Args[0]); 
+    BYTE *bytes = numericLibrary->MNumericArray_getData(MArgument_getMNumericArray(Args[1]));      
+    int bytesLen = MArgument_getInteger(Args[2]); 
+
+    iResult = send(clientId, bytes, bytesLen, 0); 
+    if (iResult == SOCKET_ERROR) {
+        wprintf(L"send failed with error: %d\n", WSAGetLastError());
+        closesocket(clientId);
+        MArgument_setInteger(Res, WSAGetLastError()); 
+        return LIBRARY_FUNCTION_ERROR; 
+    }
+    
+    printf("WRITE %d BYTES\n", bytesLen);
+    MArgument_setInteger(Res, 0); 
+    return LIBRARY_NO_ERROR; 
+}
+
+DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    int iResult; 
+    WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions; 
+    SOCKET clientId = MArgument_getInteger(Args[0]); 
+    char *text = numericLibrary->MNumericArray_getData(MArgument_getUTF8String(Args[1]));      
+    int textLen = MArgument_getInteger(Args[2]); 
+
+    iResult = send(clientId, text, textLen, 0); 
+    if (iResult == SOCKET_ERROR) {
+        wprintf(L"send failed with error: %d\n", WSAGetLastError());
+        closesocket(clientId);
+        MArgument_setInteger(Res, WSAGetLastError()); 
+        return LIBRARY_FUNCTION_ERROR; 
+    }
+    
+    printf("WRITE %d BYTES\n", textLen);
     MArgument_setInteger(Res, 0); 
     return LIBRARY_NO_ERROR; 
 }
