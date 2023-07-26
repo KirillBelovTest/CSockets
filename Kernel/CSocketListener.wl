@@ -47,7 +47,7 @@ socketWriteString[socketId, string, StringLength[string]];
 
 
 CSocket /: Close[CSocket[socketId_Integer]] := 
-Null; 
+closeSocket[socketId]; 
 
 
 CSocketListen[port_Integer, handler_] := 
@@ -85,6 +85,9 @@ socketWrite = LibraryFunctionLoad[$libFile, "socket_write", {Integer, "ByteArray
 
 
 socketWriteString = LibraryFunctionLoad[$libFile, "socket_write_string", {Integer, String, Integer}, Integer]; 
+
+
+closeSocket = LibraryFunctionLoad[$libFile, "close_socket", {Integer}, Integer]; 
 
 
 toPacket[task_, event_, {serverId_, clientId_, data_}] := 
