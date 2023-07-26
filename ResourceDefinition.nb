@@ -1411,14 +1411,14 @@ Cell[BoxData[
     RowBox[{"\<\"Handler\"\>", "\[Rule]", "handler"}], ",", 
     RowBox[{"\<\"Task\"\>", "\[Rule]", 
      InterpretationBox[
-      RowBox[{"AsynchronousTaskObject", "[", 
-       RowBox[{"\<\"\"\>", ",", "1", ",", " ", "<>"}], "]"}],
-      AsynchronousTaskObject["", 1, 22940132598954878071]]}]}], 
+      RowBox[{"AsynchronousTaskObject", "[", "\<\"\"\>", ",", "1", ",", 
+       RowBox[{" ", "<>"}], "]"}],
+      AsynchronousTaskObject["", 1, 22940146019862052385]]}]}], 
    "\[RightAssociation]"}], "]"}]], "Output",
  TaggingRules->{},
  CellTags->"DefaultContent",
  CellLabel->"Out[4]=",
- CellID->34751975,ExpressionUUID->"dc1970c0-4c60-49db-b853-b032bb2b80e3"]
+ CellID->71609515,ExpressionUUID->"e344a0ea-7548-4daf-b68b-994f3ebe0d5b"]
 }, Open  ]],
 
 Cell["Define handler:", "Text",
@@ -1474,15 +1474,15 @@ Cell[BoxData[
       ",", " ", "\[IndentingNewLine]", "\"\<SVG\>\""}], "\[IndentingNewLine]",
       "]"}]}], ";"}], " ", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[36]:=",
+ CellLabel->"In[5]:=",
  CellID->73602492,ExpressionUUID->"248b1448-c716-491d-ba61-1a33fcbd0df0"],
 
 Cell[BoxData[
  RowBox[{"{", 
-  RowBox[{"1.9320519`", ",", "Null"}], "}"}]], "Output",
+  RowBox[{"2.5386276`", ",", "Null"}], "}"}]], "Output",
  TaggingRules->{},
- CellLabel->"Out[36]=",
- CellID->737686992,ExpressionUUID->"1fd3e3fe-e1b4-491c-95e6-5274f139e875"]
+ CellLabel->"Out[5]=",
+ CellID->300481725,ExpressionUUID->"75d4144e-4782-4295-b403-6472ba6cd569"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -1500,15 +1500,15 @@ text/xml\\r\\nContent-Length: \>\"", "<>",
       "\"\<\\r\\n\\r\\n\>\"", " ", "<>", " ", "imgStr"}], "]"}]}], ";"}], " ",
    "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[37]:=",
+ CellLabel->"In[6]:=",
  CellID->468645215,ExpressionUUID->"02fb43ee-d7f3-4698-bcc7-a90a3cdedaaf"],
 
 Cell[BoxData[
  RowBox[{"{", 
-  RowBox[{"0.0016211`", ",", "Null"}], "}"}]], "Output",
+  RowBox[{"0.0017839`", ",", "Null"}], "}"}]], "Output",
  TaggingRules->{},
- CellLabel->"Out[37]=",
- CellID->256546053,ExpressionUUID->"125fe87f-54d6-4e6a-8363-9473eaaee50a"]
+ CellLabel->"Out[6]=",
+ CellID->347963929,ExpressionUUID->"7ced58d4-0261-4ce8-8312-b8f8b453540b"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -1516,13 +1516,13 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"Length", "[", "resp", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[38]:=",
+ CellLabel->"In[7]:=",
  CellID->459675646,ExpressionUUID->"82f50d1f-58da-4ed6-8c51-2bbce1dfb69f"],
 
-Cell[BoxData["1019861"], "Output",
+Cell[BoxData["1019859"], "Output",
  TaggingRules->{},
- CellLabel->"Out[38]=",
- CellID->527507466,ExpressionUUID->"db7f0ae5-42d6-4ed2-a00f-848a065bb2a8"]
+ CellLabel->"Out[7]=",
+ CellID->21130033,ExpressionUUID->"51a8536c-f28a-43a3-b264-be6c4419ed00"]
 }, Open  ]],
 
 Cell[BoxData[
@@ -1545,17 +1545,11 @@ Cell[BoxData[
      " ", "\[IndentingNewLine]", 
      RowBox[{"response", " ", "=", "resp"}], ";", "\[IndentingNewLine]", 
      "\[IndentingNewLine]", 
-     RowBox[{"Echo", "[", 
-      RowBox[{"request", ",", " ", "\"\<Request\>\""}], "]"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{"Echo", "[", 
-      RowBox[{"response", ",", " ", "\"\<Response\>\""}], "]"}], ";", " ", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
      RowBox[{"BinaryWrite", "[", 
       RowBox[{"client", ",", " ", "response"}], "]"}], ";"}]}], " ", 
    "\[IndentingNewLine]", "]"}]}]], "Input",
  TaggingRules->{},
- CellLabel->"In[39]:=",
+ CellLabel->"In[8]:=",
  CellID->279566803,ExpressionUUID->"633e7bc8-d405-4f64-aeed-ba937d73a77d"],
 
 Cell[TextData[{
@@ -1573,7 +1567,7 @@ Cell[TextData[{
 Cell[BoxData[
  RowBox[{"SystemOpen", "[", "\"\<http://localhost:8000\>\"", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[6]:=",
+ CellLabel->"In[9]:=",
  CellID->203678165,ExpressionUUID->"de0af75e-da1e-4b7d-8784-200ce4fd45ff"],
 
 Cell[TextData[{
@@ -1810,7 +1804,6 @@ Apache-2.0"}, "HyperlinkURL"]}, "RowDefault"], FontSize -> 12, Editable ->
             
             TemplateBox[{
              "\"Creative Commons Zero v1.0 Universal\"", "\"\[ThinSpace]\"", 
-              
               TemplateBox[{
                "\"\[RightGuillemet]\"", 
                 "https://resources.wolframcloud.com/PacletRepository/licenses/\
@@ -2548,7 +2541,6 @@ Cell[BoxData[
          TemplateBox[{
            CheckboxBox["WebEvaluation", {False, "WebEvaluation"}], "\" \"", 
            StyleBox[
-            
             TemplateBox[{
              "\"WebEvaluation\"", 
               "\"Cloud evaluation initiated by an HTTP request\""}, 
