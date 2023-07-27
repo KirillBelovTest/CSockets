@@ -25,6 +25,20 @@
     #include <ws2tcpip.h>
 
     #define SLEEP Sleep
+
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+       void WSAAPI freeaddrinfo( struct addrinfo* );
+    
+       int WSAAPI getaddrinfo( const char*, const char*, const struct addrinfo*,
+                     struct addrinfo** );
+    
+       int WSAAPI getnameinfo( const struct sockaddr*, socklen_t, char*, DWORD,
+                    char*, DWORD, int );
+    #ifdef __cplusplus
+    }
+    #endif    
 #else
     #include <string.h>
     #include <stdio.h>
@@ -66,13 +80,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef __linux__
 
-#elif _WIN32
-    #pragma comment (lib, "Ws2_32.lib")
-#else
-
-#endif
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
@@ -103,7 +111,7 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
     int clientsMaxLength = 2; 
 
     int iResult; 
-    int iMode = 1; 
+    unsigned long int iMode = 1; 
 
     size_t buflen = 8192; 
     BYTE *buf = malloc(8192 * sizeof(BYTE)); 

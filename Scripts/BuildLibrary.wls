@@ -1,7 +1,15 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
+
+
+
 Get["CCompilerDriver`"]; 
+
+$CCompiler={"Compiler"->GenericCCompiler,
+ "CompilerInstallation"->"C:\\mingw64\\bin",
+ "CompilerName"->"gcc.exe",
+ "ShellOutputFunction"->Print}
 
 Block[{$directory, $libSrc, $libDir}, 
 	$directory = DirectoryName[If[$InputFileName == "", 
@@ -30,5 +38,5 @@ Block[{$directory, $libSrc, $libDir},
 	Get["CCompilerDriver`"]; 
 
 
-	CreateLibrary[$libSrc, "socket_listener", "TargetDirectory" -> $libDir]; 
+	CreateLibrary[$libSrc, "socket_listener", "TargetDirectory" -> $libDir, "Debug"->True, 	"Libraries"->{"ws2_32"}]; 
 ]; 
