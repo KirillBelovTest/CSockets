@@ -115,7 +115,6 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
     SOCKET listenSocket = targ->listentSocket; 
 	WolframIOLibrary_Functions ioLibrary = targ->ioLibrary;
     WolframNumericArrayLibrary_Functions numericLibrary = targ->numericLibrary;
-    printf("ACCEPT_SOCKET_TASK\n");
 
 	DataStore ds;
     free(targ); 
@@ -164,7 +163,7 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
         }
 	}
 
-    printf("STOP ASYNCHRONOUS TASK\n");
+    printf("STOP ASYNCHRONOUS TASK %d\n", asyncObjID); 
     for (size_t i = 0; i < clientsLength; i++)
     {
         CLOSESOCKET(clients[i]);
@@ -182,7 +181,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     SOCKET listenSocket = INVALID_SOCKET; 
     WolframIOLibrary_Functions ioLibrary = libData->ioLibraryFunctions; 
     WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions;
-    printf("INIT\n");
     
     #ifdef __linux__ 
     #elif _WIN32
