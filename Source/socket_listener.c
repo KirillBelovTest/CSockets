@@ -1,7 +1,5 @@
 #undef UNICODE
 
-
-
 #ifdef __linux__ 
     #include <string.h>
     #include <stdio.h>
@@ -68,7 +66,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #ifdef __linux__
 
 #elif _WIN32
@@ -108,13 +105,13 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
     int iResult; 
     int iMode = 1; 
 
-    BYTE buf[8192]; 
     size_t buflen = 8192; 
+    BYTE *buf = malloc(8192 * sizeof(BYTE)); 
     mint dims[1]; 
     MNumericArray data;
 
     SOCKET clientSocket = INVALID_SOCKET;
-	SocketTaskArgs targ = (SocketTaskArgs)vtarg;
+	SocketTaskArgs targ = (SocketTaskArgs)vtarg; 
     SOCKET listenSocket = targ->listentSocket; 
 	WolframIOLibrary_Functions ioLibrary = targ->ioLibrary;
     WolframNumericArrayLibrary_Functions numericLibrary = targ->numericLibrary;
@@ -167,12 +164,12 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
         }
 	}
 
-    printf("STOP ASYNCHRONOUS TASK");
+    printf("STOP ASYNCHRONOUS TASK\n");
+    for (size_t i = 0; i < clientsLength; i++)
+    {
+        CLOSESOCKET(clients[i]);
+    }
     CLOSESOCKET(listenSocket);
-    //for (size_t i = 0; i < clientsLength; i++)
-    //{
-    //    CLOSESOCKET(clients[i]);
-    //}
 
     free(clients);
     free(buf);
