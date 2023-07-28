@@ -10,12 +10,13 @@
       setTimeout(async () => await waterize(), 100);
     }; 
 
-    const waterize = async () => {    
-        <?wsp Table[ ?>
-        {
+    const waterize = async () => { 
+      <?wsp jj=0; ""?>   
+        <?wsp Table[ jj=jj+1; ?>
+        setTimeout(() => { /* shitty timeout for preventing WebSocket server to fuck up */
             console.warn('hydaring....');
             const data = server.send('Hydrate["<?wsp i ?>"]');
-        };
+        }, 10 * <?wsp jj ?> );
       <?wsp , {i, $CurrentRequest["Seeds"]//Keys}] ?>
     }
 

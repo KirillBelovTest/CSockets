@@ -1,26 +1,25 @@
 PacletInstall["KirillBelov/Internal"]
 << KirillBelov`Internal`;
-PacletInstall["KirillBelov/TCPServer"]
+
+SetDirectory[$InputFileName // DirectoryName]
+Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSocketListener.wl"}]]
+
+PacletInstall["KirillBelov/TCPServer", ForceVersionInstall->True]
 << KirillBelov`TCPServer`;
 Get["https://raw.githubusercontent.com/JerryI/wl-wsp/main/Kernel/WSP.wl"];
 
 
-PacletInstall["KirillBelov/HTTPHandler"]
-<< KirillBelov`HTTPHandler`;
-<< KirillBelov`HTTPHandler`Extensions`;
+Get["https://raw.githubusercontent.com/KirillBelovTest/HTTPHandler/main/Kernel/HTTPHandler.wl"]
+Get["https://raw.githubusercontent.com/KirillBelovTest/HTTPHandler/main/Kernel/Extensions.wl"]
 
-
-PacletInstall["KirillBelov/WebSocketHandler"]
+PacletInstall["KirillBelov/WebSocketHandler", ForceVersionInstall->True]
 << KirillBelov`WebSocketHandler`;
 
 Get["https://raw.githubusercontent.com/JerryI/wl-misc/main/Kernel/Events.wl"]
 Get["https://raw.githubusercontent.com/JerryI/wl-wsp/main/Kernel/Hydrator.wl"]
 
-SetDirectory[$InputFileName // DirectoryName]
-
 $PublicDirectory = FileNameJoin[{Directory[], "Page"}]
 
-Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSocketListener.wl"}]]
 
 Print["Staring HTTP server..."];
 
