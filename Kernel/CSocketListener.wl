@@ -27,6 +27,9 @@ CSocket::usage =
 "CSocket[socketId] socket representation."; 
 
 
+CEventLoopRun::usage =
+"CEventLoopRun[] starts event loop"
+
 (* ::Section:: *)
 (*Private context*)
 
@@ -50,22 +53,35 @@ CSocket /: Close[CSocket[socketId_Integer]] :=
 closeSocket[socketId]; 
 
 
-CSocketListen[port_Integer, handler_] := 
+CSocketListen[port_Integer, handler_] := With[{sid = createServer["127.0.0.1", port//ToString]},
+Echo["Created server with sid: "<>ToString[sid]];
+router[sid] = handler;
 CSocketListener[<|
 	"Port" -> port, 
 	"Host" -> "127.0.0.1",
 	"Handler" -> handler, 
-	"Task" -> Internal`CreateAsynchronousTask[createServer, {"127.0.0.1", ToString[port]}, handler[toPacket[##]]&]
-|>]; 
+	"Task" -> Null
+|>]]; 
+
 
 CSocketListen[addr_String, handler_] := With[{port = StringSplit[addr,":"]//Last, host = StringSplit[addr,":"]//First},
+sid = createServer[host, port];
+Echo["Created server with sid: "<>ToString[sid]];
+router[sid] = handler;
+
 CSocketListener[<|
 	"Port" -> ToExpression[port], 
 	"Host" -> host,
 	"Handler" -> handler, 
-	"Task" -> Internal`CreateAsynchronousTask[createServer, {host, port}, handler[toPacket[##]]&]
+	"Task" -> Null
 |>]]; 
 
+router[task_, event_, {serverId_, clientId_, data_}] := (
+	Echo["Routing our data..."];
+	router[serverId][toPacket[task, event, {serverId, clientId, data}]]
+)
+
+CEventLoopRun[i_Integer] := Internal`CreateAsynchronousTask[runLoop, {i}, router[##]&]
 
 CSocketListener /: DeleteObject[CSocketListener[assoc_Association]] := 
 stopServer[assoc["Task"][[2]]]; 
@@ -93,6 +109,7 @@ If[!FileExistsQ[$libFile],
 
 createServer = LibraryFunctionLoad[$libFile, "create_server", {String, String}, Integer]; 
 
+runLoop = LibraryFunctionLoad[$libFile, "run_uvloop", {Integer}, Integer]; 
 
 stopServer::usage = "stopServer[asyncObjId]"; 
 stopServer = LibraryFunctionLoad[$libFile, "stop_server", {Integer}, Integer]; 
