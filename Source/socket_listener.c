@@ -88,7 +88,7 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
     servers = (server*)malloc(sizeof(server)*10);
     nservers = 0;
 
-    clients = (client*)malloc(sizeof(client)*2048);
+    clients = (client*)malloc(sizeof(client)*2048*8);
     nclients = 0;
 
     loop = uv_default_loop();
@@ -146,9 +146,13 @@ void echo_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
             fprintf(stderr, "Read error %s\n", uv_err_name(nread));
 
         //uv_close((uv_handle_t*) client, NULL);
-        printf("thinking about to close this: %d ;)))\n", fetchClientId(client));
+        int uid = fetchClientId(client);
+        printf("writeerror !\n");
+        printf("making %d closed manually!\n", uid);
+        uv_close((uv_handle_t*) clients[uid].stream, NULL);
+        clients[uid].state = -1;   
         //printf("we closed socket: %d ;)))\n", fetchClientId(client));
-        clients[fetchClientId(client)].state = 2;
+        //clients[fetchClientId(client)].state = 2;
         //mb one can notify mathematica about it
     }
 
@@ -248,7 +252,11 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 void echo_write(uv_write_t *req, int status) {
     printf("echo write\n");
     if (status) {
+        int uid = fetchClientId(req->handle);
         printf("writeerror !\n");
+        printf("making %d closed manually!\n", uid);
+        uv_close((uv_handle_t*) clients[uid].stream, NULL);
+        clients[uid].state = -1;        
     }
 
     printf("free write req !\n");
@@ -264,15 +272,16 @@ DLLEXPORT int socket_write(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     if (clients[clientId].state == -1) {
         printf("Client %d is closed already!\n", clientId);
-        return LIBRARY_FUNCTION_ERROR;
+        MArgument_setInteger(Res, -1);
+        return LIBRARY_NO_ERROR;
     }    
 
     if (uv_is_writable(clients[clientId].stream) == 0) {
         printf("Client %d i now writtable anymore!\n", clientId);
         uv_close((uv_handle_t*) clients[clientId].stream, NULL);
         clients[clientId].state = -1;
-
-        return LIBRARY_FUNCTION_ERROR;
+        MArgument_setInteger(Res, -1);
+        return LIBRARY_NO_ERROR;
     }
 
     char *bytes = numericLibrary->MNumericArray_getData(MArgument_getMNumericArray(Args[1]));      
@@ -297,15 +306,16 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
 
     if (clients[clientId].state == -1) {
         printf("Client %d is closed already!\n", clientId);
-        return LIBRARY_FUNCTION_ERROR;
+        MArgument_setInteger(Res, -1);
+        return LIBRARY_NO_ERROR;
     }    
 
     if (uv_is_writable(clients[clientId].stream) == 0) {
         printf("Client %d i now writtable anymore!\n", clientId);
         uv_close((uv_handle_t*) clients[clientId].stream, NULL);
         clients[clientId].state = -1;
-
-        return LIBRARY_FUNCTION_ERROR;
+        MArgument_setInteger(Res, -1);
+        return LIBRARY_NO_ERROR;
     }
 
     char *bytes = MArgument_getUTF8String(Args[1]);      

@@ -28,7 +28,7 @@ CSocket::usage =
 
 
 CEventLoopRun::usage =
-"CEventLoopRun[] starts event loop"
+"CEventLoopRun[0] starts event loop. RUN IT AT THE VERY LAST MOMENT ONCE"
 
 (* ::Section:: *)
 (*Private context*)
@@ -42,11 +42,11 @@ Begin["`Private`"];
 
 
 CSocket /: BinaryWrite[CSocket[socketId_Integer], bytes_ByteArray] := 
-socketWrite[socketId, bytes, Length[bytes]]; 
+If[socketWrite[socketId, bytes, Length[bytes]] === 0, $Failed, Null]; 
 
 
 CSocket /: WriteString[CSocket[socketId_Integer], string_String] := 
-socketWriteString[socketId, string, StringLength[string]]; 
+If[socketWriteString[socketId, string, StringLength[string]] === 0, $Failed, Null]; 
 
 
 CSocket /: Close[CSocket[socketId_Integer]] := 
@@ -77,7 +77,6 @@ CSocketListener[<|
 |>]]; 
 
 router[task_, event_, {serverId_, clientId_, data_}] := (
-	Echo["Routing our data..."];
 	router[serverId][toPacket[task, event, {serverId, clientId, data}]]
 )
 
