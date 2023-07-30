@@ -149,7 +149,8 @@ void echo_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
         int uid = fetchClientId(client);
         printf("writeerror !\n");
         printf("making %d closed manually!\n", uid);
-        uv_close((uv_handle_t*) clients[uid].stream, NULL);
+        if (uv_is_closing((uv_handle_t*) clients[uid].stream) == 0)
+            uv_close((uv_handle_t*) clients[uid].stream, NULL);
         clients[uid].state = -1;   
         //printf("we closed socket: %d ;)))\n", fetchClientId(client));
         //clients[fetchClientId(client)].state = 2;
@@ -184,7 +185,8 @@ void on_new_connection(uv_stream_t *server, int status) {
     } else {
         printf("not accepted for %d", nclients-1);
         clients[nclients].state = -1;
-        uv_close((uv_handle_t*) c, NULL);
+        if (uv_is_closing((uv_handle_t*) c) == 0)
+            uv_close((uv_handle_t*) c, NULL);
     }
 
     
@@ -255,7 +257,8 @@ void echo_write(uv_write_t *req, int status) {
         int uid = fetchClientId(req->handle);
         printf("writeerror !\n");
         printf("making %d closed manually!\n", uid);
-        uv_close((uv_handle_t*) clients[uid].stream, NULL);
+        if (uv_is_closing((uv_handle_t*) clients[uid].stream) == 0)
+            uv_close((uv_handle_t*) clients[uid].stream, NULL);
         clients[uid].state = -1;        
     }
 
@@ -278,7 +281,8 @@ DLLEXPORT int socket_write(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     if (uv_is_writable(clients[clientId].stream) == 0) {
         printf("Client %d i now writtable anymore!\n", clientId);
-        uv_close((uv_handle_t*) clients[clientId].stream, NULL);
+        if (uv_is_closing((uv_handle_t*) clients[clientId].stream) == 0)
+            uv_close((uv_handle_t*) clients[clientId].stream, NULL);
         clients[clientId].state = -1;
         MArgument_setInteger(Res, -1);
         return LIBRARY_NO_ERROR;
@@ -312,7 +316,8 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
 
     if (uv_is_writable(clients[clientId].stream) == 0) {
         printf("Client %d i now writtable anymore!\n", clientId);
-        uv_close((uv_handle_t*) clients[clientId].stream, NULL);
+        if (uv_is_closing((uv_handle_t*) clients[clientId].stream) == 0)
+            uv_close((uv_handle_t*) clients[clientId].stream, NULL);
         clients[clientId].state = -1;
         MArgument_setInteger(Res, -1);
         return LIBRARY_NO_ERROR;
@@ -337,7 +342,8 @@ DLLEXPORT int close_socket(WolframLibraryData libData, mint Argc, MArgument *Arg
     int clientId = MArgument_getInteger(Args[0]); 
 
     printf("Client %d was closed by Wolfram!\n", clientId);
-    uv_close((uv_handle_t*) clients[clientId].stream, NULL);
+    if (uv_is_closing((uv_handle_t*) clients[clientId].stream) == 0)
+        uv_close((uv_handle_t*) clients[clientId].stream, NULL);
     clients[clientId].state = -1;    
     
     MArgument_setInteger(Res, 0);
