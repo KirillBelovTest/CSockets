@@ -6,8 +6,8 @@ PacletObject[
     "Description" -> "Socket Listener powered by pure C & UV (a fork)",
     "Creator" -> "Kirill Belov",
     "License" -> "MIT",
-    "PublisherID" -> "KirillBelov",
-    "Version" -> "1.0.3",
+
+    "Version" -> "2.0.0",
     "WolframVersion" -> "12+",
     "PrimaryContext" -> "KirillBelov`CSocketListener`",
     "Extensions" -> {
