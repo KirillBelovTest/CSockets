@@ -85,8 +85,6 @@ EventHandler["update", Function[d,
   data = Table[{x, Sin[x 100 d]}, {x, 0, 2Pi, 0.01}];
 ]]
 
-Pause[1];
-CEventLoopRun[0]
 
 StringTemplate["open http://``:``/"][httplistener[[1]]["Host"], httplistener[[1]]["Port"]] // Print;
 While[True, Pause[1]];

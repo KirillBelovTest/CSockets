@@ -32,9 +32,6 @@ httplistener =  Check[CSocketListen["127.0.0.1:8010", tcp@# &], Print["FUCK Libr
 
 SetOptions[WSPEngine, "Cache" -> False];
 
-Pause[1];
-CEventLoopRun[0]
-
 StringTemplate["open http://``:``/"][httplistener[[1]]["Host"], httplistener[[1]]["Port"]] // Print;
 While[True, Pause[1]];
 

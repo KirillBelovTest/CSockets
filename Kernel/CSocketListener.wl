@@ -27,9 +27,6 @@ CSocket::usage =
 "CSocket[socketId] socket representation."; 
 
 
-CEventLoopRun::usage =
-"CEventLoopRun[0] starts event loop. RUN IT AT THE VERY LAST MOMENT ONCE"
-
 (* ::Section:: *)
 (*Private context*)
 
@@ -56,6 +53,7 @@ closeSocket[socketId];
 CSocketListen[port_Integer, handler_] := With[{sid = createServer["127.0.0.1", port//ToString]},
 Echo["Created server with sid: "<>ToString[sid]];
 router[sid] = handler;
+CEventLoopRun;
 CSocketListener[<|
 	"Port" -> port, 
 	"Host" -> "127.0.0.1",
@@ -68,7 +66,7 @@ CSocketListen[addr_String, handler_] := With[{port = StringSplit[addr,":"]//Last
 sid = createServer[host, port];
 Echo["Created server with sid: "<>ToString[sid]];
 router[sid] = handler;
-
+CEventLoopRun;
 CSocketListener[<|
 	"Port" -> ToExpression[port], 
 	"Host" -> host,
@@ -80,7 +78,7 @@ router[task_, event_, {serverId_, clientId_, data_}] := (
 	router[serverId][toPacket[task, event, {serverId, clientId, data}]]
 )
 
-CEventLoopRun[i_Integer] := Internal`CreateAsynchronousTask[runLoop, {i}, router[##]&]
+CEventLoopRun := (Internal`CreateAsynchronousTask[runLoop, {0}, router[##]&]; CEventLoopRun = Null)
 
 CSocketListener /: DeleteObject[CSocketListener[assoc_Association]] := 
 stopServer[assoc["Task"][[2]]]; 
