@@ -1,8 +1,8 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
-
-
+LINUXLIVUVPATH = "/home/kirill/Downloads/libuv-1.46.0/build/libuv.so"
+MACOSXLIBUVPATH = "/usr/local/lib/libuv.a"
 
 Get["CCompilerDriver`"]; 
 
@@ -13,7 +13,7 @@ Get["CCompilerDriver`"];
 
 OSLibs = If[$OperatingSystem === "Windows", {"ws2_32"}, {}];
 
-OSLinker = If[$OperatingSystem === "Windows", {}, If[$OperatingSystem === "MacOSX", {"/usr/local/lib/libuv.a -pthread"}, {"/PATHTOLIBUVSRC/build/libuv.so -pthread"}]];
+OSLinker = If[$OperatingSystem === "Windows", {}, If[$OperatingSystem === "MacOSX", {MACOSXLIBUVPATH<>" -pthread"}, {LINUXLIVUVPATH<>" -pthread"}]];
 
 Block[{$directory, $libSrc, $libDir}, 
 	$directory = DirectoryName[If[$InputFileName == "", 
