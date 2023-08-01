@@ -6,12 +6,16 @@ MACOSXLIBUVPATH = "/usr/local/lib/libuv.a"
 
 Get["CCompilerDriver`"]; 
 
-(*$CCompiler={"Compiler"->GenericCCompiler,
+(*
+$CCompiler={"Compiler"->GenericCCompiler,
  "CompilerInstallation"->"C:\\mingw64\\bin",
  "CompilerName"->"gcc.exe",
- "ShellOutputFunction"->Print}*)
+ "ShellOutputFunction"->Print}
+
+ *)
 
 OSLibs = If[$OperatingSystem === "Windows", {"ws2_32"}, {}];
+OSPath = If[$OperatingSystem === "Windows", "Windows", "Unix"];
 
 OSLinker = If[$OperatingSystem === "Windows", {}, If[$OperatingSystem === "MacOSX", {MACOSXLIBUVPATH<>" -pthread"}, {LINUXLIVUVPATH<>" -pthread"}]];
 
@@ -25,6 +29,7 @@ Block[{$directory, $libSrc, $libDir},
 	$libSrc = File[FileNameJoin[{
 		$directory, 
 		"Source", 
+		OSPath,
 		"socket_listener.c"
 	}]]; 
 

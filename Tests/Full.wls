@@ -1,19 +1,28 @@
-PacletInstall["KirillBelov/Internal"]
-<< KirillBelov`Internal`;
+PacletInstall["JerryI/LPM"]
+<< JerryI`LPM`
+
+PacletRepositories[{
+  Github -> "https://github.com/KirillBelovTest/Objects",
+  Github -> "https://github.com/KirillBelovTest/Internal",
+  Github -> "https://github.com/KirillBelovTest/TCPServer",
+  Github -> "https://github.com/KirillBelovTest/HTTPHandler",
+  Github -> "https://github.com/JerryI/WebSocketHandler",
+  Github -> "https://github.com/JerryI/wl-wsp"
+}]
+
 
 SetDirectory[$InputFileName // DirectoryName]
 Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSocketListener.wl"}]]
 
-PacletInstall["KirillBelov/TCPServer", ForceVersionInstall->True]
-<< KirillBelov`TCPServer`;
-Get["https://raw.githubusercontent.com/JerryI/wl-wsp/main/Kernel/WSP.wl"];
+<<KirillBelov`Objects`
+<<KirillBelov`Internal`
+<<KirillBelov`TCPServer`
 
+<<KirillBelov`HTTPHandler`
+<<KirillBelov`HTTPHandler`Extensions`
+<<KirillBelov`WebSocketHandler`
 
-Get["https://raw.githubusercontent.com/KirillBelovTest/HTTPHandler/main/Kernel/HTTPHandler.wl"]
-Get["https://raw.githubusercontent.com/KirillBelovTest/HTTPHandler/main/Kernel/Extensions.wl"]
-
-PacletInstall["KirillBelov/WebSocketHandler", ForceVersionInstall->True]
-<< KirillBelov`WebSocketHandler`;
+<<JerryI`WSP`
 
 Get["https://raw.githubusercontent.com/JerryI/wl-misc/main/Kernel/Events.wl"]
 Get["https://raw.githubusercontent.com/JerryI/wl-wsp/main/Kernel/Hydrator.wl"]
