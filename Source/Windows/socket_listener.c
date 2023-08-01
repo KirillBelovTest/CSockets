@@ -49,6 +49,8 @@ typedef struct SERVER_st {
 SERVER servers[10];
 nServers = 0;
 
+WolframIOLibrary_Functions ioLibrary;
+WolframNumericArrayLibrary_Functions numericLibrary;
 mint asyncObjID;
 
 DLLEXPORT int run_uvloop(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
@@ -56,7 +58,6 @@ DLLEXPORT int run_uvloop(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     ioLibrary = libData->ioLibraryFunctions;
     numericLibrary = libData->numericarrayLibraryFunctions;
-    
         
     asyncObjID = ioLibrary->createAsynchronousTaskWithThread(ListenSocketTask, NULL);
 
@@ -67,64 +68,53 @@ DLLEXPORT int run_uvloop(WolframLibraryData libData, mint Argc, MArgument *Args,
 static void ListenSocketTask(mint asyncObjID, void* vtarg)
 {
 
+  mint dims[1]; 
+  MNumericArray data;
+  DataStore ds;
 
-    mint dims[1]; 
-    MNumericArray data;
-    DataStore ds;
-
-    SOCKET* clients;
-    SOCKET* server;
+  SOCKET* clientSocket;
+  SERVER* server;
 
 
-	while(ioLibrary->asynchronousTaskAliveQ(asyncObjID))
-	{
-        SLEEP(1);
+  while(ioLibrary->asynchronousTaskAliveQ(asyncObjID)) {
+    
+    SLEEP(1);
 
+    for (size_t l = 0; l < nServers; ++l) {
         server = &servers[l];
-
         clientSocket = accept(server->listenSocket, NULL, NULL);
-
         
         if (clientSocket != INVALID_SOCKET) {
             printf("NEW CLIENT: %d\n", clientSocket);
-            server->clients[clientsLength++] = clientSocket; 
+            server->clients[server->clientsLength++] = clientSocket; 
 
-            if (clientsLength == server->clientsMaxLength){
+            if (server->clientsLength == server->clientsMaxLength){
                 server->clientsMaxLength *= 2; 
                 server->clients = (SOCKET*)realloc(server->clients, server->clientsMaxLength * sizeof(SOCKET)); 
             }
         } 
 
-        for (size_t i = 0; i < clientsLength; i++)
+        for (size_t i = 0; i < server->clientsLength; i++)
         {
-            iResult = recv(clients[i], buf, buflen, 0); 
+            int iResult = recv(server->clients[i], server->buf, server->buflen, 0); 
             if (iResult > 0){            
-                printf("CURRENT NUMBER OF CLIENTS: %d\n", clientsLength);
-                printf("MAX NUMBER OF CLIENTS: %d\n", clientsMaxLength);
+                printf("CURRENT NUMBER OF CLIENTS: %d\n", server->clientsLength);
+                printf("MAX NUMBER OF CLIENTS: %d\n", server->clientsMaxLength);
                 printf("RECEIVED %d BYTES\n", iResult);
                 dims[0] = iResult; 
                 numericLibrary->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
-                memcpy(numericLibrary->MNumericArray_getData(data), buf, iResult);
+                memcpy(numericLibrary->MNumericArray_getData(data), server->buf, iResult);
                 
                 ds = ioLibrary->createDataStore();
-                ioLibrary->DataStore_addInteger(ds, listenSocket);
-                ioLibrary->DataStore_addInteger(ds, clients[i]);
+                ioLibrary->DataStore_addInteger(ds, l);
+                ioLibrary->DataStore_addInteger(ds, server->clients[i]);
                 ioLibrary->DataStore_addMNumericArray(ds, data);
 
                 ioLibrary->raiseAsyncEvent(asyncObjID, "RECEIVED_BYTES", ds);
             }
         }
-	}
-
-    printf("STOP ASYNCHRONOUS TASK %d\n", asyncObjID); 
-    for (size_t i = 0; i < clientsLength; i++)
-    {
-        CLOSESOCKET(clients[i]);
     }
-    CLOSESOCKET(listenSocket);
-
-    free(clients);
-    free(buf);
+  }
 }
 
 DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) 
@@ -132,10 +122,8 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     int iResult; 
     char* listenAddrName = MArgument_getUTF8String(Args[0]); 
     char* listenPortName = MArgument_getUTF8String(Args[1]); 
+
     SOCKET listenSocket = INVALID_SOCKET; 
-    WolframIOLibrary_Functions ioLibrary = libData->ioLibraryFunctions; 
-    WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions;
-    
 
     WSADATA wsaData; 
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -196,7 +184,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     servers[nServers].listentSocket = listentSocket;
 
     int iMode = 1; 
-
 
     iResult = ioctlsocket(listenSocket, FIONBIO, &iMode); 
 
