@@ -216,21 +216,9 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
         socktimeout.tv_sec = 6;
         socktimeout.tv_usec = 0;
 
-
-        //log.msg("Preparing to send an entire message through. msg size is...." + to_string(write_buf_length));
-
-        //const size_t chunk_size = 16000;        //will read 16000 bytes at a time
         size_t chunk_size = chunk_s;
         if (write_buf_length < chunk_size) chunk_size = write_buf_length;
-        //fcntl(sock_fd, F_SETFL, O_NONBLOCK); //makes the socket nonblocking
 
-        //log.msg("Set socket non blocking..." + to_string(write_buf_length));
-
-        //struct timeval time_val_struct;
-        //time_val_struct.tv_sec = 0;
-        //time_val_struct.tv_usec = 0;
-        //setsockopt(sock_fd, SOL_SOCKET,SO_SNDTIMEO,(const char*)&time_val_struct,sizeof(time_val_struct));
-        //log.msg("Turned off socket timeout");
 
 
         size_t pos_in_buf = 0; //starts at 0 and is incremented to write to the right location
@@ -248,15 +236,16 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
             rv = select(sock_fd+1, NULL, &set, NULL, &socktimeout);
 
             if (total_failed > 32) return -1;
-
-            if(rv==0){
-                //log.msg("Select timeout...num neg count is: " + to_string(num_neg_count));
-                //timeout
+            if (rv==0) {
+                printf("No data available...sleeping\n");
+                SLEEP(100);
+                
                 num_neg_count++;
                 total_failed++;
-                if(num_neg_count > 3){ //three timeouts in a row
+                if(num_neg_count > 3) { //three timeouts in a row
+                    printf("Timeout!\n");
                     return pos_in_buf == 0 ? -1 : pos_in_buf;
-                }else{
+                } else {
                     continue;
                 }
             }
@@ -264,6 +253,7 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
                 //do nothing if this hits the timeout it will break out
                 //log.msg("Select error...num neg count is: " + to_string(num_neg_count));
                 total_failed++;
+                printf("Error during writting to a pipe! \n");
             }
             else{
                 //there is data to be handled
@@ -272,6 +262,7 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
                 size_t remaining_buf_size = write_buf_length - pos_in_buf;                                     //avoids a segmentation fault
 
                 size_t bytes_to_write = remaining_buf_size > chunk_size ? chunk_size : remaining_buf_size; //works to prevent a segmentation fault
+                printf("Writting %d bytes to a pipe ...\n", bytes_to_write);
                 size_sent = send(sock_fd, write_buf+pos_in_buf, bytes_to_write, 0);
 
                 //log.msg("Sent bytes..." + to_string(size_sent));
@@ -284,13 +275,15 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
 
                 if (size_sent < 0)
                 {
-                    perror("Socket send returned -1");
+                    printf("Failed! sleeping 100 ms\n");
                     total_failed++;
                     num_neg_count++; //if there are 3 consecutive failed writes we will quit
+                    SLEEP(100);
                     //this_thread::sleep_for(chrono::microseconds(100)); //needs to wait to try and get more data
                     continue;
                 }else{
                     num_neg_count = 0; //reset the failed writes
+                    printf("writting to a pipe went good\n");
                     pos_in_buf += size_sent;
                 }
 
@@ -304,6 +297,7 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
             if (num_neg_count>3) //timeout or 3 consecutive failed writes
             {
                 //log.msg("Timeout exceeded");
+                printf("3 consecutive failed writes!!!\n");
                 return -1;
             }
 
@@ -312,8 +306,13 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
         }
 
         //log.msg("Total data length sent was: " + to_string(pos_in_buf));
-        if(pos_in_buf == 0)
+        if(pos_in_buf == 0) {
+            printf("error! no data received\n");
             return -1; //error, no data received
+        }
+
+        printf("writting was done correctly :)\n");
+            
 
         return pos_in_buf; //the full size of the message received
     }
