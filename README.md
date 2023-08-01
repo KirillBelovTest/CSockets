@@ -1,7 +1,10 @@
 # CSocketListener
 
-Compiled for Linux, MacOSX only (Windows soon!).
-relies on [libuv](https://github.com/libuv/libuv)
+Linux - Stable
+MacOS - Stable
+Windows - Unstable (sometimes crashes)
+
+relies on [libuv](https://github.com/libuv/libuv) and native wsock library for Windows
 
 ## Examples
 ### Echo
