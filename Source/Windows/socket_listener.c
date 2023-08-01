@@ -38,20 +38,22 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 }
 
 typedef struct SERVER_st {
-    SOCKET listentSocket; 
+    SOCKET listenSocket; 
     SOCKET *clients;
-    int clientsLength = 0;
-    int clientsMaxLength = 2;
-    mint buflen = 0;
+    int clientsLength;
+    int clientsMaxLength;
+    mint buflen;
     BYTE* buf;     
-}* SERVER; 
+} SERVER; 
 
-SERVER servers[10];
-nServers = 0;
+SERVER* servers[100];
+int nServers = 0;
 
 WolframIOLibrary_Functions ioLibrary;
 WolframNumericArrayLibrary_Functions numericLibrary;
 mint asyncObjID;
+
+static void ListenSocketTask(mint asyncObjID, void* vtarg);
 
 DLLEXPORT int run_uvloop(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
     printf("creating async task...\n");
@@ -72,7 +74,7 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
   MNumericArray data;
   DataStore ds;
 
-  SOCKET* clientSocket;
+  SOCKET clientSocket;
   SERVER* server;
 
 
@@ -81,15 +83,17 @@ static void ListenSocketTask(mint asyncObjID, void* vtarg)
     SLEEP(1);
 
     for (size_t l = 0; l < nServers; ++l) {
-        server = &servers[l];
+        server = servers[l];
         clientSocket = accept(server->listenSocket, NULL, NULL);
         
         if (clientSocket != INVALID_SOCKET) {
             printf("NEW CLIENT: %d\n", clientSocket);
-            server->clients[server->clientsLength++] = clientSocket; 
+            server->clients[server->clientsLength] = clientSocket; 
+            server->clientsLength = server->clientsLength + 1;
 
-            if (server->clientsLength == server->clientsMaxLength){
+            if (server->clientsLength == server->clientsMaxLength - 1){
                 server->clientsMaxLength *= 2; 
+                printf("Reallocate client buffer to %d\n", server->clientsMaxLength);
                 server->clients = (SOCKET*)realloc(server->clients, server->clientsMaxLength * sizeof(SOCKET)); 
             }
         } 
@@ -178,12 +182,16 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     printf("LISTEN SOCKET\n"); 
 
-    servers[nServers].clients = (SOCKET*)malloc(2 * sizeof(SOCKET));
-    servers[nServers].buf = malloc(8192 * sizeof(BYTE));
-    servers[nServers].buflen = 8192;
-    servers[nServers].listentSocket = listentSocket;
+    servers[nServers] = (SERVER*)malloc(sizeof(SERVER));
 
-    int iMode = 1; 
+    servers[nServers]->clients = (SOCKET*)malloc(2 * sizeof(SOCKET));
+    servers[nServers]->buf = malloc(8192 * sizeof(BYTE));
+    servers[nServers]->buflen = 8192;
+    servers[nServers]->listenSocket = listenSocket;
+    servers[nServers]->clientsLength = 0;
+    servers[nServers]->clientsMaxLength = 2;
+
+    u_long iMode = 1; 
 
     iResult = ioctlsocket(listenSocket, FIONBIO, &iMode); 
 

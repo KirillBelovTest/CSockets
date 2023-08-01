@@ -1,3 +1,6 @@
+PacletInstall["JerryI/LPM"]
+<< JerryI`LPM`
+
 PacletRepositories[{
   Github -> "https://github.com/KirillBelovTest/Objects",
   Github -> "https://github.com/KirillBelovTest/Internal",
