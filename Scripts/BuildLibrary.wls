@@ -12,6 +12,7 @@ Get["CCompilerDriver`"];
  "ShellOutputFunction"->Print}*)
 
 OSLibs = If[$OperatingSystem === "Windows", {"ws2_32"}, {}];
+OSPath = If[$OperatingSystem === "Windows", "Windows", "Unix"];
 
 OSLinker = If[$OperatingSystem === "Windows", {}, If[$OperatingSystem === "MacOSX", {MACOSXLIBUVPATH<>" -pthread"}, {LINUXLIVUVPATH<>" -pthread"}]];
 
@@ -25,6 +26,7 @@ Block[{$directory, $libSrc, $libDir},
 	$libSrc = File[FileNameJoin[{
 		$directory, 
 		"Source", 
+		OSPath,
 		"socket_listener.c"
 	}]]; 
 
