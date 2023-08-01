@@ -39,11 +39,11 @@ Begin["`Private`"];
 
 
 CSocket /: BinaryWrite[CSocket[socketId_Integer], bytes_ByteArray] := 
-If[socketWrite[socketId, bytes, Length[bytes]] === -1, $Failed, Null]; 
+If[socketWrite[socketId, bytes, Length[bytes]] === -1, Print["lib writting failed!"]; $Failed, Null]; 
 
 
 CSocket /: WriteString[CSocket[socketId_Integer], string_String] := 
-If[socketWriteString[socketId, string, StringLength[string]] === -1, $Failed, Null]; 
+If[socketWriteString[socketId, string, StringLength[string]] === -1, Print["lib writting failed!"]; $Failed, Null]; 
 
 
 CSocket /: Close[CSocket[socketId_Integer]] := 

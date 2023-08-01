@@ -299,7 +299,7 @@ DLLEXPORT int socket_write(WolframLibraryData libData, mint Argc, MArgument *Arg
     //ON ERROR send expection to mathematica
     printf("*** done with %d ***\n", st);
 
-    MArgument_setInteger(Res, 0); 
+    MArgument_setInteger(Res, st); 
     return LIBRARY_NO_ERROR; 
 }
 
@@ -334,7 +334,7 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
     //ON ERROR send expection to mathematica
     printf("*** done with %d ***\n", st);
 
-    MArgument_setInteger(Res, 0); 
+    MArgument_setInteger(Res, st); 
     return LIBRARY_NO_ERROR; 
 }
 
