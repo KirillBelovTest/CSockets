@@ -1,12 +1,12 @@
 #undef UNICODE
 
 
-    #define WIN32_LEAN_AND_MEAN
-    #include <windows.h>
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-    #define SLEEP Sleep
+#define SLEEP Sleep
 
 
 
@@ -37,92 +37,106 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     return;
 }
 
-typedef struct SocketTaskArgs_st {
-    WolframNumericArrayLibrary_Functions numericLibrary;
-    WolframIOLibrary_Functions ioLibrary;
-    SOCKET listentSocket; 
-}* SocketTaskArgs; 
+typedef struct SERVER_st {
+    SOCKET listenSocket; 
+    SOCKET *clients;
+    int clientsLength;
+    int clientsMaxLength;
+    mint buflen;
+    BYTE* buf;     
+} SERVER; 
 
+SERVER* servers[100];
+int nServers = 0;
 
+WolframIOLibrary_Functions ioLibrary;
+WolframNumericArrayLibrary_Functions numericLibrary;
+mint asyncObjID;
+
+SOCKET garbage;
+
+SOCKET* fetchClient(SOCKET s) {
+    for (int l=0; l<nServers; ++l) {
+        for (int k=0; k < servers[l]->clientsLength; ++k) {
+            if (s == servers[l]->clients[k]) {
+                printf("found! ok\n");
+                SOCKET *ptr = &(servers[l]->clients[k]);
+                return ptr;
+            }
+        }
+    }
+
+    printf("Something is wrong. A requested socket was not found in the array... \n");
+    return &garbage;
+}
+
+static void ListenSocketTask(mint asyncObjID, void* vtarg);
+
+DLLEXPORT int run_uvloop(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
+    printf("creating async task...\n");
+
+    ioLibrary = libData->ioLibraryFunctions;
+    numericLibrary = libData->numericarrayLibraryFunctions;
+        
+    asyncObjID = ioLibrary->createAsynchronousTaskWithThread(ListenSocketTask, NULL);
+
+    MArgument_setInteger(Res, asyncObjID); 
+    return LIBRARY_NO_ERROR;     
+}
 
 static void ListenSocketTask(mint asyncObjID, void* vtarg)
 {
-    SOCKET *clients = (SOCKET*)malloc(2 * sizeof(SOCKET)); 
-    int clientsLength = 0;
-    int clientsMaxLength = 2; 
 
-    int iResult; 
-    int iMode = 1; 
+  mint dims[1]; 
+  MNumericArray data;
+  DataStore ds;
 
-    size_t buflen = 8192; 
-    BYTE *buf = malloc(8192 * sizeof(BYTE)); 
-    mint dims[1]; 
-    MNumericArray data;
+  SOCKET clientSocket;
+  SERVER* server;
 
-    SOCKET clientSocket = INVALID_SOCKET;
-	SocketTaskArgs targ = (SocketTaskArgs)vtarg; 
-    SOCKET listenSocket = targ->listentSocket; 
-	WolframIOLibrary_Functions ioLibrary = targ->ioLibrary;
-    WolframNumericArrayLibrary_Functions numericLibrary = targ->numericLibrary;
 
-	DataStore ds;
-    free(targ); 
+  while(ioLibrary->asynchronousTaskAliveQ(asyncObjID)) {
     
+    SLEEP(1);
 
-    iResult = ioctlsocket(listenSocket, FIONBIO, &iMode); 
-
-    if (iResult != NO_ERROR) {
-        printf("ioctlsocket failed with error: %d\n", iResult);
-    }
-
-
-
-	while(ioLibrary->asynchronousTaskAliveQ(asyncObjID))
-	{
-        SLEEP(1);
-        clientSocket = accept(listenSocket, NULL, NULL);
-
+    for (size_t l = 0; l < nServers; ++l) {
+        server = servers[l];
+        clientSocket = accept(server->listenSocket, NULL, NULL);
         
         if (clientSocket != INVALID_SOCKET) {
             printf("NEW CLIENT: %d\n", clientSocket);
-            clients[clientsLength++] = clientSocket; 
+            server->clients[server->clientsLength] = clientSocket; 
+            server->clientsLength = server->clientsLength + 1;
 
-            if (clientsLength == clientsMaxLength){
-                clientsMaxLength *= 2; 
-                clients = (SOCKET*)realloc(clients, clientsMaxLength * sizeof(SOCKET)); 
+            if (server->clientsLength == server->clientsMaxLength){
+                server->clientsMaxLength *= 2; 
+                printf("Reallocate client buffer to %d\n", server->clientsMaxLength);
+                server->clients = (SOCKET*)realloc(server->clients, server->clientsMaxLength * sizeof(SOCKET)); 
             }
         } 
 
-        for (size_t i = 0; i < clientsLength; i++)
+        for (size_t i = 0; i < server->clientsLength; i++)
         {
-            iResult = recv(clients[i], buf, buflen, 0); 
-            if (iResult > 0){            
-                printf("CURRENT NUMBER OF CLIENTS: %d\n", clientsLength);
-                printf("MAX NUMBER OF CLIENTS: %d\n", clientsMaxLength);
+            if (server->clients[i] == INVALID_SOCKET) continue;
+            int iResult = recv(server->clients[i], server->buf, server->buflen, 0); 
+            if (iResult > 0) {            
+                printf("CURRENT NUMBER OF CLIENTS: %d\n", server->clientsLength);
+                printf("MAX NUMBER OF CLIENTS: %d\n", server->clientsMaxLength);
                 printf("RECEIVED %d BYTES\n", iResult);
                 dims[0] = iResult; 
                 numericLibrary->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
-                memcpy(numericLibrary->MNumericArray_getData(data), buf, iResult);
+                memcpy(numericLibrary->MNumericArray_getData(data), server->buf, iResult);
                 
                 ds = ioLibrary->createDataStore();
-                ioLibrary->DataStore_addInteger(ds, listenSocket);
-                ioLibrary->DataStore_addInteger(ds, clients[i]);
+                ioLibrary->DataStore_addInteger(ds, l);
+                ioLibrary->DataStore_addInteger(ds, server->clients[i]);
                 ioLibrary->DataStore_addMNumericArray(ds, data);
 
                 ioLibrary->raiseAsyncEvent(asyncObjID, "RECEIVED_BYTES", ds);
             }
         }
-	}
-
-    printf("STOP ASYNCHRONOUS TASK %d\n", asyncObjID); 
-    for (size_t i = 0; i < clientsLength; i++)
-    {
-        CLOSESOCKET(clients[i]);
     }
-    CLOSESOCKET(listenSocket);
-
-    free(clients);
-    free(buf);
+  }
 }
 
 DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) 
@@ -130,10 +144,8 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
     int iResult; 
     char* listenAddrName = MArgument_getUTF8String(Args[0]); 
     char* listenPortName = MArgument_getUTF8String(Args[1]); 
+
     SOCKET listenSocket = INVALID_SOCKET; 
-    WolframIOLibrary_Functions ioLibrary = libData->ioLibraryFunctions; 
-    WolframNumericArrayLibrary_Functions numericLibrary = libData->numericarrayLibraryFunctions;
-    
 
     WSADATA wsaData; 
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -188,14 +200,26 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     printf("LISTEN SOCKET\n"); 
 
-    SocketTaskArgs threadArg = (SocketTaskArgs)malloc(sizeof(struct SocketTaskArgs_st));
-    threadArg->ioLibrary=ioLibrary; 
-    threadArg->listentSocket=listenSocket;
-    threadArg->numericLibrary=numericLibrary;
-    mint asyncObjID;
-    asyncObjID = ioLibrary->createAsynchronousTaskWithThread(ListenSocketTask, threadArg);
+    servers[nServers] = (SERVER*)malloc(sizeof(SERVER));
 
-    MArgument_setInteger(Res, asyncObjID); 
+    servers[nServers]->clients = (SOCKET*)malloc(2 * sizeof(SOCKET));
+    servers[nServers]->buf = malloc(8192 * sizeof(BYTE));
+    servers[nServers]->buflen = 8192;
+    servers[nServers]->listenSocket = listenSocket;
+    servers[nServers]->clientsLength = 0;
+    servers[nServers]->clientsMaxLength = 2;
+
+    u_long iMode = 1; 
+
+    iResult = ioctlsocket(listenSocket, FIONBIO, &iMode); 
+
+    if (iResult != NO_ERROR) {
+        printf("ioctlsocket failed with error: %d\n", iResult);
+    }
+
+    MArgument_setInteger(Res, nServers); 
+
+    nServers++;
     return LIBRARY_NO_ERROR; 
 }
 
@@ -210,21 +234,9 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
         socktimeout.tv_sec = 6;
         socktimeout.tv_usec = 0;
 
-
-        //log.msg("Preparing to send an entire message through. msg size is...." + to_string(write_buf_length));
-
-        //const size_t chunk_size = 16000;        //will read 16000 bytes at a time
         size_t chunk_size = chunk_s;
         if (write_buf_length < chunk_size) chunk_size = write_buf_length;
-        //fcntl(sock_fd, F_SETFL, O_NONBLOCK); //makes the socket nonblocking
 
-        //log.msg("Set socket non blocking..." + to_string(write_buf_length));
-
-        //struct timeval time_val_struct;
-        //time_val_struct.tv_sec = 0;
-        //time_val_struct.tv_usec = 0;
-        //setsockopt(sock_fd, SOL_SOCKET,SO_SNDTIMEO,(const char*)&time_val_struct,sizeof(time_val_struct));
-        //log.msg("Turned off socket timeout");
 
 
         size_t pos_in_buf = 0; //starts at 0 and is incremented to write to the right location
@@ -241,23 +253,26 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
    
             rv = select(sock_fd+1, NULL, &set, NULL, &socktimeout);
 
-            if (total_failed > 32) return -1;
-
-            if(rv==0){
-                //log.msg("Select timeout...num neg count is: " + to_string(num_neg_count));
-                //timeout
+        
+            if (rv==0) {
+                printf("No data available...sleeping\n");
+                SLEEP(100);
+                
                 num_neg_count++;
-                total_failed++;
-                if(num_neg_count > 3){ //three timeouts in a row
+    
+                if(num_neg_count > 3) { //three timeouts in a row
+                    printf("Timeout!\n");
                     return pos_in_buf == 0 ? -1 : pos_in_buf;
-                }else{
+                } else {
                     continue;
                 }
             }
             else if(rv==-1){
                 //do nothing if this hits the timeout it will break out
                 //log.msg("Select error...num neg count is: " + to_string(num_neg_count));
-                total_failed++;
+                
+                printf("Error during writting to a pipe! \n");
+                return -1;
             }
             else{
                 //there is data to be handled
@@ -266,25 +281,27 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
                 size_t remaining_buf_size = write_buf_length - pos_in_buf;                                     //avoids a segmentation fault
 
                 size_t bytes_to_write = remaining_buf_size > chunk_size ? chunk_size : remaining_buf_size; //works to prevent a segmentation fault
+                printf("Writting %d bytes to a pipe ...\n", bytes_to_write);
                 size_sent = send(sock_fd, write_buf+pos_in_buf, bytes_to_write, 0);
-
-                //log.msg("Sent bytes..." + to_string(size_sent));
-                //log.msg("Pos in buf..." + to_string(pos_in_buf));
-                //log.msg("Bytes to write..." + to_string(bytes_to_write));
-                //log.msg("Remaining buf size..." + to_string(remaining_buf_size));
-                
-                // log.msg("size_recv: " + to_string(size_recv));
-                // log.msg("bytes to read: " + to_string(bytes_to_read));
 
                 if (size_sent < 0)
                 {
-                    perror("Socket send returned -1");
+                    printf("Failed! sleeping 100 ms\n");
                     total_failed++;
                     num_neg_count++; //if there are 3 consecutive failed writes we will quit
+                    SLEEP(100);
                     //this_thread::sleep_for(chrono::microseconds(100)); //needs to wait to try and get more data
+                    if (num_neg_count>3) //timeout or 3 consecutive failed writes
+                    {
+                        //log.msg("Timeout exceeded");
+                        printf("3 consecutive failed writes!!!\n");
+                        return -1;
+                    }
+
                     continue;
-                }else{
+                } else {
                     num_neg_count = 0; //reset the failed writes
+                    printf("writting to a pipe went good\n");
                     pos_in_buf += size_sent;
                 }
 
@@ -298,6 +315,7 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
             if (num_neg_count>3) //timeout or 3 consecutive failed writes
             {
                 //log.msg("Timeout exceeded");
+                printf("3 consecutive failed writes!!!\n");
                 return -1;
             }
 
@@ -306,8 +324,13 @@ size_t send_full_msg(int sock_fd, char *write_buf, size_t write_buf_length, size
         }
 
         //log.msg("Total data length sent was: " + to_string(pos_in_buf));
-        if(pos_in_buf == 0)
+        if(pos_in_buf == 0) {
+            printf("error! no data received\n");
             return -1; //error, no data received
+        }
+
+        printf("writting was done correctly :)\n");
+            
 
         return pos_in_buf; //the full size of the message received
     }
@@ -330,10 +353,12 @@ DLLEXPORT int socket_write(WolframLibraryData libData, mint Argc, MArgument *Arg
     //iResult = send(clientId, bytes, bytesLen, MSG_NOSIGNAL); 
     iResult =send_full_msg(clientId, bytes, bytesLen, 8000);
     if (iResult == SOCKET_ERROR) {
-        wprintf(L"send failed with error: %d\n", GETSOCKETERRNO());
+        printf("send failed with error: %d\n", GETSOCKETERRNO());
+        *fetchClient(clientId) = INVALID_SOCKET;
         CLOSESOCKET(clientId);
-        MArgument_setInteger(Res, GETSOCKETERRNO()); 
-        return LIBRARY_FUNCTION_ERROR; 
+        printf("socket was closed\n");
+        MArgument_setInteger(Res, -1); 
+        return LIBRARY_NO_ERROR;
     }
 
 
@@ -356,9 +381,10 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
     iResult = send_full_msg(clientId, text, textLen, 8000);
     if (iResult == SOCKET_ERROR) {
         wprintf(L"send failed with error: %d\n", GETSOCKETERRNO());
+        *fetchClient(clientId) = INVALID_SOCKET;
         CLOSESOCKET(clientId);
-        MArgument_setInteger(Res, GETSOCKETERRNO()); 
-        return LIBRARY_FUNCTION_ERROR; 
+        MArgument_setInteger(Res, -1);  
+        return LIBRARY_NO_ERROR;
     }
 
     printf("WRITE %d BYTES\n", textLen);
@@ -368,7 +394,15 @@ DLLEXPORT int socket_write_string(WolframLibraryData libData, mint Argc, MArgume
 
 DLLEXPORT int close_socket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET s = MArgument_getInteger(Args[0]);
-    MArgument_setInteger(Res, CLOSESOCKET(s));
+    SOCKET* current = fetchClient(s);
+    if(*current == INVALID_SOCKET) {
+        printf("already closed!\n");
+        MArgument_setInteger(Res, 0);
+    } else {
+        MArgument_setInteger(Res, CLOSESOCKET(s));
+        *current = INVALID_SOCKET;
+    }
+    
     return LIBRARY_NO_ERROR; 
 }
 

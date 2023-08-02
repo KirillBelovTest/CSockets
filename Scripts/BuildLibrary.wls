@@ -1,18 +1,23 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
-
-
+LINUXLIVUVPATH = "/home/kirill/Downloads/libuv-1.46.0/build/libuv.so"
+MACOSXLIBUVPATH = "/usr/local/lib/libuv.a"
 
 Get["CCompilerDriver`"]; 
 
-(*$CCompiler={"Compiler"->GenericCCompiler,
+(*
+$CCompiler={"Compiler"->GenericCCompiler,
  "CompilerInstallation"->"C:\\mingw64\\bin",
  "CompilerName"->"gcc.exe",
- "ShellOutputFunction"->Print}*)
+ "ShellOutputFunction"->Print}
 
-OSFolder = If[$OperatingSystem === "Windows", "Windows", "Unix"];
+ *)
+
 OSLibs = If[$OperatingSystem === "Windows", {"ws2_32"}, {}];
+OSPath = If[$OperatingSystem === "Windows", "Windows", "Unix"];
+
+OSLinker = If[$OperatingSystem === "Windows", {}, If[$OperatingSystem === "MacOSX", {MACOSXLIBUVPATH<>" -pthread"}, {LINUXLIVUVPATH<>" -pthread"}]];
 
 Block[{$directory, $libSrc, $libDir}, 
 	$directory = DirectoryName[If[$InputFileName == "", 
@@ -24,7 +29,7 @@ Block[{$directory, $libSrc, $libDir},
 	$libSrc = File[FileNameJoin[{
 		$directory, 
 		"Source", 
-		OSFolder,
+		OSPath,
 		"socket_listener.c"
 	}]]; 
 
@@ -41,5 +46,5 @@ Block[{$directory, $libSrc, $libDir},
 
 	Get["CCompilerDriver`"]; 
 
-	CreateLibrary[$libSrc, "socket_listener" , "TargetDirectory" -> $libDir, "Debug"->True, 	"Libraries"->OSLibs]
+	CreateLibrary[$libSrc, "socket_listener" , "TargetDirectory" -> $libDir, "Debug"->True, "LinkerOptions"->OSLinker,	"Libraries"->OSLibs]
 ]; 
