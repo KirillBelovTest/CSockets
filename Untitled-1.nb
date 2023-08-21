@@ -1,0 +1,132 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4640,        124]
+NotebookOptionsPosition[      4067,        106]
+NotebookOutlinePosition[      4468,        122]
+CellTagsIndexPosition[      4425,        119]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"SetDirectory", "[", 
+    RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Needs", "[", "\"\<CCompilerDriver`\>\"", "]"}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"libSrc", " ", "=", " ", 
+   RowBox[{"File", "[", 
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"Directory", "[", "]"}], ",", " ", "\"\<Source\>\"", ",", " ", 
+       "\"\<sockets.c\>\""}], "}"}], "]"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"lib", "=", 
+    RowBox[{"CreateLibrary", "[", 
+     RowBox[{"libSrc", ",", " ", "\"\<sockets\>\"", ",", " ", 
+      RowBox[{"\"\<TargetDirectory\>\"", "->", 
+       RowBox[{"Directory", "[", "]"}]}]}], "]"}]}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"test", " ", "=", " ", 
+    RowBox[{"LibraryFunctionLoad", "[", 
+     RowBox[{"lib", ",", "\"\<test\>\"", ",", 
+      RowBox[{"{", "Integer", "}"}], ",", " ", "String"}], "]"}]}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"socketOpen", " ", "=", " ", 
+    RowBox[{"LibraryFunctionLoad", "[", 
+     RowBox[{"lib", ",", " ", "\"\<SocketOpen\>\"", ",", " ", 
+      RowBox[{"{", "String", "}"}], ",", " ", "Integer"}], "]"}]}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"socketClose", " ", "=", " ", 
+    RowBox[{"LibraryFunctionLoad", "[", 
+     RowBox[{"lib", ",", " ", "\"\<SocketClose\>\"", ",", " ", 
+      RowBox[{"{", "Integer", "}"}], ",", " ", "Integer"}], "]"}]}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{"s1", " ", "=", " ", 
+  RowBox[{"socketOpen", "[", "\"\<8000\>\"", "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"socketClose", "[", "s1", "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"LibraryFunctionUnload", "[", "test", "]"}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"LibraryFunctionUnload", "[", "socketOpen", "]"}], ";"}], 
+  " "}]}], "Input",
+ CellChangeTimes->{{3.9004292583086686`*^9, 3.9004292673001375`*^9}, {
+   3.9005112279898643`*^9, 3.900511232302244*^9}, {3.9013229253256893`*^9, 
+   3.901322925548851*^9}, {3.9013448291267242`*^9, 3.9013448298282175`*^9}, {
+   3.9014638295314884`*^9, 3.9014638298014355`*^9}, {3.9014638914069347`*^9, 
+   3.9014638967058125`*^9}, {3.9014639286028075`*^9, 3.901463957039053*^9}, {
+   3.9014641125331326`*^9, 3.901464119323705*^9}, {3.901605118388612*^9, 
+   3.90160522263965*^9}, {3.9016052897583256`*^9, 3.901605296363353*^9}, {
+   3.901605597142805*^9, 3.9016056437400675`*^9}, 3.9016067838689747`*^9},
+ CellLabel->"In[1]:=",ExpressionUUID->"560d8ffd-a24a-459a-bf41-650995062aea"],
+
+Cell[BoxData["1652"], "Output",
+ CellChangeTimes->{
+  3.9016052298548203`*^9, 3.9016052996432533`*^9, 3.901605607458965*^9, 
+   3.9016056689366665`*^9, 3.901605880149822*^9, {3.9016059442642965`*^9, 
+   3.9016059932424393`*^9}, 3.901606728773021*^9, 3.901606793248581*^9},
+ CellLabel->"Out[8]=",ExpressionUUID->"2455ead7-c480-4081-a1a0-d9c8f1539da1"],
+
+Cell[BoxData["0"], "Output",
+ CellChangeTimes->{
+  3.9016052298548203`*^9, 3.9016052996432533`*^9, 3.901605607458965*^9, 
+   3.9016056689366665`*^9, 3.901605880149822*^9, {3.9016059442642965`*^9, 
+   3.9016059932424393`*^9}, 3.901606728773021*^9, 3.9016067932536106`*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"92545044-a1c9-4650-a0b5-9e5381141bb4"]
+}, Open  ]]
+},
+WindowSize->{958, 980},
+WindowMargins->{{Automatic, -7}, {Automatic, 0}},
+FrontEndVersion->"13.3 for Microsoft Windows (64-bit) (June 3, 2023)",
+StyleDefinitions->"ReverseColor.nb",
+ExpressionUUID->"cd1d4bdd-771a-43e6-b43e-aa41b5341861"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 2766, 67, 242, "Input",ExpressionUUID->"560d8ffd-a24a-459a-bf41-650995062aea"],
+Cell[3349, 91, 350, 5, 35, "Output",ExpressionUUID->"2455ead7-c480-4081-a1a0-d9c8f1539da1"],
+Cell[3702, 98, 349, 5, 35, "Output",ExpressionUUID->"92545044-a1c9-4650-a0b5-9e5381141bb4"]
+}, Open  ]]
+}
+]
+*)
+

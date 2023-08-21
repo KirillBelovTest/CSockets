@@ -8,7 +8,7 @@
 (*Begin package*)
 
 
-BeginPackage["KirillBelov`CSocketListener`"]; 
+BeginPackage["KirillBelov`CSockets`"]; 
 
 
 (* ::Section:: *)
@@ -23,8 +23,8 @@ CSocketListener::usage =
 "CSocketListener[assoc] listener object."; 
 
 
-CSocket::usage = 
-"CSocket[socketId] socket representation."; 
+CSocketObject::usage = 
+"CSocketObject[socketId] socket representation."; 
 
 
 (* ::Section:: *)
@@ -38,15 +38,15 @@ Begin["`Private`"];
 (*Implementation*)
 
 
-CSocket /: BinaryWrite[CSocket[socketId_Integer], bytes_ByteArray] := 
+CSocketObject /: BinaryWrite[CSocketObject[socketId_Integer], bytes_ByteArray] := 
 If[socketWrite[socketId, bytes, Length[bytes]] === -1, Print["lib writting failed!"]; $Failed, Null]; 
 
 
-CSocket /: WriteString[CSocket[socketId_Integer], string_String] := 
+CSocketObject /: WriteString[CSocketObject[socketId_Integer], string_String] := 
 If[socketWriteString[socketId, string, StringLength[string]] === -1, Print["lib writting failed!"]; $Failed, Null]; 
 
 
-CSocket /: Close[CSocket[socketId_Integer]] := 
+CSocketObject /: Close[CSocketObject[socketId_Integer]] := 
 closeSocket[socketId]; 
 
 
@@ -104,27 +104,34 @@ If[!FileExistsQ[$libFile],
 ]; 
 
 
-createServer = LibraryFunctionLoad[$libFile, "create_server", {String, String}, Integer]; 
-
-runLoop = LibraryFunctionLoad[$libFile, "run_uvloop", {Integer}, Integer]; 
-
-stopServer::usage = "stopServer[asyncObjId]"; 
-stopServer = LibraryFunctionLoad[$libFile, "stop_server", {Integer}, Integer]; 
+socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String}, Integer]; 
 
 
-socketWrite = LibraryFunctionLoad[$libFile, "socket_write", {Integer, "ByteArray", Integer}, Integer]; 
+socketConnect = LibraryFunctionLoad[$libFile, "socketConnect", {String, String}, Integer]; 
 
 
-socketWriteString = LibraryFunctionLoad[$libFile, "socket_write_string", {Integer, String, Integer}, Integer]; 
+socketWrite = LibraryFunctionLoad[$libFile, "socketWrite", {Integer, "ByteArray", Integer, Integer}, Integer]; 
 
 
-closeSocket = LibraryFunctionLoad[$libFile, "close_socket", {Integer}, Integer]; 
+socketReadyQ = LibraryFunctionLoad[$libFile, "socketReadyQ", {Integer}, True | False]; 
+
+
+socketReadMessage = LibraryFunctionLoad[$libFile, "socketReadMessage", {Integer, Integer, Integer}, "ByteArray"]; 
+
+
+socketClose = LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
+
+
+soketListen = LibraryFunctionLoad[$libFile, "SocketListen", {Integer}, Integer]; 
+
+
+socketListenerTaskRemove = LibraryFunctionLoad[$libFile, "socketListenerTaskRemove", {Integer}, Integer]; 
 
 
 toPacket[task_, event_, {serverId_, clientId_, data_}] := 
 <|
-	"Socket" -> CSocket[serverId], 
-	"SourceSocket" -> CSocket[clientId], 
+	"Socket" -> CSocketObject[serverId], 
+	"SourceSocket" -> CSocketObject[clientId], 
 	"DataByteArray" -> ByteArray[data]
 |>; 
 
