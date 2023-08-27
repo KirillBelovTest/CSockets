@@ -2,23 +2,26 @@
 
 PacletObject[
   <|
-    "Name" -> "KirillBelov/CSocketListener",
-    "Description" -> "Socket Listener powered by pure C",
+    "Name" -> "KirillBelov/CSockets",
+    "Description" -> "Sockets powered by pure C",
     "Creator" -> "Kirill Belov",
     "License" -> "MIT",
     "PublisherID" -> "KirillBelov",
-    "Version" -> "1.0.5",
+    "Version" -> "1.0.0",
     "WolframVersion" -> "12+",
-    "PrimaryContext" -> "KirillBelov`CSocketListener`",
+    "PrimaryContext" -> "KirillBelov`CSockets`",
     "Extensions" -> {
       {
         "Kernel",
         "Root" -> "Kernel",
-        "Context" -> {"KirillBelov`CSocketListener`"},
+        "Context" -> {"KirillBelov`CSockets`"},
         "Symbols" -> {
-          "KirillBelov`CSocketListener`CSocket",
-          "KirillBelov`CSocketListener`CSocketListen",
-          "KirillBelov`CSocketListener`CSocketListener"
+          "KirillBelov`CSockets`CSocketObject",
+          "KirillBelov`CSockets`CSocketListen",
+          "KirillBelov`CSockets`CSocketListener",
+          "KirillBelov`CSockets`CSocketOpen",
+          "KirillBelov`CSockets`CSocketClose",
+          "KirillBelov`CSockets`CSocketConnect"
         }
       },
       {"Documentation", "Language" -> "English"},

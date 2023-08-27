@@ -154,7 +154,6 @@ DLLEXPORT int create_server(WolframLibraryData libData, mint Argc, MArgument *Ar
         return 1;
     }
  
-    
     struct addrinfo *address = NULL; 
     struct addrinfo addressHints; 
 
