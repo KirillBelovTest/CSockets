@@ -62,8 +62,8 @@ CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String] :=
 socketWriteString[socketId, data, StringLength[data], $bufferSize]; 
 
 
-CSocketObject /: SocketReadMessage[CSocketObject[socketId_Integer], bufLen_Integer: $bufferSize, maxMessageLen_Integer: $maxMessageLen] := 
-socketReadMessage[socketId, bufLen, maxMessageLen]; 
+CSocketObject /: SocketReadMessage[CSocketObject[socketId_Integer], bufferSize_Integer: $bufferSize] := 
+socketReadMessage[socketId, bufferSize]; 
 
 
 CSocketObject /: SocketReadyQ[CSocketObject[socketId_Integer]] := 
@@ -150,7 +150,7 @@ socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer,
 socketReadyQ = LibraryFunctionLoad[$libFile, "socketReadyQ", {Integer}, True | False]; 
 
 
-socketReadMessage = LibraryFunctionLoad[$libFile, "socketReadMessage", {Integer, Integer, Integer}, "ByteArray"]; 
+socketReadMessage = LibraryFunctionLoad[$libFile, "socketReadMessage", {Integer, Integer}, "ByteArray"]; 
 
 
 socketPort = LibraryFunctionLoad[$libFile, "socketPort", {Integer}, Integer]; 

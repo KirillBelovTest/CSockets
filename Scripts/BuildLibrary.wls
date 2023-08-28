@@ -28,6 +28,6 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions},
 
 	CreateLibrary[$libSrc, "csockets", 
 		"TargetDirectory" -> $libDir, 
-		"Debug" -> True
+		"Debug" -> False
 	]
 ]; 

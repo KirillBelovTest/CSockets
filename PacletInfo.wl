@@ -17,10 +17,8 @@ PacletObject[
         "Context" -> {"KirillBelov`CSockets`"},
         "Symbols" -> {
           "KirillBelov`CSockets`CSocketObject",
-          "KirillBelov`CSockets`CSocketListen",
           "KirillBelov`CSockets`CSocketListener",
           "KirillBelov`CSockets`CSocketOpen",
-          "KirillBelov`CSockets`CSocketClose",
           "KirillBelov`CSockets`CSocketConnect"
         }
       },
@@ -32,7 +30,8 @@ PacletObject[
           {"License", "./LICENSE"},
           {"ReadMe", "./README.md"},
           {"Source", "./Source"},
-          {"Scripts", "./Scripts"}
+          {"Scripts", "./Scripts"},
+          {"Tests", "./Tests"}
         }
       }
     }

@@ -124,7 +124,7 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize){
     return dataLength;
 }
 
-MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, int dataLength){
+MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint dataLength){
     MNumericArray nArray;
     libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &dataLength, &nArray);
     memcpy((uint8_t*) libData->numericarrayLibraryFunctions->MNumericArray_getData(nArray), data, dataLength);
@@ -248,9 +248,9 @@ static void socketListenerTask(mint taskId, void* vtarg)
     SOCKET clientSocket = INVALID_SOCKET;
     char *buffer = (char*)malloc(server->bufferSize * sizeof(char));
     mint dims[1];
-    MNumericArray data; 
-	DataStore ds;  
-    	
+    MNumericArray data;
+	DataStore ds;
+    
 	while(libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
 	{
         SLEEP(1);
@@ -269,17 +269,22 @@ static void socketListenerTask(mint taskId, void* vtarg)
 
         for (int i = 0; i < server->clientsLength; i++)
         {
-            iResult = recv(server->clients[i], buffer, server->bufferSize, 0); 
-            if (iResult > 0){
-                printf("[socketListenerTask]\nrecv %d bytes from %d\n\n", iResult, (int)server->clients[i]);
-                dims[0] = iResult;
-                libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
-                memcpy(libData->numericarrayLibraryFunctions->MNumericArray_getData(data), buffer, iResult);
-                ds = libData->ioLibraryFunctions->createDataStore();
-                libData->ioLibraryFunctions->DataStore_addInteger(ds, server->listenSocket);
-                libData->ioLibraryFunctions->DataStore_addInteger(ds, server->clients[i]);
-                libData->ioLibraryFunctions->DataStore_addMNumericArray(ds, data);
-                libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Received", ds);
+            if (server->clients[i] != INVALID_SOCKET) {
+                iResult = recv(server->clients[i], buffer, server->bufferSize, 0); 
+                if (iResult > 0){
+                    printf("[socketListenerTask]\nrecv %d bytes from %d\n\n", iResult, (int)server->clients[i]);
+                    dims[0] = iResult;
+                    libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
+                    memcpy(libData->numericarrayLibraryFunctions->MNumericArray_getData(data), buffer, iResult);
+                    ds = libData->ioLibraryFunctions->createDataStore();
+                    libData->ioLibraryFunctions->DataStore_addInteger(ds, server->listenSocket);
+                    libData->ioLibraryFunctions->DataStore_addInteger(ds, server->clients[i]);
+                    libData->ioLibraryFunctions->DataStore_addMNumericArray(ds, data);
+                    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Received", ds);
+                } else if (iResult == 0) {
+                    printf("[socketListenerTask]\nclient %d closed\n\n", (int)server->clients[i]);
+                    server->clients[i] = INVALID_SOCKET;
+                }
             }
         }
 	}
@@ -302,7 +307,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
 
 DLLEXPORT int socketListenerTaskRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     mint taskId = MArgument_getInteger(Args[0]);
-    printf("[socketListenerTaskRemove]\nremoved task id: %d\n\n", taskId);
+    printf("[socketListenerTaskRemove]\nremoved task id: %d\n\n", (int)taskId);
     MArgument_setInteger(Res, libData->ioLibraryFunctions->removeAsynchronousTask(taskId));
     return LIBRARY_NO_ERROR;
 }
@@ -427,12 +432,11 @@ DLLEXPORT int socketReadyQ(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma endregion
 
-#pragma region socketReadMessage[socketId_Integer, bufferLength_Integer, maxMessageLength_Integer]: ByteArray[<>] 
+#pragma region socketReadMessage[socketId_Integer, bufferSize_Integer]: ByteArray[<>] 
 
 DLLEXPORT int socketReadMessage(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET socketId = MArgument_getInteger(Args[0]);
     int bufferSize = MArgument_getInteger(Args[1]);
-    int maxMessageLen = MArgument_getInteger(Args[2]);
     
     BYTE *buffer = (BYTE*)malloc(bufferSize * sizeof(BYTE));
     int iResult;
@@ -442,6 +446,8 @@ DLLEXPORT int socketReadMessage(WolframLibraryData libData, mint Argc, MArgument
     if (iResult > 0) {
         printf("[socketReadMessage]\nreceived %d bytes\n\n", iResult);
         MArgument_setMNumericArray(Res, createByteArray(libData, buffer, iResult));
+    } else {
+        return LIBRARY_FUNCTION_ERROR;
     }
 
     return LIBRARY_NO_ERROR; 
@@ -460,7 +466,7 @@ DLLEXPORT int socketPort(WolframLibraryData libData, mint Argc, MArgument *Args,
     getsockname(socketId, (struct sockaddr *)&sin, &addrlen);
     port = ntohs(sin.sin_port); 
 
-    printf("[sockePort]\nsocketId: %d and port: %d\n\n", socketId, port); 
+    printf("[sockePort]\nsocketId: %d and port: %d\n\n", (int)socketId, port);
     MArgument_setInteger(Res, port);
     return LIBRARY_NO_ERROR; 
 }
