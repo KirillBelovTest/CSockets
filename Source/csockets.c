@@ -117,7 +117,14 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize){
 
         iResult = send(socketId, buffer, writeLength, 0);
         if (iResult == SOCKET_ERROR) {
-            return SOCKET_ERROR;
+            if (GETSOCKETERRNO() == 10035) {
+                SLEEP(2);
+                printf("[SocketWrite]\nerror 10035\n\n");
+                i -= bufferSize;
+            } else 
+            {
+                return SOCKET_ERROR;
+            }
         }
     }
 
