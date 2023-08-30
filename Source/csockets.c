@@ -2,31 +2,17 @@
 
 #undef UNICODE
 
-#ifdef __linux__ 
-    #include <string.h>
-    #include <stdio.h>
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <netdb.h>
-    #include <unistd.h>
-    #include <errno.h>
-    #include <fcntl.h>
-    #define INVALID_SOCKET -1
-    #define NO_ERROR 0
-    #define SOCKET_ERROR -1
-    #define ZeroMemory(Destination,Length) memset((Destination),0,(Length))
-    inline void nopp() {}
-    #define SLEEP usleep
-    #define ms 1000
-#elif _WIN32
+#ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #define SLEEP Sleep
     #define ms 1
+    #define ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
+    #define CLOSESOCKET(s) closesocket(s)
+    #define GETSOCKETERRNO() (WSAGetLastError())
+    #pragma comment (lib, "Ws2_32.lib")
 #else
     #include <string.h>
     #include <stdio.h>
@@ -46,13 +32,6 @@
     #define SLEEP usleep
     #define ms 1000
     inline void nopp() {}
-#endif
-
-#if defined(_WIN32)
-    #define ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
-    #define CLOSESOCKET(s) closesocket(s)
-    #define GETSOCKETERRNO() (WSAGetLastError())
-#else
     #define SOCKET int
     #define ISVALIDSOCKET(s) ((s) >= 0)
     #define CLOSESOCKET(s) close(s)
@@ -60,12 +39,8 @@
     #define BYTE uint8_t
 #endif
 
-#include <stdlib.h>
 #include <stdio.h>
-
-#ifdef _WIN32
-    #pragma comment (lib, "Ws2_32.lib")
-#endif
+#include <windows.h>
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
@@ -108,29 +83,58 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 #pragma region internal 
 
+static SOCKET currentSoketId = INVALID_SOCKET;
+
 static void socketListenerTask(mint taskId, void* vtarg); 
+
+int currentTime() {
+    SYSTEMTIME st, lt;
+    
+    GetSystemTime(&st);
+    GetLocalTime(&lt);
+    
+    printf("%d.%d\n", st.wSecond, st.wMilliseconds);
+
+    return 0;
+}
 
 int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize){
     int iResult;
     int writeLength;
     char *buffer;
+    struct timeval timeout; 
+    timeout.tv_sec = 0; 
+    timeout.tv_usec = 100000; 
+    struct fd_set sendReady;
+    FD_ZERO(&sendReady);
+    FD_SET(socketId, &sendReady);
 
-    for (int i = 0; i < dataLength; i += bufferSize){
+    currentTime();
+
+    for (int i = 0; i < dataLength; i += bufferSize) {
         buffer = (char*)&data[i]; 
         writeLength = dataLength - i > bufferSize ? bufferSize : dataLength - i; 
-
-        iResult = send(socketId, buffer, writeLength, 0);
-        if (iResult == SOCKET_ERROR) {
-            if (GETSOCKETERRNO() == 10035) {
-                SLEEP(ms);
-                printf("[SocketWrite]\r\nerror 10035\r\n\r\n");
-                i -= bufferSize;
-            } else 
-            {
-                return SOCKET_ERROR;
+        
+        if (socketId != currentSoketId) {
+            iResult = send(socketId, buffer, writeLength, 0);
+            if (iResult == SOCKET_ERROR) {
+                if (GETSOCKETERRNO() == 10035) {
+                    SLEEP(ms);
+                    printf("[socketWrite]\r\nerror 10035\r\n\r\n");
+                    i -= bufferSize;
+                } else {
+                    printf("[socketWrite]\r\nerror %d\r\n\r\n", GETSOCKETERRNO());
+                    return SOCKET_ERROR;
+                }
             }
+        } else {
+            SLEEP(1 * ms);
+            printf("[socketWrite]\r\nwaiting to ready %d\r\n\r\n", (int)socketId);
+            i -= bufferSize;
         }
     }
+
+    currentTime();
 
     return dataLength;
 }
@@ -292,7 +296,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
             if (server->clients[i] != INVALID_SOCKET) {
                 iResult = recv(server->clients[i], buffer, server->bufferSize, 0); 
                 if (iResult > 0){
-                    printf("[socketListenerTask]\r\nrecv %d bytes from %d\r\n\r\n", iResult, (int)server->clients[i]);
+                    //printf("[socketListenerTask]\r\nrecv %d bytes from %d\r\n\r\n", iResult, (int)server->clients[i]);
                     dims[0] = iResult;
                     libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, dims, &data); 
                     memcpy(libData->numericarrayLibraryFunctions->MNumericArray_getData(data), buffer, iResult);
@@ -368,7 +372,7 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     freeaddrinfo(address);
     if (iResult == SOCKET_ERROR) {
         printf("[socketConnect]\r\nconnect error: %d\r\n\r\n", GETSOCKETERRNO());
-        closesocket(connectSocket); 
+        CLOSESOCKET(connectSocket); 
         connectSocket = INVALID_SOCKET;
         return LIBRARY_FUNCTION_ERROR;
     }

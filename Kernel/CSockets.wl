@@ -110,9 +110,6 @@ $libFile = FileNameJoin[{
 $bufferSize = 8192; 
 
 
-$maxMessageLen = 65536; 
-
-
 If[!FileExistsQ[$libFile], 
 	Get[FileNameJoin[{$directory, "Scripts", "BuildLibrary.wls"}]]
 ]; 

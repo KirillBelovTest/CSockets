@@ -11151,10 +11151,10 @@ Cell[BoxData[
  CellID->119537851,ExpressionUUID->"6e7a0d0e-f2ec-411a-ac3a-6bb125b97917"],
 
 Cell[BoxData[
- RowBox[{"CSocketObject", "[", "1888", "]"}]], "Output",
+ RowBox[{"CSocketObject", "[", "1864", "]"}]], "Output",
  TaggingRules->{},
  CellLabel->"Out[6]=",
- CellID->149445999,ExpressionUUID->"c3bdc683-d2dc-4dd2-b454-bb251958aa34"]
+ CellID->14988491,ExpressionUUID->"37f70119-f87f-4229-83fc-d4d896a2dd22"]
 }, Open  ]],
 
 Cell["Create listener with custom handler:", "Text",
@@ -11180,10 +11180,10 @@ Cell[BoxData[
   RowBox[{"\[LeftAssociation]", 
    RowBox[{
     RowBox[{"\<\"Socket\"\>", "\[Rule]", 
-     RowBox[{"CSocketObject", "[", "1888", "]"}]}], ",", 
+     RowBox[{"CSocketObject", "[", "1864", "]"}]}], ",", 
     RowBox[{"\<\"Host\"\>", "\[Rule]", 
      RowBox[{
-      RowBox[{"CSocketObject", "[", "1888", "]"}], 
+      RowBox[{"CSocketObject", "[", "1864", "]"}], 
       "[", "\<\"DestinationHostname\"\>", "]"}]}], ",", 
     RowBox[{"\<\"Port\"\>", "\[Rule]", "8001"}], ",", 
     RowBox[{"\<\"Handler\"\>", "\[Rule]", 
@@ -11194,13 +11194,13 @@ Cell[BoxData[
     RowBox[{"\<\"TaskId\"\>", "\[Rule]", "1"}], ",", 
     RowBox[{"\<\"Task\"\>", "\[Rule]", 
      InterpretationBox[
-      RowBox[{"AsynchronousTaskObject", "[", 
-       RowBox[{"\<\"\"\>", ",", "1", ",", " ", "<>"}], "]"}],
-      AsynchronousTaskObject["", 1, 22958845139372434770]]}]}], 
+      RowBox[{"AsynchronousTaskObject", "[", "\<\"\"\>", ",", "1", ",", 
+       RowBox[{" ", "<>"}], "]"}],
+      AsynchronousTaskObject["", 1, 22959834916112842297]]}]}], 
    "\[RightAssociation]"}], "]"}]], "Output",
  TaggingRules->{},
  CellLabel->"Out[7]=",
- CellID->313835026,ExpressionUUID->"5a5e1acf-d236-4b0c-9f17-e4de0b0113e3"]
+ CellID->677195622,ExpressionUUID->"62c982c9-59ec-438d-a653-53cdac0e1a21"]
 }, Open  ]],
 
 Cell["Connect to the server:", "Text",
@@ -11217,11 +11217,25 @@ Cell[BoxData[
  CellID->92062243,ExpressionUUID->"9372a474-a2bd-46ae-8ce2-9ae88f7ea964"],
 
 Cell[BoxData[
- RowBox[{"CSocketObject", "[", "1468", "]"}]], "Output",
+ RowBox[{"CSocketObject", "[", "1912", "]"}]], "Output",
  TaggingRules->{},
  CellLabel->"Out[8]=",
- CellID->215209164,ExpressionUUID->"31b394c9-860f-48aa-a58b-eccdc284e183"]
+ CellID->143118924,ExpressionUUID->"a6e9e69c-b6d8-43a8-9f46-d3232ce42940"]
 }, Open  ]],
+
+Cell["Create test string:", "Text",
+ CellID->246573751,ExpressionUUID->"233565f7-1f80-4807-a228-20920b81d155"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"string1", " ", "=", " ", 
+    RowBox[{"StringJoin", "@", 
+     RowBox[{"ConstantArray", "[", 
+      RowBox[{"\"\<a\>\"", ",", " ", "1000000"}], "]"}]}]}], ";"}], 
+  " "}]], "Input",
+ CellLabel->"In[9]:=",
+ CellID->164446984,ExpressionUUID->"03f8014b-61a2-4bc6-b443-9052efce43e1"],
 
 Cell["Write 'hi' from client to server:", "Text",
  TaggingRules->{},
@@ -11230,86 +11244,58 @@ Cell["Write 'hi' from client to server:", "Text",
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"WriteString", "[", 
-  RowBox[{"client1", ",", " ", "\"\<hi\>\""}], "]"}]], "Input",
+ RowBox[{"AbsoluteTiming", "[", 
+  RowBox[{"WriteString", "[", 
+   RowBox[{"client1", ",", " ", "string1"}], "]"}], "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[9]:=",
+ CellLabel->"In[10]:=",
  CellID->165728481,ExpressionUUID->"f5e434ff-f9f8-4d27-b4e7-e1c155f89315"],
 
-Cell[BoxData["1468"], "Output",
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0.0033028`", ",", "1912"}], "}"}]], "Output",
  TaggingRules->{},
- CellLabel->"Out[9]=",
- CellID->304801328,ExpressionUUID->"ef942818-669e-4cb6-ad7e-20cc8207d0c2"]
+ CellLabel->"Out[10]=",
+ CellID->554829531,ExpressionUUID->"f87b67e2-9f83-4921-aa46-db1bab024fb8"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
-Cell[BoxData["packet1"], "Input",
- TaggingRules->{},
- CellLabel->"In[15]:=",
- CellID->97671469,ExpressionUUID->"b72d139a-6db5-49c3-9586-63381754f9f3"],
+Cell[BoxData[
+ RowBox[{"Table", "[", 
+  RowBox[{
+   RowBox[{"AbsoluteTiming", "[", 
+    RowBox[{"WriteString", "[", 
+     RowBox[{"client1", ",", " ", "string1"}], "]"}], "]"}], ",", " ", "10"}],
+   "]"}]], "Input",
+ CellLabel->"In[11]:=",
+ CellID->127144789,ExpressionUUID->"d35c159b-e6a2-485d-a1b9-71966bf61c3c"],
 
 Cell[BoxData[
- RowBox[{"\[LeftAssociation]", 
+ RowBox[{"{", 
   RowBox[{
-   RowBox[{"\<\"Socket\"\>", "\[Rule]", 
-    RowBox[{"CSocketObject", "[", "1952", "]"}]}], ",", 
-   RowBox[{"\<\"SourceSocket\"\>", "\[Rule]", 
-    RowBox[{"CSocketObject", "[", "1864", "]"}]}], ",", 
-   RowBox[{"\<\"DataByteArray\"\>", "\[Rule]", 
-    InterpretationBox[
-     RowBox[{
-      TagBox["ByteArray",
-       "SummaryHead"], "[", 
-      DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = 
-       "Ready"}, 
-       TemplateBox[{
-         PaneSelectorBox[{False -> GridBox[{{
-               GridBox[{{
-                  TagBox["\"8.2 kB\"", "SummaryItem"]}}, 
-                GridBoxAlignment -> {
-                 "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
-                False, GridBoxItemSize -> {
-                 "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
-                GridBoxSpacings -> {
-                 "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
-                BaseStyle -> {
-                 ShowStringCharacters -> False, NumberMarks -> False, 
-                  PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
-             GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
-             AutoDelete -> False, 
-             GridBoxItemSize -> {
-              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
-             BaselinePosition -> {1, 1}], True -> GridBox[{{
-               GridBox[{{
-                  TagBox["\"8.2 kB\"", "SummaryItem"]}}, 
-                GridBoxAlignment -> {
-                 "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
-                False, GridBoxItemSize -> {
-                 "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
-                GridBoxSpacings -> {
-                 "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
-                BaseStyle -> {
-                 ShowStringCharacters -> False, NumberMarks -> False, 
-                  PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
-             GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
-             AutoDelete -> False, 
-             GridBoxItemSize -> {
-              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
-             BaselinePosition -> {1, 1}]}, 
-          Dynamic[Typeset`open$$], ImageSize -> Automatic]},
-        "SummaryPanel"],
-       DynamicModuleValues:>{}], "]"}],
-     ByteArray[CompressedData["
-1:eJztwbERABAUBbBnE1Yywq+o7N+xhrsko86slqcna6uqqqqqqqqqv7/VihKL
-
-      "]],
-     Editable->False,
-     SelectWithContents->True,
-     Selectable->False]}]}], "\[RightAssociation]"}]], "Output",
- TaggingRules->{},
- CellLabel->"Out[15]=",
- CellID->60232076,ExpressionUUID->"bf681b0e-77be-4ae2-bc99-a0b68ce52813"]
+   RowBox[{"{", 
+    RowBox[{"0.0037858`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0.0036649`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0.0264875`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0.0030936`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"4.205474`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0.0030625`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0.00359`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"4.0851618`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0.0031843`", ",", "1912"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"4.0928919`", ",", "1912"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[11]=",
+ CellID->804236400,ExpressionUUID->"49ce20df-acb4-4e0e-b979-01d83c01f0d9"]
 }, Open  ]],
 
 Cell["Result received on server side:", "Text",
@@ -11320,16 +11306,16 @@ Cell[CellGroupData[{
 
 Cell[BoxData["packet1"], "Input",
  TaggingRules->{},
- CellLabel->"In[10]:=",
+ CellLabel->"In[11]:=",
  CellID->115386064,ExpressionUUID->"d25b6a4e-b84c-45e6-a076-2badf489f981"],
 
 Cell[BoxData[
  RowBox[{"\[LeftAssociation]", 
   RowBox[{
    RowBox[{"\<\"Socket\"\>", "\[Rule]", 
-    RowBox[{"CSocketObject", "[", "1760", "]"}]}], ",", 
+    RowBox[{"CSocketObject", "[", "2132", "]"}]}], ",", 
    RowBox[{"\<\"SourceSocket\"\>", "\[Rule]", 
-    RowBox[{"CSocketObject", "[", "1896", "]"}]}], ",", 
+    RowBox[{"CSocketObject", "[", "1872", "]"}]}], ",", 
    RowBox[{"\<\"DataByteArray\"\>", "\[Rule]", 
     InterpretationBox[
      RowBox[{
@@ -11379,8 +11365,8 @@ Cell[BoxData[
      SelectWithContents->True,
      Selectable->False]}]}], "\[RightAssociation]"}]], "Output",
  TaggingRules->{},
- CellLabel->"Out[10]=",
- CellID->238440688,ExpressionUUID->"06b71e05-627a-4ac9-a4bf-a2596057908b"]
+ CellLabel->"Out[11]=",
+ CellID->302560135,ExpressionUUID->"bd0dce58-2a2d-4762-94d3-06b0e00f7147"]
 }, Open  ]],
 
 Cell["Convert the result to string:", "Text",
@@ -11393,13 +11379,13 @@ Cell[BoxData[
  RowBox[{"ByteArrayToString", "[", 
   RowBox[{"packet1", "[", "\"\<DataByteArray\>\"", "]"}], "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[11]:=",
+ CellLabel->"In[12]:=",
  CellID->295082272,ExpressionUUID->"34513a19-bcbf-4c77-8a11-3bb1f0ff2c10"],
 
 Cell[BoxData["\<\"hi\"\>"], "Output",
  TaggingRules->{},
- CellLabel->"Out[11]=",
- CellID->16624872,ExpressionUUID->"f4ac9e04-0e0a-483b-9447-f083b1755d74"]
+ CellLabel->"Out[12]=",
+ CellID->69808800,ExpressionUUID->"169a95d9-ada8-41bc-a32c-0848d0a36f46"]
 }, Open  ]],
 
 Cell["Socket associated with the client on server side:", "Text",
@@ -11411,14 +11397,14 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"packet1", "[", "\"\<SourceSocket\>\"", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[12]:=",
+ CellLabel->"In[13]:=",
  CellID->33250962,ExpressionUUID->"c7a82034-9d8d-4f42-aa05-7d62361e4054"],
 
 Cell[BoxData[
- RowBox[{"CSocketObject", "[", "1896", "]"}]], "Output",
+ RowBox[{"CSocketObject", "[", "1872", "]"}]], "Output",
  TaggingRules->{},
- CellLabel->"Out[12]=",
- CellID->61695155,ExpressionUUID->"69f98b4e-01fe-40ea-b817-bb4b5078d775"]
+ CellLabel->"Out[13]=",
+ CellID->28345197,ExpressionUUID->"f4c66493-a594-4569-b3db-259dc7fc4cb4"]
 }, Open  ]],
 
 Cell["Write response for the client:", "Text",
@@ -11433,13 +11419,13 @@ Cell[BoxData[
    RowBox[{"packet1", "[", "\"\<SourceSocket\>\"", "]"}], ",", " ", 
    "\"\<hello\>\""}], "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[13]:=",
+ CellLabel->"In[14]:=",
  CellID->758037192,ExpressionUUID->"ef0e8369-38ad-42f0-bcae-87eb443eca56"],
 
-Cell[BoxData["1896"], "Output",
+Cell[BoxData["1872"], "Output",
  TaggingRules->{},
- CellLabel->"Out[13]=",
- CellID->244025209,ExpressionUUID->"3f87821a-15ab-4f9b-b070-2a73a6b3985a"]
+ CellLabel->"Out[14]=",
+ CellID->460064020,ExpressionUUID->"0c630df9-25f5-4eb6-b256-39b7f36d151f"]
 }, Open  ]],
 
 Cell["Check that message is ready on client side:", "Text",
@@ -11451,13 +11437,13 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"SocketReadyQ", "[", "client1", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[14]:=",
+ CellLabel->"In[15]:=",
  CellID->638345771,ExpressionUUID->"107d65bf-d7d7-413b-8257-ef0bc7e675ca"],
 
 Cell[BoxData["True"], "Output",
  TaggingRules->{},
- CellLabel->"Out[14]=",
- CellID->333157224,ExpressionUUID->"ccc5dde4-959b-482f-b677-b98d0fcf0427"]
+ CellLabel->"Out[15]=",
+ CellID->367336784,ExpressionUUID->"f3cec667-d025-4498-91bd-d700b581dc21"]
 }, Open  ]],
 
 Cell["Read the message:", "Text",
@@ -11470,7 +11456,7 @@ Cell[BoxData[
  RowBox[{"response1", " ", "=", " ", 
   RowBox[{"SocketReadMessage", "[", "client1", "]"}]}]], "Input",
  TaggingRules->{},
- CellLabel->"In[15]:=",
+ CellLabel->"In[16]:=",
  CellID->104794730,ExpressionUUID->"677b41d1-f5cd-4832-a83b-81afaed6d42a"],
 
 Cell[BoxData[
@@ -11519,8 +11505,8 @@ Cell[BoxData[
   SelectWithContents->True,
   Selectable->False]], "Output",
  TaggingRules->{},
- CellLabel->"Out[15]=",
- CellID->485369547,ExpressionUUID->"5f5f989a-4b45-4fd0-9ca7-96884f8f35da"]
+ CellLabel->"Out[16]=",
+ CellID->11545046,ExpressionUUID->"00acbd1e-f54b-4ede-b568-2dfe194dc336"]
 }, Open  ]],
 
 Cell["Convert to string:", "Text",
@@ -11532,13 +11518,13 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"ByteArrayToString", "[", "response1", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[16]:=",
+ CellLabel->"In[17]:=",
  CellID->19633756,ExpressionUUID->"b73cb75e-a18c-4469-a2f3-354dfb27bf7d"],
 
 Cell[BoxData["\<\"hello\"\>"], "Output",
  TaggingRules->{},
- CellLabel->"Out[16]=",
- CellID->51859525,ExpressionUUID->"ed62e659-3780-4a87-8283-f76546625687"]
+ CellLabel->"Out[17]=",
+ CellID->187186349,ExpressionUUID->"a5e3d7f7-7e8e-4a32-970a-5bb86d3871c8"]
 }, Open  ]],
 
 Cell["Close client:", "Text",
@@ -11550,13 +11536,13 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"Close", "[", "client1", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[17]:=",
+ CellLabel->"In[18]:=",
  CellID->319947517,ExpressionUUID->"d0d67b1d-eb03-4d1b-b717-a068422673f7"],
 
 Cell[BoxData["0"], "Output",
  TaggingRules->{},
- CellLabel->"Out[17]=",
- CellID->161979669,ExpressionUUID->"5b405d7f-b1b3-4cdb-8913-f6ba873b83bf"]
+ CellLabel->"Out[18]=",
+ CellID->48033097,ExpressionUUID->"5f61e4fd-c8d2-4a90-9c6a-a29790e481c6"]
 }, Open  ]],
 
 Cell["Delete listener:", "Text",
@@ -11568,13 +11554,13 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"DeleteObject", "[", "listener1", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[18]:=",
+ CellLabel->"In[19]:=",
  CellID->109910893,ExpressionUUID->"fd34bca2-34cb-4f47-b575-07d7719d3f18"],
 
 Cell[BoxData["0"], "Output",
  TaggingRules->{},
- CellLabel->"Out[18]=",
- CellID->168703789,ExpressionUUID->"733c5eb7-a402-438d-8ce4-f89fcce7eef2"]
+ CellLabel->"Out[19]=",
+ CellID->117540869,ExpressionUUID->"a2801a8f-9ca5-49e9-8baa-85eed947117e"]
 }, Open  ]],
 
 Cell["Close server:", "Text",
@@ -11586,13 +11572,13 @@ Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{"Close", "[", "server1", "]"}]], "Input",
  TaggingRules->{},
- CellLabel->"In[19]:=",
+ CellLabel->"In[20]:=",
  CellID->782621599,ExpressionUUID->"a1b5a81e-e6ce-4990-9f14-8b93132397ae"],
 
 Cell[BoxData["0"], "Output",
  TaggingRules->{},
- CellLabel->"Out[19]=",
- CellID->266358847,ExpressionUUID->"8bb999cf-5caf-4684-a30a-832abceef029"]
+ CellLabel->"Out[20]=",
+ CellID->122595232,ExpressionUUID->"66efc998-8817-455d-b317-5d1de693c5ad"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]],
@@ -11767,7 +11753,6 @@ MIT"}, "HyperlinkURL"]}, "RowDefault"], FontSize -> 12, Editable -> False,
             "Apache-2.0"}], "\" \"", 
            StyleBox[
             TemplateBox[{"\"Apache License 2.0\"", "\"\[ThinSpace]\"", 
-              
               TemplateBox[{
                "\"\[RightGuillemet]\"", 
                 "https://resources.wolframcloud.com/PacletRepository/licenses/\
@@ -13594,8 +13579,8 @@ Cell["Additional information about limitations, issues, etc.", "Text",
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{958, 973},
-WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+WindowSize->{958, 980},
+WindowMargins->{{Automatic, -7}, {Automatic, 0}},
 WindowTitle->"CSocketListener | Definition Notebook",
 DockedCells->{
   Cell[
