@@ -16,6 +16,7 @@
 #else
     #include <string.h>
     #include <stdio.h>
+    #include <stdlib.h>
     #include <sys/types.h>
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -40,7 +41,6 @@
 #endif
 
 #include <stdio.h>
-#include <windows.h>
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
@@ -88,12 +88,14 @@ static SOCKET currentSoketId = INVALID_SOCKET;
 static void socketListenerTask(mint taskId, void* vtarg); 
 
 int currentTime() {
-    SYSTEMTIME st, lt;
+    #ifdef _WIN32
+        SYSTEMTIME st, lt;
     
-    GetSystemTime(&st);
-    GetLocalTime(&lt);
+        GetSystemTime(&st);
+        GetLocalTime(&lt);
     
-    printf("%d.%d\n", st.wSecond, st.wMilliseconds);
+        printf("%d.%d\n", st.wSecond, st.wMilliseconds);
+    #endif
 
     return 0;
 }
