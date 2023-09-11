@@ -21,11 +21,10 @@ Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSockets.wl"}]]
 
 <<KirillBelov`HTTPHandler`
 <<KirillBelov`HTTPHandler`Extensions`
-<<KirillBelov`WebSocketHandler`
 
 <<JerryI`WSP`
 
-$PublicDirectory = FileNameJoin[{Directory[], "Simple"}]
+$PublicDirectory = {FileNameJoin[{Directory[], "Simple"}]}
 
 
 Print["Staring HTTP server..."];
@@ -38,7 +37,7 @@ http = HTTPHandler[];
 
 http["MessageHandler", "Index"] = AssocMatchQ[<|"Path" -> "/"|>] -> (HypertextProcess[#, "index.wsp", "Base" -> $PublicDirectory] &)
 http["MessageHandler", "WSP"] = GetFileRequestQ[{"wsp"}] -> (HypertextProcess[#, "Base" -> $PublicDirectory] &)
-http["MessageHandler", "WSP"] = GetFileRequestQ[{"png", "html"}] -> (ImportFile[#, "Base" -> $PublicDirectory] &)
+http["MessageHandler", "Files"] = GetFileRequestQ[{"png", "html", "js"}] -> (ImportFile[#, "Base" -> $PublicDirectory] &)
 
 (* ::End::*)
 SocketListen[CSocketOpen[8010], tcp@# &];
