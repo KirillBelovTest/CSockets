@@ -1,10 +1,3 @@
-<?wsp 
-    (* initiate seeds *)
-    $CurrentRequest["Seeds"] = <||>;
-
-    ""
-?>
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -18,4 +11,6 @@
     <script type="module" src="https://cdn.jsdelivr.net/gh/JerryI/wljs-graphics-d3@master/dist/kernel.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/gh/JerryI/wljs-plotly@latest/dist/kernel.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/gh/JerryI/wljs-inputs@latest/dist/kernel.js"></script>
+
+    <?wsp WLJSTransportScript[8020, "Standalone"] ?>
 </head>
