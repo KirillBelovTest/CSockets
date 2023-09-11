@@ -16,6 +16,7 @@
 #else
     #include <string.h>
     #include <stdio.h>
+    #include <stdlib.h>
     #include <sys/types.h>
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -40,11 +41,12 @@
 #endif
 
 #include <stdio.h>
-#include <windows.h>
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
+
+volatile int emergencyExit = 0;
 
 #pragma endregion
 
@@ -66,7 +68,10 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
         }
     #endif
 
+    
+
     printf("[WolframLibrary_initialize]\r\ninitialized\r\n\r\n"); 
+
     return LIBRARY_NO_ERROR; 
 }
 
@@ -74,8 +79,10 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #ifdef _WIN32
         WSACleanup(); 
     #endif 
-
+    emergencyExit = 1;
+    SLEEP(1000 * ms);
     printf("[WolframLibrary_uninitialize]\r\nuninitialized\r\n\r\n"); 
+
     return; 
 }
 
@@ -88,12 +95,14 @@ static SOCKET currentSoketId = INVALID_SOCKET;
 static void socketListenerTask(mint taskId, void* vtarg); 
 
 int currentTime() {
-    SYSTEMTIME st, lt;
+    #ifdef _WIN32
+        SYSTEMTIME st, lt;
     
-    GetSystemTime(&st);
-    GetLocalTime(&lt);
+        GetSystemTime(&st);
+        GetLocalTime(&lt);
     
-    printf("%d.%d\n", st.wSecond, st.wMilliseconds);
+        printf("%d.%d\n", st.wSecond, st.wMilliseconds);
+    #endif
 
     return 0;
 }
@@ -275,9 +284,10 @@ static void socketListenerTask(mint taskId, void* vtarg)
     MNumericArray data;
 	DataStore ds;
     
-	while(libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+	while(libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId) && emergencyExit == 0)
 	{
         SLEEP(ms);
+
         clientSocket = accept(server->listenSocket, NULL, NULL); 
         if (ISVALIDSOCKET(clientSocket)) {
             printf("[socketListenerTask]\r\nnew client: %d\r\n\r\n", (int)clientSocket);
@@ -323,6 +333,8 @@ static void socketListenerTask(mint taskId, void* vtarg)
     free(targ); 
     free(server->clients);
     free(buffer);
+
+    printf("[socketListenerTask]\r\ndone!\r\n\r\n");
 }
 
 #pragma endregion

@@ -6,13 +6,14 @@ PacletRepositories[{
   Github -> "https://github.com/KirillBelovTest/Internal",
   Github -> "https://github.com/KirillBelovTest/TCPServer",
   Github -> "https://github.com/KirillBelovTest/HTTPHandler",
-  Github -> "https://github.com/JerryI/WebSocketHandler",
-  Github -> "https://github.com/JerryI/wl-wsp"
+  Github -> "https://github.com/KirillBelovTest/WebSocketHandler",
+  Github -> "https://github.com/JerryI/wl-wsp",
+  Github -> "https://github.com/JerryI/wl-misc"
 }]
 
 
 SetDirectory[$InputFileName // DirectoryName]
-Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSocketListener.wl"}]]
+Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSockets.wl"}]]
 
 <<KirillBelov`Objects`
 <<KirillBelov`Internal`
@@ -40,10 +41,10 @@ http["MessageHandler", "WSP"] = GetFileRequestQ[{"wsp"}] -> (HypertextProcess[#,
 http["MessageHandler", "WSP"] = GetFileRequestQ[{"png", "html"}] -> (ImportFile[#, "Base" -> $PublicDirectory] &)
 
 (* ::End::*)
-httplistener =  Check[CSocketListen["127.0.0.1:8010", tcp@# &], Print["FUCK LibraryLink and Sockets! Using shitty ZMQ..."]; SocketListen["127.0.0.1:8010", tcp@# &]];
+SocketListen[CSocketOpen[8010], tcp@# &];
 
 SetOptions[WSPEngine, "Cache" -> False];
 
-StringTemplate["open http://``:``/"][httplistener[[1]]["Host"], httplistener[[1]]["Port"]] // Print;
+"open http://127.0.0.1:8010/" // Print;
 While[True, Pause[1]];
 
