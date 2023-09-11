@@ -50,12 +50,26 @@ CSocketOpen[host_String: "localhost", port_Integer] :=
 CSocketObject[socketOpen[host, ToString[port]]]; 
 
 
+CSocketOpen[address_String] /; 
+StringMatchQ[address, __ ~~ ":" ~~ NumberString] := 
+CSocketObject[Apply[socketOpen, StringSplit[address, ":"]]]; 
+
+
 CSocketConnect[host_String: "localhost", port_Integer] := 
 CSocketObject[socketConnect[host, ToString[port]]]; 
 
 
+CSocketConnect[address_String] /; 
+StringMatchQ[address, __ ~~ ":" ~~ NumberString] := 
+CSocketObject[Apply[socketConnect, StringSplit[address, ":"]]]; 
+
+
 CSocketObject /: BinaryWrite[CSocketObject[socketId_Integer], data_ByteArray] := 
 socketBinaryWrite[socketId, data, Length[data], $bufferSize]; 
+
+
+CSocketObject /: BinaryWrite[CSocketObject[socketId_Integer], data_List] := 
+socketBinaryWrite[socketId, ByteArray[data], Length[data], $bufferSize];
 
 
 CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String] := 
