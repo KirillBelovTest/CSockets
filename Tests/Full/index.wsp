@@ -4,11 +4,11 @@
         <h2>Playground</h2>
         <br/>
         <?wsp 
-                RangeView[{0,1,0.1, 0.5}, "Event"->"update"] // Plant
+                RangeView[{0,1,0.1, 0.5}, "Event"->"update"] // WLJS
         ?>   
         <br/>
         <?wsp 
-                ListLinePlotly[data // Hold] // Plant
+                Graphics[{Pink, Line[data // Offload]}, PlotRange->{{0,6}, {-1,1}}, Controls->True, Axes->True] // WLJS
         ?>
         <br/>
      

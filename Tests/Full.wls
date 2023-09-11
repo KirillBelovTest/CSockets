@@ -6,13 +6,14 @@ PacletRepositories[{
   Github -> "https://github.com/KirillBelovTest/Internal",
   Github -> "https://github.com/KirillBelovTest/TCPServer",
   Github -> "https://github.com/KirillBelovTest/HTTPHandler",
-  Github -> "https://github.com/JerryI/WebSocketHandler",
-  Github -> "https://github.com/JerryI/wl-wsp"
+  Github -> "https://github.com/KirillBelovTest/WebSocketHandler",
+  Github -> "https://github.com/JerryI/wl-wsp",
+  Github -> "https://github.com/JerryI/wl-misc"
 }]
 
 
 SetDirectory[$InputFileName // DirectoryName]
-Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSocketListener.wl"}]]
+Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSockets.wl"}]]
 
 <<KirillBelov`Objects`
 <<KirillBelov`Internal`
@@ -23,9 +24,9 @@ Get[FileNameJoin[{ParentDirectory[Directory[]], "Kernel", "CSocketListener.wl"}]
 <<KirillBelov`WebSocketHandler`
 
 <<JerryI`WSP`
-
-Get["https://raw.githubusercontent.com/JerryI/wl-misc/main/Kernel/Events.wl"]
-Get["https://raw.githubusercontent.com/JerryI/wl-wsp/main/Kernel/Hydrator.wl"]
+<<JerryI`WSP`WLJS`
+<<JerryI`Misc`Events`
+<<JerryI`Misc`WLJS`Transport`
 
 $PublicDirectory = FileNameJoin[{Directory[], "Full"}]
 
@@ -42,7 +43,7 @@ http["MessageHandler", "Index"] = AssocMatchQ[<|"Path" -> "/"|>] -> (HypertextPr
 http["MessageHandler", "WSP"] = GetFileRequestQ[{"wsp"}] -> (HypertextProcess[#, "Base" -> $PublicDirectory] &)
 
 (* ::End::*)
-httplistener =  Check[CSocketListen["127.0.0.1:8010", tcp@# &], Print["FUCK LibraryLink and Sockets! Using shitty ZMQ..."]; SocketListen["127.0.0.1:8010", tcp@# &]];
+SocketListen[CSocketOpen[8010], tcp@# &]
 
 Print["Staring WS/HTTP server..."];
 
@@ -52,31 +53,25 @@ wcp["MessageHandler", "WebSocket"]  = WebSocketPacketQ -> ws
 
 ws = WebSocketHandler[]
 
-ws["MessageHandler", "Evaluate"]  = Function[True] -> evaluate
+ws["MessageHandler", "Evaluate"]  = Function[True] -> WLJSTransportHandler
 
-evaluate[cl: _SocketObject | _CSocket, data_ByteArray] := Block[{Global`client = cl},
-    ToExpression[data//ByteArrayToString];
+
+(* symbols tracking *)
+WLJSTransportHandler["AddTracking"] = Function[{symbol, name, cli, callback},
+    Print["Add tracking... for "<>name];
+    Experimental`ValueFunction[Unevaluated[symbol]] = Function[{y,x}, callback[cli, x]];
+, HoldFirst]
+
+WLJSTransportHandler["GetSymbol"] = Function[{expr, client, callback},
+    Print["evaluating the desired symbol on the Kernel"];
+    callback[expr // ReleaseHold];
 ]
 
-Check[CSocketListen["127.0.0.1:8020", wcp@#&], Print["FUCK LibraryLink and Sockets! Using shitty ZMQ..."]; SocketListen["127.0.0.1:8020", wcp@#&]];
+SocketListen[CSocketOpen[8020], wcp@#&]
 
 SetOptions[WSPEngine, "Cache" -> False];
 
-NotebookGetSymbol[uid_, params_][expr_] := WebSocketSend[Global`client, ExportByteArray[Global`PromiseResolve[uid, expr // ReleaseHold], "ExpressionJSON", "Compact"->0]];
 
-NotebookAddTracking[symbol_] := With[{cli = Global`client, name = SymbolName[Unevaluated[symbol]]},
-    Print["Add tracking... for "<>name];
-    Experimental`ValueFunction[Unevaluated[symbol]] = Function[{y,x}, 
-      If[FailureQ[
-        WebSocketSend[cli, ExportByteArray[Global`FrontUpdateSymbol[name, x], "ExpressionJSON", "Compact"->0]]
-      ],
-        Print["tracking of "<>ToString[Unevaluated[symbol]]<>" was removed for "<>cli[[1]]];
-        Unset[Experimental`ValueFunction[Unevaluated[symbol]]];
-      ]
-    ]
-]
-
-SetAttributes[NotebookAddTracking, HoldFirst];
 
 
 
@@ -95,6 +90,6 @@ EventHandler["update", Function[d,
 ]]
 
 
-StringTemplate["open http://``:``/"][httplistener[[1]]["Host"], httplistener[[1]]["Port"]] // Print;
+StringTemplate["open http://``:``/"]["127.0.0.1", "8010"] // Print;
 While[True, Pause[1]];
 

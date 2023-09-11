@@ -46,6 +46,8 @@
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
 
+volatile int emergencyExit = 0;
+
 #pragma endregion
 
 #pragma region initialization 
@@ -66,7 +68,10 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
         }
     #endif
 
+    
+
     printf("[WolframLibrary_initialize]\r\ninitialized\r\n\r\n"); 
+
     return LIBRARY_NO_ERROR; 
 }
 
@@ -74,8 +79,10 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #ifdef _WIN32
         WSACleanup(); 
     #endif 
-
+    emergencyExit = 1;
+    SLEEP(1000 * ms);
     printf("[WolframLibrary_uninitialize]\r\nuninitialized\r\n\r\n"); 
+
     return; 
 }
 
@@ -277,9 +284,10 @@ static void socketListenerTask(mint taskId, void* vtarg)
     MNumericArray data;
 	DataStore ds;
     
-	while(libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+	while(libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId) && emergencyExit == 0)
 	{
         SLEEP(ms);
+
         clientSocket = accept(server->listenSocket, NULL, NULL); 
         if (ISVALIDSOCKET(clientSocket)) {
             printf("[socketListenerTask]\r\nnew client: %d\r\n\r\n", (int)clientSocket);
@@ -325,6 +333,8 @@ static void socketListenerTask(mint taskId, void* vtarg)
     free(targ); 
     free(server->clients);
     free(buffer);
+
+    printf("[socketListenerTask]\r\ndone!\r\n\r\n");
 }
 
 #pragma endregion
