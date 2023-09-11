@@ -107,45 +107,39 @@ int currentTime() {
     return 0;
 }
 
-int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize){
-    int iResult;
-    int writeLength;
-    char *buffer;
-    struct timeval timeout; 
-    timeout.tv_sec = 0; 
-    timeout.tv_usec = 100000; 
-    struct fd_set sendReady;
-    FD_ZERO(&sendReady);
-    FD_SET(socketId, &sendReady);
-
-    currentTime();
-
-    for (int i = 0; i < dataLength; i += bufferSize) {
-        buffer = (char*)&data[i]; 
-        writeLength = dataLength - i > bufferSize ? bufferSize : dataLength - i; 
-        
-        if (socketId != currentSoketId) {
-            iResult = send(socketId, buffer, writeLength, 0);
-            if (iResult == SOCKET_ERROR) {
-                if (GETSOCKETERRNO() == 10035) {
-                    SLEEP(ms);
-                    printf("[socketWrite]\r\nerror 10035\r\n\r\n");
-                    i -= bufferSize;
-                } else {
-                    printf("[socketWrite]\r\nerror %d\r\n\r\n", GETSOCKETERRNO());
-                    return SOCKET_ERROR;
-                }
-            }
-        } else {
-            SLEEP(1 * ms);
-            printf("[socketWrite]\r\nwaiting to ready %d\r\n\r\n", (int)socketId);
-            i -= bufferSize;
-        }
-    }
-
-    currentTime();
-
-    return dataLength;
+int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize){ 
+    int iResult; 
+    int writeLength; 
+    char *buffer; 
+    int errno;   
+    SOCKET currentSoketIdBackup; 
+    int timeoutMult = 2; 
+ 
+    for (int i = 0; i < dataLength; i += bufferSize) { 
+        buffer = (char*)&data[i];  
+        writeLength = dataLength - i > bufferSize ? bufferSize : dataLength - i;  
+         
+        iResult = send(socketId, buffer, writeLength, 0); 
+        if (iResult == SOCKET_ERROR) { 
+            errno = GETSOCKETERRNO();  
+            if (errno == 10035 || errno == 35) { 
+                SLEEP(timeoutMult * ms); 
+                printf("[socketWrite]\r\nerror 10035\r\n\r\n"); 
+                i -= bufferSize; 
+                timeoutMult *= 2; 
+                if (timeoutMult > 1000) { 
+                    return SOCKET_ERROR; 
+                } 
+            } else { 
+                printf("[socketWrite]\r\nerror %d\r\n\r\n", GETSOCKETERRNO()); 
+                return SOCKET_ERROR; 
+            } 
+        } else { 
+            timeoutMult = 2; 
+        } 
+    } 
+ 
+    return dataLength; 
 }
 
 MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint dataLength){
