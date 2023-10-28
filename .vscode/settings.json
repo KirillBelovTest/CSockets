@@ -4,5 +4,6 @@
         "*.wls": "wolfram",
         "*.wl": "wolfram",
         "random": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }
