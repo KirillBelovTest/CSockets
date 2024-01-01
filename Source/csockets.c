@@ -262,11 +262,11 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     iResult = fcntl(listenSocket, O_NONBLOCK, &iMode); 
     #endif
 
-    printf("[socketOpen]\n\tid: %d\n\thost: %s\n\tport: %s\n\n", listenSocket, host, port);
+    //printf("[socketOpen]\n\tid: %d\n\thost: %s\n\tport: %s\n\n", listenSocket, host, port);
 
-    if (iResult != NO_ERROR) {
-        printf("[socketOpen]\n\terror!\n\n");
-    }
+    //if (iResult != NO_ERROR) {
+    //    printf("[socketOpen]\n\terror!\n\n");
+    //}
 
     freeaddrinfo(address);
 
@@ -280,7 +280,7 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET socketId = MArgument_getInteger(Args[0]);
-    printf("[socketClose]\n\tid: %d\n\n", socketId);
+    //printf("[socketClose]\n\tid: %d\n\n", socketId);
     MArgument_setInteger(Res, CLOSESOCKET(socketId));
     return LIBRARY_NO_ERROR; 
 }
@@ -425,8 +425,9 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     iResult = fcntl(connectSocket, O_NONBLOCK, &iMode); 
     #endif
 
-    if (iResult != NO_ERROR) {
-    }
+    //if (iResult != NO_ERROR) {
+    //print
+    //}
 
     MArgument_setInteger(Res, connectSocket); 
     return LIBRARY_NO_ERROR;
