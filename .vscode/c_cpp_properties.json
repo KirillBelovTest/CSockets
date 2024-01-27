@@ -3,8 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**", 
-                "C:/Program Files/Wolfram Research/Mathematica/13.3/SystemFiles/IncludeFiles/C"
+                "${workspaceFolder}/**",
+                "C:/Program Files/Wolfram Research/Mathematica/14.0/SystemFiles/IncludeFiles/C"
             ],
             "defines": [
                 "_DEBUG",
