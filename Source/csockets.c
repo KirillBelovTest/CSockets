@@ -25,6 +25,7 @@
     #include <fcntl.h>
     #include <wchar.h>
     #include <netinet/tcp.h>
+    #include <sys/select.h>
     #define INVALID_SOCKET -1
     #define NO_ERROR 0
     #define SOCKET_ERROR -1
@@ -37,7 +38,7 @@
     #define CLOSESOCKET(s) close(s)
     #define GETSOCKETERRNO() (errno)
     #define BYTE uint8_t
-    #define BOOL uint8_t
+    #define BOOL int
 #endif
 
 #include <stdio.h>
@@ -46,7 +47,6 @@
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
-#include <sys/select.h>
 
 volatile int emergencyExit = 0;
 
