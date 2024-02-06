@@ -42,8 +42,20 @@ Begin["`Private`"];
 (*Implementation*)
 
 
+CSocketObject[socketId_Integer]["SocketId"] := 
+socketId; 
+
+
 CSocketObject[socketId_Integer]["DestinationPort"] := 
 socketPort[socketId]; 
+
+
+CSocketObject[socketId_Integer]["DestinationHostname"] := 
+socketHostname[socketId]; 
+
+
+CSocketObject[socketId_Integer]["ConnectedClients"] := 
+Map[CSocketObject] @ socketClients[socketId]; 
 
 
 CSocketOpen[host_String: "localhost", port_Integer] := 
@@ -102,8 +114,48 @@ Module[{task},
 ]; 
 
 
+$cSocketObjectIcon = 
+Import[FileNameJoin[{ParentDirectory[DirectoryName[$InputFileName]], "Images", "CSocketObjectIcon.png"}]]; 
+
+
+CSocketObject /: MakeBoxes[socket: CSocketObject[socketId_Integer], form: (StandardForm | TraditionalForm)] := 
+Module[{above, below}, 
+	above = {
+		{BoxForm`SummaryItem[{"SocketId: ", socketId}], SpanFromLeft}, 
+		{BoxForm`SummaryItem[{"DestinationPort: ", socket["DestinationPort"]}], SpanFromLeft}, 
+		{BoxForm`SummaryItem[{"DestinationHostname: ", socket["DestinationHostname"]}], SpanFromLeft}
+	}; 
+	below = {}; 
+	
+	BoxForm`ArrangeSummaryBox[CSocketObject, socket, $cSocketObjectIcon, above, below, form, "Interpretable" -> Automatic]
+]; 
+
+
 CSocketListener /: DeleteObject[CSocketListener[assoc_Association]] := 
 socketListenerTaskRemove[assoc["TaskId"]]; 
+
+
+CSocketListener[assoc_Association][key_String] := 
+assoc[key]; 
+
+
+$cSocketListenreIcon = 
+Import[FileNameJoin[{ParentDirectory[DirectoryName[$InputFileName]], "Images", "CSocketListenerIcon.png"}]]; 
+
+
+CSocketListener /: MakeBoxes[listener: CSocketListener[assoc_Association], form: (StandardForm | TraditionalForm)] := 
+Module[{above, below}, 
+	above = {
+		{BoxForm`SummaryItem[{"TaskId: ", assoc["TaskId"]}], SpanFromLeft}, 
+		{BoxForm`SummaryItem[{"Host: ", assoc["Host"]}], SpanFromLeft}, 
+		{BoxForm`SummaryItem[{"Post: ", assoc["Port"]}], SpanFromLeft}
+	}; 
+	below = {
+		{BoxForm`SummaryItem[{"Handler: ", assoc["Handler"]}], SpanFromLeft}
+	}; 
+	
+	BoxForm`ArrangeSummaryBox[CSocketListener, listener, $cSocketListenreIcon, above, below, form, "Interpretable" -> Automatic]
+]; 
 
 
 (* ::Section:: *)
@@ -130,11 +182,14 @@ If[!FileExistsQ[$libFile],
 
 
 toPacket[task_, event_, {serverId_, clientId_, data_}] := 
-<|
-	"Socket" -> CSocketObject[serverId], 
-	"SourceSocket" -> CSocketObject[clientId], 
-	"DataByteArray" -> ByteArray[data]
-|>; 
+With[{byteArray = ByteArray[data]}, 
+	<|
+		"Socket" :> CSocketObject[serverId], 
+		"SourceSocket" :> CSocketObject[clientId], 
+		"DataByteArray" :> byteArray, 
+		"Data" :> ByteArrayToString[byteArray]
+	|>
+]; 
 
 
 socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String}, Integer]; 
@@ -152,7 +207,7 @@ socketListenerTaskRemove = LibraryFunctionLoad[$libFile, "socketListenerTaskRemo
 socketConnect = LibraryFunctionLoad[$libFile, "socketConnect", {String, String}, Integer]; 
 
 
-socketBinaryWrite = LibraryFunctionLoad[$libFile, "socketBinaryWrite", {Integer, "ByteArray", Integer, Integer}, Integer]; 
+socketBinaryWrite = LibraryFunctionLoad[$libFile, "socketBinaryWrite", {Integer, {LibraryDataType[ByteArray], "Shared"}, Integer, Integer}, Integer]; 
 
 
 socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, String, Integer, Integer}, Integer]; 
@@ -165,6 +220,12 @@ socketReadMessage = LibraryFunctionLoad[$libFile, "socketReadMessage", {Integer,
 
 
 socketPort = LibraryFunctionLoad[$libFile, "socketPort", {Integer}, Integer]; 
+
+
+socketHostname = LibraryFunctionLoad[$libFile, "socketHostname", {Integer}, String]; 
+
+
+socketClients = LibraryFunctionLoad[$libFile, "socketClients", {Integer}, {Integer, 1}]; 
 
 
 (* ::Section:: *)

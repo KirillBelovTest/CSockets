@@ -7,26 +7,23 @@ PacletDirectoryLoad[Directory[]]
 Get["KirillBelov`CSockets`"]; 
 
 
-server = CSocketOpen[8000]
+server = CSocketOpen[8000]; 
 
 
-timelist = {};
+(*handler[assoc_Association] := Module[{length, body, path, file}, 
+	path = StringTrim[StringSplit[assoc["Data"], "\r\n"][[1]], {"GET ", " HTTP/1.1"}]; 
+	file = FileNameJoin[Flatten[{Directory[], FileNameSplit[path]}]]; 
+	body = Import[file, "String"]; 
+	length = StringLength[body]; 
+	WriteString[assoc["SourceSocket"], StringTemplate["HTTP/1.1 200 OK\r\nContent-Length: `1`\r\n\r\n`2`"][length, body]]; 
+];*)
 
 
-handler[___] := AppendTo[timelist, AbsoluteTime[]]
+handler[assoc_Association] := 
+{}
 
 
-listener = SocketListen[server, handler[#]&]
+listener = SocketListen[server, handler[#]&]; 
 
 
-client = CSocketConnect[8000]
-
-
-timeWrite = AbsoluteTiming[BinaryWrite[client, ByteArray[RandomInteger[{100, 200},  1024 * 1024]]]]; 
-
-
-Pause[1]
-
-
-Print[Mean[timeWrite[[All, 1]]]]
-Print[timelist[[-1]] - timelist[[1]]]
+While[True, Pause[0.1]]; 
