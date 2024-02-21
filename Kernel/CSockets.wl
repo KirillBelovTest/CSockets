@@ -8,7 +8,10 @@
 (*Begin package*)
 
 
-BeginPackage["KirillBelov`CSockets`"]; 
+BeginPackage["KirillBelov`CSockets`", {
+	"CCompilerDriver`", 
+	"LibraryLink`"
+}]; 
 
 
 (* ::Section:: *)
@@ -55,7 +58,7 @@ socketHostname[socketId];
 
 
 CSocketObject[socketId_Integer]["ConnectedClients"] := 
-Map[CSocketObject] @ socketClients[socketId]; 
+(*Map[CSocketObject] @ *)socketClients[socketId]; 
 
 
 CSocketOpen[host_String: "localhost", port_Integer] := 
@@ -165,15 +168,22 @@ Module[{above, below},
 $directory = DirectoryName[$InputFileName, 2]; 
 
 
+$libraryLinkVersion := $libraryLinkVersion = 
+LibraryVersionInformation[FindLibrary["demo"]]["WolframLibraryVersion"]; 
+
+
+Once[$libraryLinkVersion]; 
+
+
 $libFile = FileNameJoin[{
 	$directory, 
 	"LibraryResources", 
-	$SystemID, 
+	$SystemID <> "-v" <> ToString[$libraryLinkVersion], 
 	"csockets." <> Internal`DynamicLibraryExtension[]
 }]; 
 
 
-$bufferSize = 8192; 
+$bufferSize = 8*8192; 
 
 
 If[!FileExistsQ[$libFile], 

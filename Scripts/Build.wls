@@ -2,6 +2,11 @@
 (* ::Package:: *)
 
 Get["CCompilerDriver`"]; 
+Get["LibraryLink`"]; 
+
+
+$libraryLinkVersion = 
+LibraryVersionInformation[FindLibrary["demo"]]["WolframLibraryVersion"]; 
 
 
 Block[{$directory, $libSrc, $libDir, $linkerOptions}, 
@@ -16,11 +21,10 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions},
 		"csockets.c"
 	}]]; 
 
-
 	$libDir = FileNameJoin[{
 		$directory, 
 		"LibraryResources", 
-		$SystemID
+		$SystemID <> "-v" <> ToString[$libraryLinkVersion]
 	}]; 
 
 
