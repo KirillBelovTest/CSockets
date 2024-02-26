@@ -327,8 +327,8 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     libData->ioLibraryFunctions->DataStore_addInteger(ds, server->clients[i]);
                     libData->ioLibraryFunctions->DataStore_addMNumericArray(ds, data);
                     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Received", ds);
-                    libData->numericarrayLibraryFunctions->MNumericArray_disown(data);
-                    libData->ioLibraryFunctions->deleteDataStore(ds);
+                    //libData->numericarrayLibraryFunctions->MNumericArray_disown(data);
+                    //libData->ioLibraryFunctions->deleteDataStore(ds);
                 } else if (iResult == 0) {
                     server->clients[i] = INVALID_SOCKET;
                 }
