@@ -252,6 +252,8 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     }
 
     freeaddrinfo(address);
+    libData->UTF8String_disown(host); 
+    libData->UTF8String_disown(port); 
 
     MArgument_setInteger(Res, listenSocket);
     return LIBRARY_NO_ERROR; 
@@ -325,6 +327,8 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     libData->ioLibraryFunctions->DataStore_addInteger(ds, server->clients[i]);
                     libData->ioLibraryFunctions->DataStore_addMNumericArray(ds, data);
                     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Received", ds);
+                    libData->numericarrayLibraryFunctions->MNumericArray_disown(data);
+                    libData->ioLibraryFunctions->deleteDataStore(ds);
                 } else if (iResult == 0) {
                     server->clients[i] = INVALID_SOCKET;
                 }
@@ -435,6 +439,8 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     #endif
 
     MArgument_setInteger(Res, connectSocket); 
+    libData->UTF8String_disown(host); 
+    libData->UTF8String_disown(port);
     return LIBRARY_NO_ERROR;
 }
 
@@ -520,6 +526,7 @@ DLLEXPORT int socketBinaryWrite(WolframLibraryData libData, mint Argc, MArgument
     }
     
     MArgument_setInteger(Res, clientId);
+    libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
     return LIBRARY_NO_ERROR;
 }
 
@@ -538,6 +545,7 @@ DLLEXPORT int socketWriteString(WolframLibraryData libData, mint Argc, MArgument
     }
   
     MArgument_setInteger(Res, socketId);
+    libData->UTF8String_disown(data);
     return LIBRARY_NO_ERROR;
 }
 
@@ -581,6 +589,10 @@ DLLEXPORT int socketReadMessage(WolframLibraryData libData, mint Argc, MArgument
         return LIBRARY_FUNCTION_ERROR;
     }
 
+    #ifdef _DEBUG
+    printf("[socketReadMessage]\n\tsocket id = %d received = %d bytes\n\n", socketId, iResult);
+    #endif
+
     return LIBRARY_NO_ERROR; 
 }
 
@@ -597,6 +609,10 @@ DLLEXPORT int socketPort(WolframLibraryData libData, mint Argc, MArgument *Args,
     getsockname(socketId, (struct sockaddr *)&sin, &addrlen);
     port = ntohs(sin.sin_port); 
 
+    #ifdef _DEBUG
+    printf("[socketHostname]\n\tsocket id = %d hostname = %d\n\n", socketId, port);
+    #endif
+
     MArgument_setInteger(Res, port);
     return LIBRARY_NO_ERROR; 
 }
@@ -607,13 +623,19 @@ DLLEXPORT int socketPort(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 DLLEXPORT int socketHostname(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
     SOCKET socketId = MArgument_getInteger(Args[0]); 
-    struct  sockaddr_in sin;
-    char str[INET_ADDRSTRLEN]; 
+    struct sockaddr_in sin;
+    //char str[INET_ADDRSTRLEN];
+    char *str;
+    str = (void*)malloc(INET_ADDRSTRLEN * sizeof(char)); 
     int addrlen = sizeof(sin);
 
     getsockname(socketId, (struct sockaddr *)&sin, &addrlen);
     struct in_addr ip = sin.sin_addr;
     inet_ntop(AF_INET, &ip, str, INET_ADDRSTRLEN);
+
+    #ifdef _DEBUG
+    printf("[socketHostname]\n\tsocket id = %d hostname = %s\n\n", socketId, str);
+    #endif
 
     MArgument_setUTF8String(Res, str);
     return LIBRARY_NO_ERROR;  
@@ -639,9 +661,14 @@ DLLEXPORT int socketClients(WolframLibraryData libData, mint Argc, MArgument *Ar
     libData->MTensor_new(MType_Integer, rank, dims, &data);
     mint *out; 
     out = libData->MTensor_getIntegerData(data);
-    for (int i = 0; i < 1; i++){
+    for (int i = 0; i < servers[serverId]->clientsLength; i++){
         out[i] = servers[serverId]->clients[i]; 
     }
+
+    #ifdef _DEBUG
+    printf("[socketHostname]\n\tsocket id = %d number of connected clients = %d\n\n", socketId, servers[serverId]->clientsLength);
+    #endif
+
     MArgument_setMTensor(Res, data); 
     return LIBRARY_NO_ERROR; 
 }
