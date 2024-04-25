@@ -58,7 +58,7 @@ socketHostname[socketId];
 
 
 CSocketObject[socketId_Integer]["ConnectedClients"] := 
-(*Map[CSocketObject] @ *)socketClients[socketId]; 
+Map[CSocketObject] @ socketClients[socketId]; 
 
 
 CSocketOpen[host_String: "localhost", port_Integer] := 
@@ -187,17 +187,34 @@ $bufferSize = 8*8192;
 
 
 If[!FileExistsQ[$libFile], 
-	Get[FileNameJoin[{$directory, "Scripts", "BuildLibrary.wls"}]]
+	Get[FileNameJoin[{$directory, "Scripts", "Build.wls"}]]
 ]; 
 
 
-toPacket[task_, event_, {serverId_, clientId_, data_}] := 
+toPacket[task_, event: "Accepted" | "Closed", {serverId_, clientId_, data_Integer}] := 
+<|
+	"Event" -> event, 
+	"TimeStamp" -> Now, 
+	"Socket" :> CSocketObject[serverId], 
+	"SourceSocket" :> CSocketObject[clientId], 
+	"DataByteArray" :> ByteArray[{}], 
+	"Data" :> "", 
+	"DataBytes" :> {}, 
+	"MultipartComplete" -> True
+|>; 
+
+
+toPacket[task_, event: "Received", {serverId_, clientId_, data_}] := 
 With[{byteArray = ByteArray[data]}, 
 	<|
+		"Event" -> event, 
+		"TimeStamp" -> Now, 
 		"Socket" :> CSocketObject[serverId], 
 		"SourceSocket" :> CSocketObject[clientId], 
 		"DataByteArray" :> byteArray, 
-		"Data" :> ByteArrayToString[byteArray]
+		"Data" :> ByteArrayToString[byteArray], 
+		"DataBytes" :> Normal[byteArray], 
+		"MultipartComplete" -> True
 	|>
 ]; 
 
