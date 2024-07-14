@@ -23,11 +23,13 @@ CSocketObject::usage =
 
 
 CSocketOpen::usage = 
-"CSocketOpen[port] returns new server socket."; 
+"CSocketOpen[port] returns new server socket opened on localhost.
+CSocketOpen[host, port] returns new server socket opened on specific host."; 
 
 
 CSocketConnect::usage = 
-"CSocketConnect[host, port] connect to socket."; 
+"CSocketConnect[port] connect to socket on localhost.
+CSocketConnect[host, port] connect to socket."; 
 
 
 CSocketListener::usage = 
@@ -183,7 +185,7 @@ $libFile = FileNameJoin[{
 }]; 
 
 
-$bufferSize = 8*8192; 
+$bufferSize = 8 * 8192; 
 
 
 If[!FileExistsQ[$libFile], 
