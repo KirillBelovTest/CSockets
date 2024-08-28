@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/Program Files/Wolfram Research/Mathematica/14.0/SystemFiles/IncludeFiles/C"
+                "C:/Program Files/Wolfram Research/Wolfram/14.1/SystemFiles/IncludeFiles/C"
             ],
             "defines": [
                 "_DEBUG",

@@ -338,6 +338,8 @@ static void socketListenerTask(mint taskId, void* vtarg)
     mint dims[1];
     MNumericArray data;
 	DataStore ds;
+    BYTE *array; 
+    SOCKET client; 
 
     time_t readTime = time(NULL);
     BOOL sleepMode = True;
@@ -367,11 +369,12 @@ static void socketListenerTask(mint taskId, void* vtarg)
         sleepMode = True;
         len = server->clientsLength; 
         for (int i = 0; i < len; i++) {
-            if (server->clients[i] != INVALID_SOCKET) {
-                iResult = recv(server->clients[i], buffer, server->bufferSize, 0);
+            client = server->clients[i];
+            if (client != INVALID_SOCKET) {
+                iResult = recv(client, buffer, server->bufferSize, 0);
                 if (iResult > 0) {
                     #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(server->clients[i]));
+                    printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
                     #endif
                     sleepMode = False;
                     dims[0] = iResult;
@@ -379,16 +382,16 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     memcpy(libData->numericarrayLibraryFunctions->MNumericArray_getData(data), buffer, iResult);
                     ds = libData->ioLibraryFunctions->createDataStore();
                     libData->ioLibraryFunctions->DataStore_addInteger(ds, server->listenSocket);
-                    libData->ioLibraryFunctions->DataStore_addInteger(ds, server->clients[i]);
+                    libData->ioLibraryFunctions->DataStore_addInteger(ds, client);
                     libData->ioLibraryFunctions->DataStore_addMNumericArray(ds, data);
                     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Received", ds);
                 } else if (iResult == 0) {
                     #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(server->clients[i]));
+                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
                     #endif
                     ds = libData->ioLibraryFunctions->createDataStore();
                     libData->ioLibraryFunctions->DataStore_addInteger(ds, server->listenSocket);
-                    libData->ioLibraryFunctions->DataStore_addInteger(ds, server->clients[i]);
+                    libData->ioLibraryFunctions->DataStore_addInteger(ds, client);
                     libData->ioLibraryFunctions->DataStore_addInteger(ds, 0);
                     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Closed", ds);
                     server->clients[i] = INVALID_SOCKET;
