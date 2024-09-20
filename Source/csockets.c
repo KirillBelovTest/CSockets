@@ -182,8 +182,9 @@ void removeInvalidClients(Server server){
 MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint dataLength){
     MNumericArray nArray;
     libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &dataLength, &nArray);
+
     BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(nArray);
-    array = data;
+    memcpy(array, data, dataLength); 
     return nArray;
 }
 

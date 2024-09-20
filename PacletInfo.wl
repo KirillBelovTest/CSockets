@@ -7,7 +7,7 @@ PacletObject[
     "Creator" -> "Kirill Belov",
     "License" -> "MIT",
     "PublisherID" -> "KirillBelov",
-    "Version" -> "1.0.12",
+    "Version" -> "1.0.13",
     "WolframVersion" -> "13.3+",
     "PrimaryContext" -> "KirillBelov`CSockets`",
     "Extensions" -> {
@@ -19,7 +19,8 @@ PacletObject[
           "KirillBelov`CSockets`CSocketObject",
           "KirillBelov`CSockets`CSocketListener",
           "KirillBelov`CSockets`CSocketOpen",
-          "KirillBelov`CSockets`CSocketConnect"
+          "KirillBelov`CSockets`CSocketConnect", 
+          "KirillBelov`CSockets`CSocketHandler"
         }
       },
       {"Documentation", "Language" -> "English"},
