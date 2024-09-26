@@ -51,58 +51,58 @@ Begin["`Private`"];
 (*Implementation*)
 
 
+(* ::Section:: *)
+(*Implementation*)
+
+
 Options[CSocketHandler] = {
 	"Logger" :> Function[#], 
 	"Buffer" :> CreateDataStructure["HashTable"], 
 	"Serializer" :> Function[#], 
 	"Deserializer" :> Function[#], 
-	"Accumulator" :> CreateDataStructure["HashTable"], 
+	"Accumulator" :> <||>, 
 	"DefaultAccumulator" :> Function[Length[#DataByteArray]], 
-	"Handler" :> CreateDataStructure["HashTable"], 
+	"Handler" :> <||>, 
 	"DefaultHandler" :> Function[Null], 
 	"AcceptHandler" :> Function[Null], 
 	"CloseHandler" :> Function[Null]
 }; 
 
 
-CSocketHandler[OptionsPattern[]] := 
-With[{store = CreateDataStructure["HashTable"]}, 
-	Map[store["Insert", # -> assocToStruct[OptionValue[#]]]&] @ Keys[Options[CSocketHandler]]; 
-	System`Private`SetValid[CSocketHandler[store]]
+With[{store = Language`NewExpressionStore["$CSocketHandlers"]}, 
+
+	CSocketHandler[OptionsPattern[]] := 
+	With[{handler = CSocketHandler[Null]}, 
+		Map[store["put"[handler, #, OptionValue[#]]]&] @ Keys[Options[CSocketHandler]]; 
+
+		handler
+	]; 
+
+	(handler_CSocketHandler)[key_] := store["get"[handler, key]]; 
+
+	CSocketHandler /: Set[(handler_CSocketHandler)[key_], value_] := (store["put"[handler, key, value]]; value); 
+
+	CSocketHandler /: Set[(handler_CSocketHandler)[prop_, key_], value_] := (store["put"[handler, prop, Append[handler[prop], key -> value]]]; value); 
+
+	Unprotect[Set]; 
+
+	Set[(handler_?(Head[#] === CSocketHandler&))[keys__], value_] := With[{$handler = handler}, $handler[keys] = value]; 
+
+	Protect[Set]; 
+
+	Format[handler_CSocketHandler, InputForm] := 
+	SequenceForm[CSocketHandler] @ Map[Function[# -> handler[#]]] @ Keys @ Options[CSocketHandler]; 
+
+	CSocketHandler /: MakeBoxes[handler: CSocketHandler[Null], form: (StandardForm | TraditionalForm)] := 
+	Module[{above, below}, 
+		{above, below} = TakeDrop[Map[# -> handler[#]&] @ Keys @ Options[CSocketHandler], 2]; 
+		
+		BoxForm`ArrangeSummaryBox[CSocketHandler, handler, Null, above, below, form, "Interpretable" -> Automatic]
+	]; 
 ]; 
 
 
-assocToStruct[arg_] := arg; 
-
-
-assocToStruct[assoc_Association] := 
-CreateDataStructure["HashTable", assoc]; 
-
-
-CSocketHandler[store_][key_String] := 
-store["Lookup", key]; 
-
-
-CSocketHandler /: 
-Set[CSocketHandler[store_][key_String], value_] := 
-(store["Insert", key -> value]; value); 
-
-
-Unprotect[Set]; 
-
-
-Set[(handler_?(System`Private`ValidQ))[prop_String], value_] := 
-With[{$handler = handler}, $handler[prop] = value]; 
-
-
-Set[(handler_?(System`Private`ValidQ))[prop_String, key_], value_] := 
-(handler[prop]["Insert", key -> value]; value); 
-
-
-Protect[Set]; 
-
-
-(handler_CSocketHandler?System`Private`ValidQ)[packet_Association] := 
+(handler_CSocketHandler)[packet_Association] := 
 Module[{logger, extendedPacket, result, extraPacket, extraPacketDataLength}, 
 	Which[
 		packet["Event"] === "Received", 
@@ -221,10 +221,6 @@ CSocketHandler::cntsnd =
 "Can't send result to the client\n `1`"; 
 
 
-Format[handler_CSocketHandler, InputForm] := 
-SequenceForm[CSocketHandler][Normal[Normal[handler[[1]]]]]; 
-
-
 sendResponse[handler_, packet_, result: _ByteArray | _String | Null] := 
 With[{client = packet["SourceSocket"]}, 
 	Switch[result, 
@@ -264,10 +260,6 @@ With[{buffer = handler["Buffer"]["Lookup", packet["SourceSocket"][[1]]]},
 
 conditionApply[conditionAndFunctions_: <||>, defalut_: Function[Null], ___] := 
 Function[Last[SelectFirst[conditionAndFunctions, Function[cf, First[cf][##]], {defalut}]][##]]; 
-
-
-conditionApply[hashTable_?(DataStructureQ[#, "HashTable"]&), rest___] := 
-conditionApply[Normal[hashTable], rest]; 
 
 
 CSocketObject[socketId_Integer]["SocketId"] := 
