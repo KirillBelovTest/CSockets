@@ -1,0 +1,4 @@
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
+
+
+cl.exe /LD /Zi  /I "C:\Program Files\Wolfram Research\Wolfram\14.1\SystemFiles\IncludeFiles\C" /I "C:\Program Files\Wolfram Research\Wolfram\14.1\SystemFiles\Links\MathLink\DeveloperKit\Windows-x86-64\CompilerAdditions" "C:\Users\Kirill\Projects\CSockets\Source\csockets.c" /link  /implib:"C:\Users\Kirill\Projects\CSockets\LibraryResources\Windows-x86-64-v7\Working-strix-23296-28312-1\csockets.lib"  /LIBPATH:"C:\Program Files\Wolfram Research\Wolfram\14.1\SystemFiles\Links\MathLink\DeveloperKit\Windows-x86-64\CompilerAdditions" /LIBPATH:"C:\Program Files\Wolfram Research\Wolfram\14.1\SystemFiles\Libraries\Windows-x86-64"  "ml64i4m.lib"  /out:"C:\Users\Kirill\Projects\CSockets\LibraryResources\Windows-x86-64-v7\Working-strix-23296-28312-1\csockets.dll"

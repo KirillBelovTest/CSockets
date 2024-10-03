@@ -7,19 +7,22 @@ PacletObject[
     "Creator" -> "Kirill Belov",
     "License" -> "MIT",
     "PublisherID" -> "KirillBelov",
-    "Version" -> "1.0.14",
+    "Version" -> "1.0.16",
     "WolframVersion" -> "13.3+",
     "PrimaryContext" -> "KirillBelov`CSockets`",
     "Extensions" -> {
       {
         "Kernel",
         "Root" -> "Kernel",
-        "Context" -> {"KirillBelov`CSockets`"},
+        "Context" -> {
+          {"KirillBelov`CSockets`", "CSockets.wl"}, 
+          {"KirillBelov`CSockets`UDP`", "UDP.wl"}
+        },
         "Symbols" -> {
           "KirillBelov`CSockets`CSocketObject",
           "KirillBelov`CSockets`CSocketListener",
           "KirillBelov`CSockets`CSocketOpen",
-          "KirillBelov`CSockets`CSocketConnect", 
+          "KirillBelov`CSockets`CSocketConnect",
           "KirillBelov`CSockets`CSocketHandler"
         }
       },

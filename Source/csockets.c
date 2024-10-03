@@ -25,6 +25,7 @@
     #include <wchar.h>
     #include <netinet/tcp.h>
     #include <sys/select.h>
+    #include <time.h>
     #define INVALID_SOCKET -1
     #define NO_ERROR 0
     #define SOCKET_ERROR -1
@@ -732,7 +733,7 @@ DLLEXPORT int socketClients(WolframLibraryData libData, mint Argc, MArgument *Ar
     }
 
     int rank = 1;
-    int dims[1];
+    mint dims[1];
     dims[0] = servers[serverId]->clientsLength;
     MTensor data;
     libData->MTensor_new(MType_Integer, rank, dims, &data);
