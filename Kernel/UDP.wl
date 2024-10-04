@@ -56,12 +56,17 @@ UDPConnect[host_String, port_Integer?Positive] /; StringMatchQ[host, NumberStrin
 With[{id = udpSocketConnect[host, port]}, UDPSocketObject[id, "Write"]]; 
 
 
-UDPReadyQ[UDPSocketObject[id_Integer, "Read"]] := 
-With[{result = udpSocketReadReadyQ[id, 1000]}, result] === 1; 
+Options[UDPReadyQ] = {
+	"Timeout" :> $timeout
+}; 
 
 
-UDPReadyQ[UDPSocketObject[id_Integer, "Write"]] := 
-With[{result = udpSocketWriteReadyQ[id, 1000]}, result] === 1; 
+UDPReadyQ[UDPSocketObject[id_Integer, "Read"], OptionsPattern[]] := 
+With[{result = udpSocketReadReadyQ[id, Round[OptionValue["Timeout"] * 1000000]]}, result] === 1; 
+
+
+UDPReadyQ[UDPSocketObject[id_Integer, "Write"], OptionsPattern[]] := 
+With[{result = udpSocketWriteReadyQ[id, Round[OptionValue["Timeout"] * 1000000]]}, result] === 1; 
 
 
 UDPSend[UDPSocketObject[id_Integer, "Write"], byteArray_ByteArray] := 
@@ -72,12 +77,22 @@ UDPSendString[UDPSocketObject[id_Integer, "Write"], string_String] :=
 (udpSocketSend[id, StringToByteArray[string], StringLength[string]];); 
 
 
-UDPRead[UDPSocketObject[id_Integer, "Read"]] := 
-With[{result = udpSocketRead[id, 1024]}, result]; 
+Options[UDPRead] = {
+	"BufferSize" :> $bufferSize
+}; 
 
 
-UDPReadString[UDPSocketObject[id_Integer, "Read"]] := 
-With[{result = udpSocketRead[id, 1024]}, ByteArrayToString[result]]; 
+UDPRead[UDPSocketObject[id_Integer, "Read"], OptionsPattern[]] := 
+With[{result = udpSocketRead[id, OptionValue["BufferSize"]]}, result]; 
+
+
+Options[UDPReadString] = {
+	"BufferSize" :> $bufferSize
+}; 
+
+
+UDPReadString[UDPSocketObject[id_Integer, "Read"], OptionsPattern[]] := 
+With[{result = udpSocketRead[id, OptionValue["BufferSize"]]}, ByteArrayToString[result]]; 
 
 
 (*Internal*)
@@ -101,7 +116,10 @@ $libFile = FileNameJoin[{
 }]; 
 
 
-$bufferSize = 1024; 
+$bufferSize = 8 * 1024; 
+
+
+$timeout = 0.001; 
 
 
 udpSocketListen = LibraryFunctionLoad[$libFile, "udpSocketListen", {Integer}, Integer]; 

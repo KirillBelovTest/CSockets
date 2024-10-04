@@ -49,34 +49,13 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     return;
 }
 
-void initialize_sockets() {
-    WSADATA wsa_data;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
-        fprintf(stderr, "winsock not initizlized: %d\n", WSAGetLastError());
-        exit(EXIT_FAILURE);
-    }
-}
-
-void cleanup_sockets() {
-    WSACleanup();
-}
-
 #else // Assume POSIX
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
-void initialize_sockets() {
-    // No initialization needed for POSIX
-}
-
-void cleanup_sockets() {
-    // No cleanup needed for POSIX
-}
-
 #endif
 
-// 1. Listen specific port
+// Listen specific port
 DLLEXPORT int udpSocketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     int port = MArgument_getInteger(Args[0]);
 
@@ -116,7 +95,7 @@ MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint
     return nArray;
 }
 
-// 2. Read from the socket
+// Read from the socket
 DLLEXPORT int udpSocketRead(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     int sockId = MArgument_getInteger(Args[0]);
     size_t bufferSize = MArgument_getInteger(Args[1]); 
@@ -140,7 +119,7 @@ DLLEXPORT int udpSocketRead(WolframLibraryData libData, mint Argc, MArgument *Ar
     return LIBRARY_NO_ERROR; 
 }
 
-// 3. Connect to specific host
+// Connect to specific host
 DLLEXPORT int udpSocketConnect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     char* host = MArgument_getUTF8String(Args[0]); 
     int port = MArgument_getInteger(Args[1]); 
@@ -184,7 +163,7 @@ DLLEXPORT int udpSocketConnect(WolframLibraryData libData, mint Argc, MArgument 
     return LIBRARY_NO_ERROR;
 }
 
-// 4. Sending data using the socket
+// Sending data using the socket
 DLLEXPORT int udpSocketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     int sockId = MArgument_getInteger(Args[0]);
     MNumericArray marr = MArgument_getMNumericArray(Args[1]);
@@ -202,7 +181,7 @@ DLLEXPORT int udpSocketSend(WolframLibraryData libData, mint Argc, MArgument *Ar
     return LIBRARY_NO_ERROR; // sent data length
 }
 
-// 5. Close the socket
+// Close the socket
 DLLEXPORT int udpSocketClose(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     int sockId = MArgument_getInteger(Args[0]);
 
