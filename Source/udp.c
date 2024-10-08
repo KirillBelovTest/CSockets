@@ -55,22 +55,32 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 #include <sys/socket.h>
 #endif
 
-// Listen specific port
-DLLEXPORT int udpSocketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    int port = MArgument_getInteger(Args[0]);
+// Listen specific host and port
+DLLEXPORT int udpSocketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
+    const char *host = MArgument_getUTF8String(Args[0]);
+    int port = MArgument_getInteger(Args[1]);
 
     int sockfd;
     struct sockaddr_in servaddr;
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("Socket create error");
-        return -1;
+        return LIBRARY_FUNCTION_ERROR;
     }
 
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(port);
+
+    if (inet_pton(AF_INET, host, &servaddr.sin_addr) <= 0) {
+        perror("Invalid address/Address not supported");
+        #ifdef _WIN32
+        closesocket(sockfd);
+        #else
+        close(sockfd);
+        #endif
+        return LIBRARY_FUNCTION_ERROR;
+    }
 
     if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
         perror("Socket bind error");
@@ -79,11 +89,11 @@ DLLEXPORT int udpSocketListen(WolframLibraryData libData, mint Argc, MArgument *
         #else
         close(sockfd);
         #endif
-        return -1;
+        return LIBRARY_FUNCTION_ERROR;
     }
 
     MArgument_setInteger(Res, sockfd);
-    return LIBRARY_NO_ERROR; 
+    return LIBRARY_NO_ERROR;
 }
 
 MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint dataLength){

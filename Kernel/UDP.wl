@@ -48,12 +48,20 @@ Begin["`Private`"];
 (*Implementation*)
 
 
-UDPListen[port_Integer] /; port > 1023 := 
+UDPListen[host_String, port_Integer] /; port > 1023 && StringMatchQ[host, NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString] := 
 With[{id = udpSocketListen[port]}, UDPSocketObject[id, "Read"]]; 
+
+
+UDPListen[port_Integer] := 
+UDPListen["127.0.0.1", oprt]; 
 
 
 UDPConnect[host_String, port_Integer?Positive] /; StringMatchQ[host, NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString] := 
 With[{id = udpSocketConnect[host, port]}, UDPSocketObject[id, "Write"]]; 
+
+
+UDPConnect[port_Integer] := 
+UDPConnect["127.0.0.1", port]; 
 
 
 Options[UDPReadyQ] = {
@@ -122,7 +130,7 @@ $bufferSize = 8 * 1024;
 $timeout = 0.001; 
 
 
-udpSocketListen = LibraryFunctionLoad[$libFile, "udpSocketListen", {Integer}, Integer]; 
+udpSocketListen = LibraryFunctionLoad[$libFile, "udpSocketListen", {String, Integer}, Integer]; 
 
 
 udpSocketRead = LibraryFunctionLoad[$libFile, "udpSocketRead", {Integer, Integer}, "ByteArray"]; 
