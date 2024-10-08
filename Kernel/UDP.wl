@@ -42,6 +42,10 @@ UDPSendString::usage =
 "UDPSendString[socket, string] convert string to byte array and send."; 
 
 
+UDPClose::usage = 
+"UDPClose[socket] close socket."
+
+
 Begin["`Private`"]; 
 
 
@@ -101,6 +105,10 @@ Options[UDPReadString] = {
 
 UDPReadString[UDPSocketObject[id_Integer, "Read"], OptionsPattern[]] := 
 With[{result = udpSocketRead[id, OptionValue["BufferSize"]]}, ByteArrayToString[result]]; 
+
+
+UDPClose[UDPSocketObject[id_,_]] := 
+With[{res = udpSocketClose[id]}, res;]; 
 
 
 (*Internal*)
