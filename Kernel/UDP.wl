@@ -53,11 +53,11 @@ Begin["`Private`"];
 
 
 UDPListen[host_String, port_Integer] /; port > 1023 && StringMatchQ[host, NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString] := 
-With[{id = udpSocketListen[port]}, UDPSocketObject[id, "Read"]]; 
+With[{id = udpSocketListen[host, port]}, UDPSocketObject[id, "Read"]]; 
 
 
 UDPListen[port_Integer] := 
-UDPListen["127.0.0.1", oprt]; 
+UDPListen["127.0.0.1", port]; 
 
 
 UDPConnect[host_String, port_Integer?Positive] /; StringMatchQ[host, NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString] := 
@@ -79,6 +79,10 @@ With[{result = udpSocketReadReadyQ[id, Round[OptionValue["Timeout"] * 1000000]]}
 
 UDPReadyQ[UDPSocketObject[id_Integer, "Write"], OptionsPattern[]] := 
 With[{result = udpSocketWriteReadyQ[id, Round[OptionValue["Timeout"] * 1000000]]}, result] === 1; 
+
+
+UDPReadyQ[___] := 
+False; 
 
 
 UDPSend[UDPSocketObject[id_Integer, "Write"], byteArray_ByteArray] := 

@@ -7,6 +7,12 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
+#else // Assume POSIX
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#endif
+
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
@@ -43,17 +49,11 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #ifdef _WIN32
     WSACleanup();
     #else
-    SLEEP(1000 * ms);
+    SLEEP(1000);
     #endif
 
     return;
 }
-
-#else // Assume POSIX
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#endif
 
 // Listen specific host and port
 DLLEXPORT int udpSocketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
@@ -96,11 +96,11 @@ DLLEXPORT int udpSocketListen(WolframLibraryData libData, mint Argc, MArgument *
     return LIBRARY_NO_ERROR;
 }
 
-MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint dataLength){
+MNumericArray createByteArray(WolframLibraryData libData, char *data, const mint dataLength){
     MNumericArray nArray;
     libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &dataLength, &nArray);
 
-    BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(nArray);
+    char *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(nArray);
     memcpy(array, data, dataLength); 
     return nArray;
 }
@@ -179,7 +179,7 @@ DLLEXPORT int udpSocketSend(WolframLibraryData libData, mint Argc, MArgument *Ar
     MNumericArray marr = MArgument_getMNumericArray(Args[1]);
     int dataLength = MArgument_getInteger(Args[2]);
 
-    char *data = (BYTE *)libData->numericarrayLibraryFunctions->MNumericArray_getData(marr);
+    char *data = (char *)libData->numericarrayLibraryFunctions->MNumericArray_getData(marr);
 
     int n = send(sockId, data, dataLength, 0);
     if (n < 0) {
