@@ -43,7 +43,11 @@ UDPSendString::usage =
 
 
 UDPClose::usage = 
-"UDPClose[socket] close socket."
+"UDPClose[socket] close socket."; 
+
+
+UDPCreateListener::usage = 
+"UDPCreateListener[socket, func] creates listener object."; 
 
 
 Begin["`Private`"]; 
@@ -99,7 +103,12 @@ Options[UDPRead] = {
 
 
 UDPRead[UDPSocketObject[id_Integer, "Read"], OptionsPattern[]] := 
-With[{result = udpSocketRead[id, OptionValue["BufferSize"]]}, result]; 
+With[{
+	result = udpSocketRead[id, OptionValue["BufferSize"]], 
+	handler = getHandler[id]
+}, 
+	handler[result]
+]; 
 
 
 Options[UDPReadString] = {
@@ -115,7 +124,36 @@ UDPClose[UDPSocketObject[id_,_]] :=
 With[{res = udpSocketClose[id]}, res;]; 
 
 
+Options[UDPCreateListener] = {
+	"Interval" -> 0.01
+};
+
+
+UDPCreateListener[UDPSocketObject[id_,_], handler_, OptionsPattern[]] := 
+Module[{taskId, usecInterval}, 
+	usecInterval = Round[OptionValue["Interval"] * 10^6]; 
+	$handlers[id] = handler; 
+	Internal`CreateAsynchronousTask[
+		startAsyncSocketReadCheck, 
+		{id, usecInterval}, 
+		getHandler[id][toEvent[##]]&
+	];
+]; 
+
+
 (*Internal*)
+
+
+toEvent[task_, event_, {socket_, data_}] := 
+With[{bytes = ByteArray[data], taskId = task[[2]]}, 
+	<|
+		"TaskId" :> taskId, 
+		"Socket" :> socket, 
+		"DataByteArray" :> bytes, 
+		"DataBytes" :> Normal[bytes], 
+		"Data" :> ByteArrayToString[bytes]
+	|>
+]; 
 
 
 $directory = DirectoryName[$InputFileName, 2]; 
@@ -142,6 +180,17 @@ $bufferSize = 8 * 1024;
 $timeout = 0.001; 
 
 
+If[!AssociationQ[$handlers], $handlers = <||>]; 
+
+
+getHandler[id_] := 
+If[KeyExistsQ[$handlers, id], $handlers[id], Function[#]]; 
+
+
+udpSocketHandleEvent[id_] := 
+getHandler[id][udpSocketRead[id, $bufferSize]]; 
+
+
 udpSocketListen = LibraryFunctionLoad[$libFile, "udpSocketListen", {String, Integer}, Integer]; 
 
 
@@ -161,6 +210,12 @@ udpSocketReadReadyQ = LibraryFunctionLoad[$libFile, "udpSocketReadReadyQ", {Inte
 
 
 udpSocketWriteReadyQ = LibraryFunctionLoad[$libFile, "udpSocketWriteReadyQ", {Integer, Integer}, Integer]; 
+
+
+startAsyncSocketReadCheck = LibraryFunctionLoad[$libFile, "startAsyncSocketReadCheck", {Integer, Integer}, Integer];
+
+
+stopAsyncSocketReadCheck = LibraryFunctionLoad[$libFile, "stopAsyncSocketReadCheck", {Integer}, Integer];
 
 
 End[(*`Private`*)]; 

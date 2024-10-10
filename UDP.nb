@@ -23,10 +23,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[      1060,         20]
-NotebookDataLength[      7398,        175]
-NotebookOptionsPosition[      6570,        151]
-NotebookOutlinePosition[      6974,        167]
-CellTagsIndexPosition[      6931,        164]
+NotebookDataLength[     14562,        347]
+NotebookOptionsPosition[     13392,        321]
+NotebookOutlinePosition[     13794,        337]
+CellTagsIndexPosition[     13751,        334]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -35,7 +35,8 @@ Cell[BoxData[
  RowBox[{
   RowBox[{
    RowBox[{"$HistoryLength", " ", "=", " ", "0"}], ";"}], " "}]], "Input",
- CellChangeTimes->{{3.936945506615511*^9, 3.936945509249943*^9}},
+ CellChangeTimes->{{3.936945506615511*^9, 3.936945509249943*^9}, {
+  3.9375355452875347`*^9, 3.9375355459185047`*^9}},
  CellLabel->"In[1]:=",ExpressionUUID->"74abd2f2-6bdf-d440-b505-dafb6e34db1d"],
 
 Cell[BoxData[
@@ -51,106 +52,275 @@ Cell[BoxData[
  CellChangeTimes->{{3.936944963761366*^9, 3.9369449709572296`*^9}},
  CellLabel->"In[3]:=",ExpressionUUID->"c28fa4d3-97c6-a546-bea0-b984b60c94b1"],
 
-Cell[CellGroupData[{
-
 Cell[BoxData[
- RowBox[{"server", " ", "=", " ", 
-  RowBox[{"UDPListen", "[", "8001", "]"}]}]], "Input",
+ RowBox[{
+  RowBox[{
+   RowBox[{"server", " ", "=", " ", 
+    RowBox[{"UDPListen", "[", "8001", "]"}]}], ";"}], " "}]], "Input",
  CellChangeTimes->{{3.936945294342098*^9, 3.9369453044758167`*^9}, {
-  3.9369467237919827`*^9, 3.936946724438488*^9}},
+  3.9369467237919827`*^9, 3.936946724438488*^9}, {3.937549618607689*^9, 
+  3.9375496186428375`*^9}},
  CellLabel->"In[4]:=",ExpressionUUID->"65e2266a-5e5e-7a41-9491-5d25332eeb62"],
 
 Cell[BoxData[
- RowBox[{"UDPSocketObject", "[", 
-  RowBox[{"1784", ",", "\<\"Read\"\>"}], "]"}]], "Output",
- CellChangeTimes->{3.936945306185663*^9, 3.9369454108300495`*^9, 
-  3.936945523444315*^9, 3.936945890488493*^9, 3.936946000224367*^9, 
-  3.9369461718063374`*^9, 3.9369463776377354`*^9, 3.936946725256895*^9, 
-  3.9369468622210007`*^9, 3.936947140868967*^9, 3.9369473051088047`*^9, 
-  3.936947527551655*^9, 3.9369476180707817`*^9, 3.9369477036258793`*^9, 
-  3.936947775523304*^9, 3.936948029755539*^9, 3.9369481222952957`*^9, 
-  3.9369483044158936`*^9, 3.9369483688961926`*^9, 3.936948444637184*^9, 
-  3.9369484940862446`*^9},
- CellLabel->"Out[4]=",ExpressionUUID->"27ee278c-d88c-4448-a2af-112629842ec3"]
-}, Open  ]],
-
-Cell[CellGroupData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"listener", " ", "=", " ", 
+    RowBox[{"UDPCreateListener", "[", 
+     RowBox[{"server", ",", " ", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"Echo", "[", 
+          RowBox[{"{", "##", "}"}], "]"}], ";", " ", 
+         RowBox[{"Echo", "[", 
+          RowBox[{"f", "[", "##", "]"}], "]"}]}], ")"}], "&"}]}], "]"}]}], 
+   ";"}], " "}]], "Input",
+ CellChangeTimes->{{3.9375342236006985`*^9, 3.937534232588619*^9}, {
+   3.9375360973738785`*^9, 3.9375361128357887`*^9}, {3.9375362136890182`*^9, 
+   3.9375362147578697`*^9}, {3.9375362745365925`*^9, 
+   3.9375362752955112`*^9}, {3.937544409093937*^9, 3.9375444150739155`*^9}, {
+   3.937548262327385*^9, 3.937548269591709*^9}, 3.93754839061454*^9, {
+   3.937549516422228*^9, 3.937549535678343*^9}, {3.9375496208629704`*^9, 
+   3.9375496209565353`*^9}},
+ CellLabel->"In[5]:=",ExpressionUUID->"0e375971-a0ee-2b4a-8c3b-bef5d6cddc73"],
 
 Cell[BoxData[
- RowBox[{"client", " ", "=", " ", 
-  RowBox[{"UDPConnect", "[", 
-   RowBox[{"\"\<127.0.0.1\>\"", ",", " ", "8001"}], "]"}]}]], "Input",
+ RowBox[{
+  RowBox[{
+   RowBox[{"result", " ", "=", " ", 
+    RowBox[{"{", "}"}]}], ";"}], " "}]], "Input",
+ CellChangeTimes->{{3.937549671800991*^9, 3.93754967394252*^9}},
+ CellLabel->"In[6]:=",ExpressionUUID->"6d8b5b6b-22eb-c043-8257-d92a6c2052ed"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"f", "[", "assoc_", "]"}], " ", ":=", " ", 
+  RowBox[{"AppendTo", "[", 
+   RowBox[{"result", ",", " ", 
+    RowBox[{"assoc", "[", "\"\<DataByteArray\>\"", "]"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.9375496622047634`*^9, 3.9375496928383503`*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"0e2bed3f-eaa5-f74d-8302-c1570f8f2286"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"client", " ", "=", " ", 
+    RowBox[{"UDPConnect", "[", 
+     RowBox[{"\"\<127.0.0.1\>\"", ",", " ", "8001"}], "]"}]}], ";"}], 
+  " "}]], "Input",
  CellChangeTimes->{{3.9369453120511665`*^9, 3.936945326864559*^9}, {
-  3.936946728482792*^9, 3.936946729129322*^9}},
- CellLabel->"In[5]:=",ExpressionUUID->"f949855f-19fd-1447-ae5a-d23fa505c797"],
-
-Cell[BoxData[
- RowBox[{"UDPSocketObject", "[", 
-  RowBox[{"1764", ",", "\<\"Write\"\>"}], "]"}]], "Output",
- CellChangeTimes->{3.9369453287863865`*^9, 3.936945413038538*^9, 
-  3.9369455248661137`*^9, 3.936945896084938*^9, 3.9369460011537914`*^9, 
-  3.93694617519734*^9, 3.936946381300852*^9, 3.9369467302202682`*^9, 
-  3.936946863182747*^9, 3.936947142388117*^9, 3.9369473074464855`*^9, 
-  3.9369476189513397`*^9, 3.9369477051688213`*^9, 3.9369477767191143`*^9, 
-  3.93694803071414*^9, 3.936948123556326*^9, 3.936948305589922*^9, 
-  3.9369483700139294`*^9, 3.9369484456586323`*^9, 3.936948494919588*^9},
- CellLabel->"Out[5]=",ExpressionUUID->"93ded60b-6c92-a945-9244-b7a7deded245"]
-}, Open  ]],
+  3.936946728482792*^9, 3.936946729129322*^9}, {3.9375496229198246`*^9, 
+  3.9375496237427998`*^9}},
+ CellLabel->"In[8]:=",ExpressionUUID->"f949855f-19fd-1447-ae5a-d23fa505c797"],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
- RowBox[{"UDPReadyQ", "[", "client", "]"}]], "Input",
- CellChangeTimes->{{3.936948447402479*^9, 3.936948450876566*^9}},
- CellLabel->"In[6]:=",ExpressionUUID->"616f00e7-1fcd-1d41-ad1b-ebd9458b00ee"],
+Cell[BoxData["result"], "Input",
+ CellChangeTimes->{{3.937549701636923*^9, 3.937549702366165*^9}},
+ CellLabel->"In[9]:=",ExpressionUUID->"9fae2d8e-8777-f54b-9e39-6f2eed726cfc"],
 
-Cell[BoxData["True"], "Output",
- CellChangeTimes->{3.9369484511747665`*^9, 3.936948495750435*^9},
- CellLabel->"Out[6]=",ExpressionUUID->"acb8ed33-7fe2-334d-a876-bf78b10f992f"]
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "Output",
+ CellChangeTimes->{3.9375497026516457`*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"baeb5a07-2f01-714f-a8ea-e1cad0eff036"]
 }, Open  ]],
 
 Cell[BoxData[
  RowBox[{"UDPSendString", "[", 
-  RowBox[{"client", ",", " ", "\"\<Hello\>\""}], "]"}]], "Input",
- CellChangeTimes->{{3.9369453367579136`*^9, 3.936945347593998*^9}, {
-  3.936946179689314*^9, 3.9369461799099007`*^9}, {3.936946734784441*^9, 
-  3.936946740747591*^9}},
- CellLabel->"In[7]:=",ExpressionUUID->"6427ed21-fa0c-fb4f-9f94-62d49d09c1fb"],
+  RowBox[{"client", ",", " ", "\"\<hi\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.9375427536406727`*^9, 3.937542760197426*^9}},
+ CellLabel->"In[10]:=",ExpressionUUID->"464cad58-fec8-584f-9533-5641f9916371"],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
- RowBox[{"UDPReadyQ", "[", "server", "]"}]], "Input",
- CellChangeTimes->{{3.9369484548838425`*^9, 3.9369484583726273`*^9}},
- CellLabel->"In[8]:=",ExpressionUUID->"e9826240-b7e1-2443-b561-1e85a3808018"],
+Cell[BoxData["result"], "Input",
+ CellChangeTimes->{{3.9375497065349884`*^9, 3.9375497070729275`*^9}},
+ CellLabel->"In[11]:=",ExpressionUUID->"7b0d3dd7-d842-6540-8828-b79204f23039"],
 
-Cell[BoxData["True"], "Output",
- CellChangeTimes->{3.9369484586562786`*^9, 3.936948497970291*^9},
- CellLabel->"Out[8]=",ExpressionUUID->"9d18e0f6-6774-c045-945b-1bfa7f980fcf"]
+Cell[BoxData[
+ RowBox[{"{", 
+  InterpretationBox[
+   RowBox[{
+    TagBox["ByteArray",
+     "SummaryHead"], "[", 
+    DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+     TemplateBox[{
+       PaneSelectorBox[{False -> GridBox[{{
+             GridBox[{{
+                TagBox["\"2 bytes\"", "SummaryItem"]}}, 
+              GridBoxAlignment -> {
+               "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+              False, GridBoxItemSize -> {
+               "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+              GridBoxSpacings -> {
+               "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
+              BaseStyle -> {
+               ShowStringCharacters -> False, NumberMarks -> False, 
+                PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+           AutoDelete -> False, 
+           GridBoxItemSize -> {
+            "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+           BaselinePosition -> {1, 1}], True -> GridBox[{{
+             GridBox[{{
+                TagBox["\"2 bytes\"", "SummaryItem"]}}, 
+              GridBoxAlignment -> {
+               "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+              False, GridBoxItemSize -> {
+               "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+              GridBoxSpacings -> {
+               "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
+              BaseStyle -> {
+               ShowStringCharacters -> False, NumberMarks -> False, 
+                PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+           AutoDelete -> False, 
+           GridBoxItemSize -> {
+            "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+           BaselinePosition -> {1, 1}]}, 
+        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+      "SummaryPanel"],
+     DynamicModuleValues:>{}], "]"}],
+   ByteArray[{104, 105}],
+   Editable->False,
+   SelectWithContents->True,
+   Selectable->False], "}"}]], "Output",
+ CellChangeTimes->{3.937549707329603*^9},
+ CellLabel->"Out[11]=",ExpressionUUID->"0237fef5-d3fb-7b44-923f-19def37075b5"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"UDPSendString", "[", 
+  RowBox[{"client", ",", " ", "\"\<next message\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.937549716680889*^9, 3.93754972223464*^9}},
+ CellLabel->"In[12]:=",ExpressionUUID->"70d0b623-80c8-264b-8f50-835a00893271"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["result"], "Input",
+ CellChangeTimes->{{3.9375497246216393`*^9, 3.9375497251652393`*^9}},
+ CellLabel->"In[13]:=",ExpressionUUID->"05bdf038-1bc7-1040-ac18-61d1750bcc72"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   InterpretationBox[
+    RowBox[{
+     TagBox["ByteArray",
+      "SummaryHead"], "[", 
+     DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = 
+      "Ready"}, 
+      TemplateBox[{
+        PaneSelectorBox[{False -> GridBox[{{
+              GridBox[{{
+                 TagBox["\"2 bytes\"", "SummaryItem"]}}, 
+               GridBoxAlignment -> {
+                "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+               False, GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+               GridBoxSpacings -> {
+                "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
+               BaseStyle -> {
+                ShowStringCharacters -> False, NumberMarks -> False, 
+                 PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+            GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+            AutoDelete -> False, 
+            GridBoxItemSize -> {
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+            BaselinePosition -> {1, 1}], True -> GridBox[{{
+              GridBox[{{
+                 TagBox["\"2 bytes\"", "SummaryItem"]}}, 
+               GridBoxAlignment -> {
+                "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+               False, GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+               GridBoxSpacings -> {
+                "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
+               BaseStyle -> {
+                ShowStringCharacters -> False, NumberMarks -> False, 
+                 PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+            GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+            AutoDelete -> False, 
+            GridBoxItemSize -> {
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+            BaselinePosition -> {1, 1}]}, 
+         Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+       "SummaryPanel"],
+      DynamicModuleValues:>{}], "]"}],
+    ByteArray[{104, 105}],
+    Editable->False,
+    SelectWithContents->True,
+    Selectable->False], ",", 
+   InterpretationBox[
+    RowBox[{
+     TagBox["ByteArray",
+      "SummaryHead"], "[", 
+     DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = 
+      "Ready"}, 
+      TemplateBox[{
+        PaneSelectorBox[{False -> GridBox[{{
+              GridBox[{{
+                 TagBox["\"12 bytes\"", "SummaryItem"]}}, 
+               GridBoxAlignment -> {
+                "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+               False, GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+               GridBoxSpacings -> {
+                "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
+               BaseStyle -> {
+                ShowStringCharacters -> False, NumberMarks -> False, 
+                 PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+            GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+            AutoDelete -> False, 
+            GridBoxItemSize -> {
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+            BaselinePosition -> {1, 1}], True -> GridBox[{{
+              GridBox[{{
+                 TagBox["\"12 bytes\"", "SummaryItem"]}}, 
+               GridBoxAlignment -> {
+                "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+               False, GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+               GridBoxSpacings -> {
+                "Columns" -> {{2}}, "Rows" -> {{Automatic}}}, 
+               BaseStyle -> {
+                ShowStringCharacters -> False, NumberMarks -> False, 
+                 PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+            GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+            AutoDelete -> False, 
+            GridBoxItemSize -> {
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+            BaselinePosition -> {1, 1}]}, 
+         Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+       "SummaryPanel"],
+      DynamicModuleValues:>{}], "]"}],
+    ByteArray[{110, 101, 120, 116, 32, 109, 101, 115, 115, 97, 103, 101}],
+    Editable->False,
+    SelectWithContents->True,
+    Selectable->False]}], "}"}]], "Output",
+ CellChangeTimes->{3.937549725510195*^9},
+ CellLabel->"Out[13]=",ExpressionUUID->"c03c4ed9-b09a-404f-8c50-7d9806926eed"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"UDPReadString", "[", "server", "]"}]], "Input",
- CellChangeTimes->{{3.936945712948391*^9, 3.9369457183467064`*^9}, {
-  3.9369457487504253`*^9, 3.9369457561055393`*^9}, {3.9369459019394894`*^9, 
-  3.9369459464704857`*^9}, {3.9369467434819775`*^9, 3.936946746188158*^9}, {
-  3.9369468669585304`*^9, 3.9369468681655273`*^9}},
- CellLabel->"In[9]:=",ExpressionUUID->"17ae0611-526d-a04d-b2ff-6549919b3d7e"],
+ RowBox[{
+  RowBox[{"Map", "[", "ByteArrayToString", "]"}], " ", "@", " ", 
+  "result"}]], "Input",
+ CellChangeTimes->{{3.937549727021818*^9, 3.9375497346278057`*^9}},
+ CellLabel->"In[14]:=",ExpressionUUID->"225712f4-ce03-3f4d-b2a4-56b74997a736"],
 
-Cell[BoxData["\<\"Hello\"\>"], "Output",
- CellChangeTimes->{{3.9369459278706455`*^9, 3.9369459491262054`*^9}, 
-   3.93694600412702*^9, 3.936946184343132*^9, {3.9369467470054398`*^9, 
-   3.9369467736694775`*^9}, 3.9369468690047073`*^9, 3.936947148090597*^9, 
-   3.9369473131784306`*^9, {3.9369477790139866`*^9, 3.936947807992672*^9}, 
-   3.936948034199524*^9, 3.9369481261802692`*^9, 3.9369483088682327`*^9, 
-   3.9369483719635525`*^9, 3.936948459743614*^9, 3.9369484992112045`*^9},
- CellLabel->"Out[9]=",ExpressionUUID->"02dc028a-e948-f24c-aa7f-a9d1eb411832"]
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"\<\"hi\"\>", ",", "\<\"next message\"\>"}], "}"}]], "Output",
+ CellChangeTimes->{3.9375497348836784`*^9},
+ CellLabel->"Out[14]=",ExpressionUUID->"1a90ad05-1ab8-714a-8a41-bf556d82e276"]
 }, Open  ]]
 },
-WindowSize->{675, 654},
-WindowMargins->{{Automatic, -2.25}, {-0.75, Automatic}},
+WindowSize->{718.5, 825},
+WindowMargins->{{Automatic, -5.25}, {Automatic, 0}},
 FrontEndVersion->"14.1 for Microsoft Windows (64-bit) (July 16, 2024)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"6e28ed07-d0d1-c141-980e-6ae19b48000c"
@@ -166,29 +336,31 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[1460, 33, 253, 5, 28, "Input",ExpressionUUID->"74abd2f2-6bdf-d440-b505-dafb6e34db1d"],
-Cell[1716, 40, 279, 6, 28, "Input",ExpressionUUID->"450f9b07-1457-f14c-8d26-4b2d40232051"],
-Cell[1998, 48, 215, 3, 28, "Input",ExpressionUUID->"c28fa4d3-97c6-a546-bea0-b984b60c94b1"],
+Cell[1460, 33, 306, 6, 28, "Input",ExpressionUUID->"74abd2f2-6bdf-d440-b505-dafb6e34db1d"],
+Cell[1769, 41, 279, 6, 28, "Input",ExpressionUUID->"450f9b07-1457-f14c-8d26-4b2d40232051"],
+Cell[2051, 49, 215, 3, 28, "Input",ExpressionUUID->"c28fa4d3-97c6-a546-bea0-b984b60c94b1"],
+Cell[2269, 54, 390, 8, 28, "Input",ExpressionUUID->"65e2266a-5e5e-7a41-9491-5d25332eeb62"],
+Cell[2662, 64, 949, 21, 28, "Input",ExpressionUUID->"0e375971-a0ee-2b4a-8c3b-bef5d6cddc73"],
+Cell[3614, 87, 264, 6, 28, "Input",ExpressionUUID->"6d8b5b6b-22eb-c043-8257-d92a6c2052ed"],
+Cell[3881, 95, 364, 7, 28, "Input",ExpressionUUID->"0e2bed3f-eaa5-f74d-8302-c1570f8f2286"],
+Cell[4248, 104, 441, 10, 28, "Input",ExpressionUUID->"f949855f-19fd-1447-ae5a-d23fa505c797"],
 Cell[CellGroupData[{
-Cell[2238, 55, 300, 5, 28, "Input",ExpressionUUID->"65e2266a-5e5e-7a41-9491-5d25332eeb62"],
-Cell[2541, 62, 709, 11, 32, "Output",ExpressionUUID->"27ee278c-d88c-4448-a2af-112629842ec3"]
+Cell[4714, 118, 176, 2, 28, "Input",ExpressionUUID->"9fae2d8e-8777-f54b-9e39-6f2eed726cfc"],
+Cell[4893, 122, 167, 3, 32, "Output",ExpressionUUID->"baeb5a07-2f01-714f-a8ea-e1cad0eff036"]
+}, Open  ]],
+Cell[5075, 128, 255, 4, 28, "Input",ExpressionUUID->"464cad58-fec8-584f-9533-5641f9916371"],
+Cell[CellGroupData[{
+Cell[5355, 136, 181, 2, 28, "Input",ExpressionUUID->"7b0d3dd7-d842-6540-8828-b79204f23039"],
+Cell[5539, 140, 2273, 49, 46, "Output",ExpressionUUID->"0237fef5-d3fb-7b44-923f-19def37075b5"]
+}, Open  ]],
+Cell[7827, 192, 262, 4, 28, "Input",ExpressionUUID->"70d0b623-80c8-264b-8f50-835a00893271"],
+Cell[CellGroupData[{
+Cell[8114, 200, 181, 2, 28, "Input",ExpressionUUID->"05bdf038-1bc7-1040-ac18-61d1750bcc72"],
+Cell[8298, 204, 4554, 98, 46, "Output",ExpressionUUID->"c03c4ed9-b09a-404f-8c50-7d9806926eed"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3287, 78, 344, 6, 28, "Input",ExpressionUUID->"f949855f-19fd-1447-ae5a-d23fa505c797"],
-Cell[3634, 86, 681, 10, 32, "Output",ExpressionUUID->"93ded60b-6c92-a945-9244-b7a7deded245"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[4352, 101, 211, 3, 28, "Input",ExpressionUUID->"616f00e7-1fcd-1d41-ad1b-ebd9458b00ee"],
-Cell[4566, 106, 175, 2, 32, "Output",ExpressionUUID->"acb8ed33-7fe2-334d-a876-bf78b10f992f"]
-}, Open  ]],
-Cell[4756, 111, 357, 6, 28, "Input",ExpressionUUID->"6427ed21-fa0c-fb4f-9f94-62d49d09c1fb"],
-Cell[CellGroupData[{
-Cell[5138, 121, 215, 3, 28, "Input",ExpressionUUID->"e9826240-b7e1-2443-b561-1e85a3808018"],
-Cell[5356, 126, 175, 2, 32, "Output",ExpressionUUID->"9d18e0f6-6774-c045-945b-1bfa7f980fcf"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[5568, 133, 424, 6, 28, "Input",ExpressionUUID->"17ae0611-526d-a04d-b2ff-6549919b3d7e"],
-Cell[5995, 141, 559, 7, 32, "Output",ExpressionUUID->"02dc028a-e948-f24c-aa7f-a9d1eb411832"]
+Cell[12889, 307, 260, 5, 28, "Input",ExpressionUUID->"225712f4-ce03-3f4d-b2a4-56b74997a736"],
+Cell[13152, 314, 224, 4, 32, "Output",ExpressionUUID->"1a90ad05-1ab8-714a-8a41-bf556d82e276"]
 }, Open  ]]
 }
 ]

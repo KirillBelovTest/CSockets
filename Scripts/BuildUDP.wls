@@ -30,8 +30,9 @@ Block[{$directory, $libSrc, $libDir, $linkerOptions},
 
 	If[!FileExistsQ[$libDir], CreateDirectory[]];
 
-	CreateLibrary[$libSrc, "udp", 
+	Echo@CreateLibrary[$libSrc, "udp", 
 		"TargetDirectory" -> $libDir, 
-		"Debug" -> False
+		"Debug" -> True, 
+		"TransferProtocolLibrary" -> "WSTP"
 	]
 ]; 
