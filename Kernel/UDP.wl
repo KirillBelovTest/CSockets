@@ -7,9 +7,6 @@ BeginPackage["KirillBelov`CSockets`UDP`", {
 }]; 
 
 
-(*Public*)
-
-
 UDPSocketObject::usage = 
 "UDPSocketObject[sockfd] socket representation."; 
 
@@ -51,9 +48,6 @@ UDPCreateListener::usage =
 
 
 Begin["`Private`"]; 
-
-
-(*Implementation*)
 
 
 UDPListen[host_String, port_Integer] /; port > 1023 && StringMatchQ[host, NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString ~~ "." ~~ NumberString] := 
@@ -141,9 +135,6 @@ Module[{taskId, usecInterval},
 ]; 
 
 
-(*Internal*)
-
-
 toEvent[task_, event_, {socket_, data_}] := 
 With[{bytes = ByteArray[data], taskId = task[[2]]}, 
 	<|
@@ -191,31 +182,40 @@ udpSocketHandleEvent[id_] :=
 getHandler[id][udpSocketRead[id, $bufferSize]]; 
 
 
-udpSocketListen = LibraryFunctionLoad[$libFile, "udpSocketListen", {String, Integer}, Integer]; 
+udpSocketListen = 
+LibraryFunctionLoad[$libFile, "udpSocketListen", {String, Integer}, Integer]; 
 
 
-udpSocketRead = LibraryFunctionLoad[$libFile, "udpSocketRead", {Integer, Integer}, "ByteArray"]; 
+udpSocketRead = 
+LibraryFunctionLoad[$libFile, "udpSocketRead", {Integer, Integer}, "ByteArray"]; 
 
 
-udpSocketConnect = LibraryFunctionLoad[$libFile, "udpSocketConnect", {String, Integer}, Integer]; 
+udpSocketConnect = 
+LibraryFunctionLoad[$libFile, "udpSocketConnect", {String, Integer}, Integer]; 
 
 
-udpSocketSend = LibraryFunctionLoad[$libFile, "udpSocketSend", {Integer, {LibraryDataType[ByteArray], "Shared"}, Integer}, Integer]; 
+udpSocketSend = 
+LibraryFunctionLoad[$libFile, "udpSocketSend", {Integer, {LibraryDataType[ByteArray], "Shared"}, Integer}, Integer]; 
 
 
-udpSocketClose = LibraryFunctionLoad[$libFile, "udpSocketClose", {Integer}, Integer]; 
+udpSocketClose = 
+LibraryFunctionLoad[$libFile, "udpSocketClose", {Integer}, Integer]; 
 
 
-udpSocketReadReadyQ = LibraryFunctionLoad[$libFile, "udpSocketReadReadyQ", {Integer, Integer}, Integer]; 
+udpSocketReadReadyQ = 
+LibraryFunctionLoad[$libFile, "udpSocketReadReadyQ", {Integer, Integer}, Integer]; 
 
 
-udpSocketWriteReadyQ = LibraryFunctionLoad[$libFile, "udpSocketWriteReadyQ", {Integer, Integer}, Integer]; 
+udpSocketWriteReadyQ = 
+LibraryFunctionLoad[$libFile, "udpSocketWriteReadyQ", {Integer, Integer}, Integer]; 
 
 
-startAsyncSocketReadCheck = LibraryFunctionLoad[$libFile, "startAsyncSocketReadCheck", {Integer, Integer}, Integer];
+startAsyncSocketReadCheck = 
+LibraryFunctionLoad[$libFile, "startAsyncSocketReadCheck", {Integer, Integer}, Integer];
 
 
-stopAsyncSocketReadCheck = LibraryFunctionLoad[$libFile, "stopAsyncSocketReadCheck", {Integer}, Integer];
+stopAsyncSocketReadCheck = 
+LibraryFunctionLoad[$libFile, "stopAsyncSocketReadCheck", {Integer}, Integer];
 
 
 End[(*`Private`*)]; 

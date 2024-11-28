@@ -1,0 +1,99 @@
+(* Content-type: application/vnd.wolfram.cdf.text *)
+
+(*** Wolfram CDF File ***)
+(* http://www.wolfram.com/cdf *)
+
+(* CreatedBy='Wolfram 14.1' *)
+
+(*************************************************************************)
+(*                                                                       *)
+(*                                                                       *)
+(*  This file was created under the Wolfram Enterprise licensing terms.  *)
+(*                                                                       *)
+(*       For additional information concerning CDF licensing see:        *)
+(*                                                                       *)
+(*        www.wolfram.com/cdf/adopting-cdf/licensing-options.html        *)
+(*                                                                       *)
+(*                                                                       *)
+(*                                                                       *)
+(*************************************************************************)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[      1060,         20]
+NotebookDataLength[      2530,         78]
+NotebookOptionsPosition[      2856,         73]
+NotebookOutlinePosition[      3262,         89]
+CellTagsIndexPosition[      3219,         86]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{"<<", "KirillBelov`CSockets`"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"client", " ", "=", " ", 
+    RowBox[{"CSocketConnect", "[", "8080", "]"}]}], ";"}], 
+  " "}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"data", " ", "=", " ", 
+    RowBox[{
+     RowBox[{
+     "URLRead", "[", 
+      "\"\<https://upload.wikimedia.org/wikipedia/commons/1/1d/\
+LuChenAttractor3D.svg\>\"", "]"}], "[", "\"\<Body\>\"", "]"}]}], ";"}], 
+  " "}]}], "Input",
+ CellChangeTimes->{{3.9417844119043083`*^9, 3.941784423546547*^9}, {
+  3.941785555418873*^9, 
+  3.9417855625708466`*^9}},ExpressionUUID->"e21d6322-4585-a244-aba4-\
+6ec47f110c7e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"AbsoluteTiming", "[", 
+  RowBox[{"WriteString", "[", 
+   RowBox[{"client", ",", " ", "data"}], "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.9417851013281803`*^9, 3.941785127482748*^9}, {
+  3.9417851718837414`*^9, 3.9417851722509995`*^9}},
+ CellLabel->"In[13]:=",ExpressionUUID->"6649d130-e470-6643-9b76-ceeba4ace466"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0.0180756`", ",", "740"}], "}"}]], "Output",
+ CellChangeTimes->{{3.9417851083651066`*^9, 3.941785127822092*^9}, 
+   3.9417851781794205`*^9, 3.9417853035513783`*^9, {3.9417854025709343`*^9, 
+   3.9417854299438457`*^9}},
+ CellLabel->"Out[13]=",ExpressionUUID->"6345515a-d19a-2544-b6d2-484c7a66b2ae"]
+}, Open  ]]
+},
+WindowSize->{951.75, 516.75},
+WindowMargins->{{Automatic, -5.25}, {Automatic, 0}},
+FrontEndVersion->"14.1 for Microsoft Windows (64-bit) (July 16, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"1d052b42-27bc-0a4d-b14e-ddd17f301f20"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[1460, 33, 673, 19, 66, "Input",ExpressionUUID->"e21d6322-4585-a244-aba4-6ec47f110c7e"],
+Cell[CellGroupData[{
+Cell[2158, 56, 342, 6, 28, "Input",ExpressionUUID->"6649d130-e470-6643-9b76-ceeba4ace466"],
+Cell[2503, 64, 337, 6, 32, "Output",ExpressionUUID->"6345515a-d19a-2544-b6d2-484c7a66b2ae"]
+}, Open  ]]
+}
+]
+*)
+

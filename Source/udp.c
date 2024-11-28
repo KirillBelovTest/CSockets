@@ -421,7 +421,7 @@ DLLEXPORT int udpSocketReadReadyQ(WolframLibraryData libData, mint Argc, MArgume
 }
 
 // ready for write
-DLLEXPORT int udpSocketWriteReadyQ(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+DLLEXPORT int udpSocketWriteReadyQ(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){    
     if (Argc < 2) {
         return LIBRARY_FUNCTION_ERROR;
     }

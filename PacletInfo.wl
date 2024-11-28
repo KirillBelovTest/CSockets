@@ -16,7 +16,9 @@ PacletObject[
         "Root" -> "Kernel",
         "Context" -> {
           {"KirillBelov`CSockets`", "CSockets.wl"}, 
-          {"KirillBelov`CSockets`UDP`", "UDP.wl"}
+          {"KirillBelov`CSockets`TCP`", "TCP.wl"}, 
+          {"KirillBelov`CSockets`UDP`", "UDP.wl"}, 
+          {"KirillBelov`CSockets`Handler`", "Handler.wl"}
         },
         "Symbols" -> {
           "KirillBelov`CSockets`CSocketObject",
