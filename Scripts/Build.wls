@@ -1,4 +1,5 @@
 #!/usr/bin/env wolframscript
+(* ::Package:: *)
 
 Get["CCompilerDriver`"]; 
 Get["LibraryLink`"]; 
@@ -8,7 +9,7 @@ $libraryLinkVersion =
 LibraryVersionInformation[FindLibrary["demo"]]["WolframLibraryVersion"]; 
 
 
-build[lib_String] := Block[{$directory, $libSrc, $libDir, $linkerOptions}, 
+build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $linkerOptions}, 
     $directory = DirectoryName[If[$InputFileName == "", 
         NotebookFileName[], 
         $InputFileName
@@ -32,13 +33,14 @@ build[lib_String] := Block[{$directory, $libSrc, $libDir, $linkerOptions},
     CreateLibrary[$libSrc, lib, 
         "TargetDirectory" -> $libDir, 
         "Debug" -> False, 
-        (*"TransferProtocolLibrary" -> "WSTP", *)
-        "ShellCommandFunction" -> Print
+        If[prot === Automatic, Nothing, "TransferProtocolLibrary" -> "WSTP"],
+        "ShellCommandFunction" -> Print, 
+        "SystemCompileOptions" -> "/Ox /GL"
     ]
 ]; 
 
 
-build["csockets"]; 
+build["tcp"]; 
 
 
-(*build["udp"]; *)
+build["udp", "WSTP"]; 

@@ -1,0 +1,145 @@
+(* Content-type: application/vnd.wolfram.cdf.text *)
+
+(*** Wolfram CDF File ***)
+(* http://www.wolfram.com/cdf *)
+
+(* CreatedBy='Wolfram 14.1' *)
+
+(*************************************************************************)
+(*                                                                       *)
+(*                                                                       *)
+(*  This file was created under the Wolfram Enterprise licensing terms.  *)
+(*                                                                       *)
+(*       For additional information concerning CDF licensing see:        *)
+(*                                                                       *)
+(*        www.wolfram.com/cdf/adopting-cdf/licensing-options.html        *)
+(*                                                                       *)
+(*                                                                       *)
+(*                                                                       *)
+(*************************************************************************)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[      1060,         20]
+NotebookDataLength[      4853,        124]
+NotebookOptionsPosition[      4708,        114]
+NotebookOutlinePosition[      5121,        130]
+CellTagsIndexPosition[      5078,        127]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"$HistoryLength", " ", "=", " ", "0"}], ";"}], " "}]], "Input",
+ CellChangeTimes->{{3.941843638549223*^9, 3.9418436414565525`*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"26f15597-e816-de45-b699-edd8dacc88ee"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"SetDirectory", "[", 
+    RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}], " "}]], "Input",
+ CellChangeTimes->{{3.941843642466921*^9, 3.9418436502699604`*^9}},
+ CellLabel->"In[2]:=",ExpressionUUID->"fe4fea1b-6505-264f-838b-4ca1aaf71994"],
+
+Cell[BoxData[
+ RowBox[{"<<", "KirillBelov`CSockets`"}]], "Input",
+ CellChangeTimes->{{3.9417844119043083`*^9, 3.941784423546547*^9}, {
+  3.941785555418873*^9, 3.9417855625708466`*^9}, {3.94184356430472*^9, 
+  3.9418435652986813`*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"e21d6322-4585-a244-aba4-6ec47f110c7e"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"server1", " ", "=", " ", 
+    RowBox[{"CSocketOpen", "[", "8001", "]"}]}], ";"}], " "}]], "Input",
+ CellChangeTimes->{{3.9418047736560345`*^9, 3.9418047752806664`*^9}, {
+  3.9418436042426434`*^9, 3.9418436136099987`*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"b9ed38b5-ad0d-6e4a-b4f5-28007ad5285d"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"listener1", " ", "=", " ", 
+    RowBox[{"SocketListen", "[", 
+     RowBox[{"server1", ",", " ", "func1"}], "]"}]}], ";"}], " "}]], "Input",
+ CellChangeTimes->{
+  3.941804781685272*^9, {3.941843619127325*^9, 3.9418436352574825`*^9}},
+ CellLabel->"In[5]:=",ExpressionUUID->"93947885-7edb-3e48-9135-a0aa6e73c4d6"],
+
+Cell[BoxData[{
+ RowBox[{"ClearAll", "[", "func1", "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ClearAll", "[", "t0", "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ClearAll", "[", "t1", "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"func1", "[", "_", "]"}], " ", ":=", " ", 
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{"!", 
+       RowBox[{"NumericQ", "[", "t0", "]"}]}], ",", " ", 
+      "\[IndentingNewLine]", 
+      RowBox[{"t0", " ", "=", " ", 
+       RowBox[{"AbsoluteTime", "[", "]"}]}], ",", " ", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"func1", "[", "_", "]"}], " ", ":=", " ", 
+       RowBox[{"t1", " ", "=", " ", 
+        RowBox[{"AbsoluteTime", "[", "]"}]}]}]}], "\[IndentingNewLine]", 
+     "]"}]}], ";"}], " "}]}], "Input",
+ CellChangeTimes->{{3.9418436850230827`*^9, 3.9418437583888683`*^9}, {
+  3.9418437925372944`*^9, 3.9418438050869427`*^9}, {3.941843837948921*^9, 
+  3.941843873461979*^9}},
+ CellLabel->"In[26]:=",ExpressionUUID->"4c234fb4-4d31-dc49-a643-0cc88d0ffd68"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"t1", "-", "t0"}]], "Input",
+ CellChangeTimes->{{3.941843784328039*^9, 3.941843786041479*^9}},
+ CellLabel->"In[30]:=",ExpressionUUID->"b911dfe4-3f3d-b342-a40e-1e15d120622b"],
+
+Cell[BoxData["0.10199`6.460102585280218"], "Output",
+ CellChangeTimes->{{3.9418437868847218`*^9, 3.9418438306981945`*^9}, {
+   3.941843862148411*^9, 3.9418438813660927`*^9}, 3.941843922652071*^9, 
+   3.9418440907847633`*^9, {3.9418447457213306`*^9, 3.9418447565516796`*^9}, {
+   3.9418448617100983`*^9, 3.941844903881914*^9}},
+ CellLabel->"Out[30]=",ExpressionUUID->"f11ab399-7197-8444-8e79-3a28b76c2313"]
+}, Open  ]]
+},
+WindowSize->{978.75, 480},
+WindowMargins->{{202.5, Automatic}, {Automatic, 179.25}},
+FrontEndVersion->"14.1 for Microsoft Windows (64-bit) (July 16, 2024)",
+StyleDefinitions->"ReverseColor.nb",
+ExpressionUUID->"1d052b42-27bc-0a4d-b14e-ddd17f301f20"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[1460, 33, 255, 5, 28, "Input",ExpressionUUID->"26f15597-e816-de45-b699-edd8dacc88ee"],
+Cell[1718, 40, 289, 6, 28, "Input",ExpressionUUID->"fe4fea1b-6505-264f-838b-4ca1aaf71994"],
+Cell[2010, 48, 312, 5, 28, "Input",ExpressionUUID->"e21d6322-4585-a244-aba4-6ec47f110c7e"],
+Cell[2325, 55, 346, 7, 28, "Input",ExpressionUUID->"b9ed38b5-ad0d-6e4a-b4f5-28007ad5285d"],
+Cell[2674, 64, 357, 8, 28, "Input",ExpressionUUID->"93947885-7edb-3e48-9135-a0aa6e73c4d6"],
+Cell[3034, 74, 1029, 23, 142, "Input",ExpressionUUID->"4c234fb4-4d31-dc49-a643-0cc88d0ffd68"],
+Cell[CellGroupData[{
+Cell[4088, 101, 196, 3, 28, "Input",ExpressionUUID->"b911dfe4-3f3d-b342-a40e-1e15d120622b"],
+Cell[4287, 106, 405, 5, 32, "Output",ExpressionUUID->"f11ab399-7197-8444-8e79-3a28b76c2313"]
+}, Open  ]]
+}
+]
+*)
+

@@ -157,7 +157,7 @@ $libFile = FileNameJoin[{
 	$directory, 
 	"LibraryResources", 
 	$SystemID <> "-v" <> ToString[$libraryLinkVersion], 
-	"csockets." <> Internal`DynamicLibraryExtension[]
+	"tcp." <> Internal`DynamicLibraryExtension[]
 }]; 
 
 
