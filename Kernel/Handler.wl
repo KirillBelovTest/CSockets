@@ -4,7 +4,7 @@ BeginPackage["KirillBelov`CSockets`Handler`"];
 
 
 CSocketHandler::usage = 
-"CSocketHandler[] "; 
+"CSocketHandler[] mutable handler object."; 
 
 
 CSocketCreateServer::usage = 
@@ -24,12 +24,11 @@ Options[CSocketHandler] = {
     "Handler" :> <||>, 
     "DefaultHandler" :> Function[Null], 
     "AcceptHandler" :> Function[Null], 
-    "CloseHandler" :> Function[Null], 
-    "Listener" :> None
+    "CloseHandler" :> Function[Null]
 }; 
 
 
-With[{store = Language`NewExpressionStore["$CSocketHandlers"]}, 
+With[{store = Language`NewExpressionStore["CSocketHandler"]}, 
 
     CSocketHandler[OptionsPattern[]] := 
     With[{handler = CSocketHandler[Null]}, 
@@ -43,67 +42,28 @@ With[{store = Language`NewExpressionStore["$CSocketHandlers"]},
     CSocketHandler /: Set[(handler_CSocketHandler)[key_], value_] := (store["put"[handler, key, value]]; value); 
 
     CSocketHandler /: Set[(handler_CSocketHandler)[prop_, key_], value_] := (store["put"[handler, prop, Append[handler[prop], key -> value]]]; value); 
-
-    Unprotect[Set]; 
-
-    Set[(handler_?(Head[#] === CSocketHandler&))[keys__], value_] := With[{$handler = handler}, $handler[keys] = value]; 
-
-    Protect[Set]; 
-
-    Format[handler_CSocketHandler, InputForm] := 
-    SequenceForm[CSocketHandler] @ Map[Function[# -> handler[#]]] @ Keys @ Options[CSocketHandler]; 
-
-    CSocketHandler /: MakeBoxes[handler: CSocketHandler[Null], form: (StandardForm | TraditionalForm)] := 
-    Module[{above, below}, 
-        {above, below} = TakeDrop[Map[# -> handler[#]&] @ Keys @ Options[CSocketHandler], 2]; 
-        
-        BoxForm`ArrangeSummaryBox[CSocketHandler, handler, Null, above, below, form, "Interpretable" -> Automatic]
-    ]; 
 ]; 
 
 
-Options[CSocketCreateServer] = {
-    "Host" :> "localhost", 
-    "Port" :> RandomInteger[20000, 60000], 
-    "SocketOpen" :> KirillBelov`CSockets`TCP`CSocketOpen, 
-    "Logger" :> Function[#], 
-    "Buffer" :> CreateDataStructure["HashTable"], 
-    "Serializer" :> Function[#], 
-    "Deserializer" :> Function[#], 
-    "Accumulator" :> <||>, 
-    "DefaultAccumulator" :> Function[Length[#DataByteArray]], 
-    "Handler" :> <||>, 
-    "DefaultHandler" :> Function[Null], 
-    "AcceptHandler" :> Function[Null], 
-    "CloseHandler" :> Function[Null]
-}; 
+Unprotect[Set]; 
 
 
-CSocketCreateServer[opts: OptionsPattern[]] := 
-With[{
-    $port = OptionValue["Port"], 
-    $host = OptionValue["Host"], 
-    $handlerOpts = FilterRules[Flatten[{opts}], Options[CSocketHandler]]
-}, 
-    With[{
-        $socket = OptionValue["SocketOpen"][$host, $port], 
-        $handler = CSocketHandler[$handlerOpts]
-    }, 
-        SocketListen[$socket, $handler]
-    ]
+Set[(handler_?(Head[#] === CSocketHandler&))[keys__], value_] := With[{$handler$ = handler}, $handler$[keys] = value]; 
+
+
+Protect[Set]; 
+
+
+Format[handler_CSocketHandler, InputForm] := 
+SequenceForm[CSocketHandler] @ Map[Function[# -> handler[#]]] @ Keys @ Options[CSocketHandler]; 
+
+
+CSocketHandler /: MakeBoxes[handler: CSocketHandler[Null], form: (StandardForm | TraditionalForm)] := 
+Module[{above, below}, 
+    {above, below} = TakeDrop[Map[# -> handler[#]&] @ Keys @ Options[CSocketHandler], 2]; 
+
+    BoxForm`ArrangeSummaryBox[CSocketHandler, handler, Null, above, below, form, "Interpretable" -> Automatic]
 ]; 
-
-
-CSocketCreateServer[port_Integer, func_, opts: OptionsPattern[]] := 
-CSocketCreateServer["Port" -> port, "DefaultHandler" -> func, opts]; 
-
-
-CSocketCreateServer[func_, opts: OptionsPattern[]] := 
-CSocketCreateServer["DefaultHandler" -> func, opts]; 
-
-
-CSocketCreateServer[assoc_?AssociationQ, opts: OptionsPattern[]] := 
-CSocketCreateServer["Handler" -> assoc, opts]; 
 
 
 (handler_CSocketHandler)[packet_Association] := 
