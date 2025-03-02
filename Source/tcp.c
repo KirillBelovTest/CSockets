@@ -92,7 +92,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 #pragma endregion
 
-#pragma region server
+#pragma region tools
 
 #ifdef _WIN32
 void SLEEP(__int64 usec) {
@@ -113,6 +113,10 @@ void SLEEP(__int64 usec) {
     CloseHandle(timer);
 }
 #endif
+
+#pragma endregion
+
+#pragma region server
 
 typedef struct Server_st {
     SOCKET listenSocket;

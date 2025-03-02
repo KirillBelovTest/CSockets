@@ -16,7 +16,7 @@ typedef SOCKET SOCKET_TYPE;
 typedef int SOCKET_TYPE;
 #endif
 
-#include "wstp.h"
+//#include "wstp.h"
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
@@ -52,7 +52,7 @@ int closeSocket(SOCKET_TYPE sockId) {
 }
 
 // Function to rise an event when socket is ready for reading
-void riseEvent(WolframLibraryData libData, SOCKET_TYPE sockfd) {
+/*void riseEvent(WolframLibraryData libData, SOCKET_TYPE sockfd) {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
 
@@ -83,7 +83,7 @@ void riseEvent(WolframLibraryData libData, SOCKET_TYPE sockfd) {
     
     WSNextPacket(link); 
     WSNewPacket(link);
-}
+}*/
 
 // Structure for passing data to the thread function
 typedef struct {

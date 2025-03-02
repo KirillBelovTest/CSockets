@@ -43,4 +43,4 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 build["tcp"]; 
 
 
-build["udp", "WSTP"]; 
+build["udp"]; 
