@@ -30,13 +30,13 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 
     If[!FileExistsQ[$libDir], CreateDirectory[]];
 
-    CreateLibrary[$libSrc, lib, 
+    CreateLibrary @@ {$libSrc, lib, 
         "TargetDirectory" -> $libDir, 
         "Debug" -> False, 
         If[prot === Automatic, Nothing, "TransferProtocolLibrary" -> "WSTP"],
         "ShellCommandFunction" -> Print, 
         "SystemCompileOptions" -> "/Ox /GL"
-    ]
+    }
 ]; 
 
 

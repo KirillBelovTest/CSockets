@@ -48,7 +48,8 @@ With[{store = Language`NewExpressionStore["CSocketHandler"]},
 Unprotect[Set]; 
 
 
-Set[(handler_?(Head[#] === CSocketHandler&))[keys__], value_] := With[{$handler$ = handler}, $handler$[keys] = value]; 
+Set[(handler_?(Head[#] === CSocketHandler&))[keys__], value_] := 
+With[{$handler$ = handler}, $handler$[keys] = value]; 
 
 
 Protect[Set]; 
@@ -119,9 +120,6 @@ With[{uuid = packet["SourceSocket"][[1]]},
         expectedLength, 
         storedLength, 
         completed, 
-        completeHandler, 
-        defaultCompleteHandler, 
-        extendedPacket, 
         buffer
     }, 
         dataLength = Length[packet["DataByteArray"]]; 
@@ -223,7 +221,11 @@ With[{buffer = handler["Buffer"]["Lookup", packet["SourceSocket"][[1]]]},
 
 
 conditionApply[conditionAndFunctions_: <||>, defalut_: Function[Null], ___] := 
-Function[Last[SelectFirst[conditionAndFunctions, Function[cf, First[cf][##]], {defalut}]][##]]; 
+Function[
+    With[{selected = SelectFirst[conditionAndFunctions, Function[f, First[f][##]], {defalut}]}, 
+        selected[[-1]][##]
+    ]
+]; 
 
 
 End[(*`Private`*)]; 
