@@ -1,4 +1,4 @@
 /build
-wl_packages
-wl_packages_lock.wl
+/.vscode
+/LibraryResources
 .DS_Store
