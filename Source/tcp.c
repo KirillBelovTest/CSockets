@@ -309,6 +309,17 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_NO_ERROR;
 }
 
+Server* createServer(SOCKET listenSocket){
+    Server server = malloc(sizeof(struct Server_st)); 
+
+    server->listenSocket = listenSocket; 
+    server->bufferSize = 1024; 
+    server->buffer = malloc(1024 * sizeof(int)); 
+    
+    Server* server_ptr = &server; 
+    return server_ptr; 
+}
+
 #pragma endregion
 
 #pragma region socketClose[socketId_Integer]: socketId_Integer
