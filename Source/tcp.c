@@ -119,6 +119,8 @@ void SLEEP(__int64 usec) {
 #pragma region server
 
 typedef struct Server_st {
+    WolframLibraryData libData;
+    mint taskId; 
     SOCKET listenSocket;
     size_t clientsLength;
     size_t clientsLengthMax;
@@ -128,9 +130,55 @@ typedef struct Server_st {
     BYTE *buffer;
 }* Server;
 
-int serversLength = 0;
+DLLEXPORT int createServer(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET listenSocket = (SOCKET)MArgument_getInteger(Args[0]);
+    size_t bufferSize = (size_t)MArgument_getInteger(Args[1]);
+    
+    void* ptr = malloc(sizeof(struct Server_st)); 
+    Server server = (Server)ptr;
 
-Server servers[1048576];
+    server->taskId = 0;
+
+    server->libData = libData;
+
+    server->listenSocket = listenSocket; 
+
+    server->bufferSize = bufferSize; 
+    server->buffer = malloc(1024 * sizeof(size_t)); 
+
+    server->clients = malloc(4 * sizeof(SOCKET));
+    server->clientsLength = 0;
+    server->clientsLengthMax = 4;
+    server->clientsLengthInvalid = 0;
+
+    server->clients[0] = INVALID_SOCKET;
+    server->clients[1] = INVALID_SOCKET;
+    server->clients[2] = INVALID_SOCKET;
+    server->clients[3] = INVALID_SOCKET;
+    
+    MArgument_setInteger(Res, ptr); 
+
+    return LIBRARY_NO_ERROR; 
+}
+
+DLLEXPORT int getServerListenSocket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    Server server = (Server)MArgument_getInteger(Args[0]);
+    MArgument_setInteger(Res, server->listenSocket); 
+    return LIBRARY_NO_ERROR; 
+}
+
+DLLEXPORT int getServerClients(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    Server server = (Server)MArgument_getInteger(Args[0]);
+
+    MTensor clients;
+    libData->MTensor_new(MType_Integer, 1, &server->clientsLength, &clients);
+
+    int *array = libData->MTensor_getIntegerData(clients);
+    memcpy(array, server->clients, server->clientsLength * sizeof(SOCKET));
+
+    MArgument_setMTensor(Res, clients); 
+    return LIBRARY_NO_ERROR; 
+}
 
 void addClient(Server server, SOCKET client){
     #ifdef _DEBUG
@@ -309,17 +357,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_NO_ERROR;
 }
 
-Server* createServer(SOCKET listenSocket){
-    Server server = malloc(sizeof(struct Server_st)); 
-
-    server->listenSocket = listenSocket; 
-    server->bufferSize = 1024; 
-    server->buffer = malloc(1024 * sizeof(int)); 
-    
-    Server* server_ptr = &server; 
-    return server_ptr; 
-}
-
 #pragma endregion
 
 #pragma region socketClose[socketId_Integer]: socketId_Integer
@@ -337,16 +374,10 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
 
 #pragma region socketListen[socketid_Integer, bufferSize_Integer]: taskId_Integer
 
-typedef struct SocketListenerTaskArgs_st {
-    WolframLibraryData libData;
-    Server server;
-}* SocketListenerTaskArgs;
-
 static void socketListenerTask(mint taskId, void* vtarg)
 {
-    SocketListenerTaskArgs targ = (SocketListenerTaskArgs)vtarg;
-    Server server = targ->server;
-	WolframLibraryData libData = targ->libData;
+    Server server = (Server)vtarg;
+	WolframLibraryData libData = server->libData;
 
     int iResult;
     int len; 
@@ -439,25 +470,11 @@ static void socketListenerTask(mint taskId, void* vtarg)
 }
 
 DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET listenSocket = MArgument_getInteger(Args[0]);
-    int bufferSize = MArgument_getInteger(Args[1]);
-
+    Server server = (Server)MArgument_getInteger(Args[0]);
     mint taskId;
-    SOCKET *clients = (SOCKET*)malloc(4 * sizeof(SOCKET));
-    Server server = (Server)malloc(sizeof(struct Server_st));
-    servers[serversLength] = server;
-    serversLength++;
 
-    server->listenSocket=listenSocket;
-    server->clients=clients;
-    server->clientsLength=0;
-    server->clientsLengthMax=4;
-    server->bufferSize=bufferSize;
-
-    SocketListenerTaskArgs threadArg = (SocketListenerTaskArgs)malloc(sizeof(struct SocketListenerTaskArgs_st));
-    threadArg->libData=libData;
-    threadArg->server=server;
-    taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketListenerTask, threadArg);
+    taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketListenerTask, server);
+    server->taskId = taskId;
 
     #ifdef _DEBUG
     printf("[socketListen]\n\tlisten socket id = %d in taks with id = %d\n\n", listenSocket, taskId);
@@ -542,61 +559,62 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 #pragma region (socketBinaryWrite|socketWriteString)[socketId_Integer, data: ByteArray[<>] | _String, dataLength_Integer, bufferLength_Integer]: socketId_Integer
 
-int socketReadyForWriteQ(SOCKET socketId){
-    fd_set set;
-    struct timeval socktimeout;
-    socktimeout.tv_sec = 0;
-    socktimeout.tv_usec = 1000;
-    int rv;
+#define TIMEOUT_INIT_MS 10
+#define TIMEOUT_MAX_MULTIPLIER 100
 
-    FD_ZERO(&set);
-    FD_SET(socketId, &set);
+static fd_set global_write_set;
+static struct timeval global_socktimeout = {0, 1000}; // 1 ms
 
-    if (select(socketId+1, NULL, &set, NULL, &socktimeout) == 1) return True;
-    return False;
+int socketReadyForWriteQ(SOCKET socketId) {
+    FD_ZERO(&global_write_set);
+    FD_SET(socketId, &global_write_set);
+
+    struct timeval socktimeout = global_socktimeout;
+
+    return select(socketId + 1, NULL, &global_write_set, NULL, &socktimeout) == 1;
 }
 
-int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize){
-    int iResult;
-    int writeLength;
-    char *buffer;
-    int err;
-    SOCKET currentSoketIdBackup;
-    int timeoutInit = 10;
-    int timeout = timeoutInit;
+int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
+    int sentBytes, chunkSize;
+    int timeout = TIMEOUT_INIT_MS;
 
-    for (int i = 0; i < dataLength; i += bufferSize) {
-        buffer = (char*)&data[i];
-        writeLength = dataLength - i > bufferSize ? bufferSize : dataLength - i;
+    for (int offset = 0; offset < dataLength;) {
+        chunkSize = (dataLength - offset > bufferSize) ? bufferSize : dataLength - offset;
 
-        if (socketReadyForWriteQ(socketId) == 1) {
-            iResult = send(socketId, buffer, writeLength, 0);
-            if (iResult == SOCKET_ERROR) {
-                err = GETSOCKETERRNO();
-                printf("[socketWrite]\n\terror write %d bytes to socket %d on step %d error number = %d\n\n", dataLength, (int)socketId, i, err);
-                if (err == 10035 || err == 35) {
-                    printf("[socketWrite]\n\twrite paused on %d ms\n\n", timeout);
-                    SLEEP(timeout * ms);
-                    i -= bufferSize;
-                    timeout += timeoutInit;
+        if (socketReadyForWriteQ(socketId)) {
+            sentBytes = send(socketId, (char*)&data[offset], chunkSize, 0);
 
-                    if (timeout > 100 * timeoutInit) {
-                        return SOCKET_ERROR;
-                    }
+            if (sentBytes == SOCKET_ERROR) {
+                int err = GETSOCKETERRNO();
+                printf("[socketWrite] Error sending %d bytes on socket %d at offset %d, error %d\n", dataLength, (int)socketId, offset, err);
+
+                if (err == 10035 || err == 35) {  // EWOULDBLOCK or similar
+                    #ifdef _DEBUG
+                    printf("[socketWrite] Write paused for %d ms\n", timeout);
+                    #endif
                 } else {
                     return SOCKET_ERROR;
                 }
             } else {
-                timeout = timeoutInit;
+                offset += sentBytes;
+                timeout = TIMEOUT_INIT_MS; 
+                continue;
             }
-        } else {
-            SLEEP(timeout * ms);
-            i -= bufferSize;
-            timeout += timeoutInit;
-            if (timeout > 100 * timeoutInit) {
-                printf("[socketWrite]\n\ttimeout error!\n\n");
-                return SOCKET_ERROR;
-            }
+        } 
+        #ifdef _DEBUG
+        else {
+            printf("[socketWrite] Socket not ready, pausing for %d ms\n", timeout);
+        }
+        #endif
+
+        SLEEP(timeout * ms);
+        timeout += TIMEOUT_INIT_MS;
+
+        if (timeout > TIMEOUT_INIT_MS * TIMEOUT_MAX_MULTIPLIER) {
+            #ifdef _DEBUG
+            printf("[socketWrite] Timeout exceeded\n");
+            #endif
+            return SOCKET_ERROR;
         }
     }
 
@@ -731,38 +749,6 @@ DLLEXPORT int socketHostname(WolframLibraryData libData, mint Argc, MArgument *A
     #endif
 
     MArgument_setUTF8String(Res, str);
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socketClients[socketId_Integer]: clients: {___Integer}
-
-DLLEXPORT int socketClients(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
-    SOCKET socketId = MArgument_getInteger(Args[0]);
-    int serverId;
-    for (int i = 0; i < serversLength; i++){
-        if (servers[i]->listenSocket == socketId){
-            serverId = i;
-        }
-    }
-
-    int rank = 1;
-    mint dims[1];
-    dims[0] = servers[serverId]->clientsLength;
-    MTensor data;
-    libData->MTensor_new(MType_Integer, rank, dims, &data);
-    mint *out;
-    out = libData->MTensor_getIntegerData(data);
-    for (int i = 0; i < servers[serverId]->clientsLength; i++){
-        out[i] = servers[serverId]->clients[i];
-    }
-
-    #ifdef _DEBUG
-    printf("[socketHostname]\n\tsocket id = %d number of connected clients = %d\n\n", socketId, servers[serverId]->clientsLength);
-    #endif
-
-    MArgument_setMTensor(Res, data);
     return LIBRARY_NO_ERROR;
 }
 
