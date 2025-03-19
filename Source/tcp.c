@@ -2,12 +2,14 @@
 
 #undef UNICODE
 
+#define SECOND 1000000
+#define MILISECOND 1000
+
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #define ms 1000
     #define ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
     #define CLOSESOCKET(s) closesocket(s)
     #define GETSOCKETERRNO() (WSAGetLastError())
@@ -30,8 +32,6 @@
     #define NO_ERROR 0
     #define SOCKET_ERROR -1
     #define ZeroMemory(Destination,Length) memset((Destination),0,(Length))
-    #define SLEEP usleep
-    #define ms 1000
     inline void nopp() {}
     #define SOCKET int
     #define ISVALIDSOCKET(s) ((s) >= 0)
@@ -42,6 +42,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "WolframLibrary.h"
@@ -84,7 +85,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #ifdef _WIN32
     WSACleanup();
     #else
-    SLEEP(1000 * ms);
+    SLEEP(SECOND);
     #endif
 
     return;
@@ -94,25 +95,30 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 #pragma region tools
 
-#ifdef _WIN32
-void SLEEP(__int64 usec) {
-
-    HANDLE timer;
+void SLEEP(uint64_t usec) {
+    #ifdef _WIN32
+    // windows
+    static HANDLE timer = NULL;
+    if (!timer) {
+        timer = CreateWaitableTimer(NULL, TRUE, NULL);
+        if (!timer) return;
+    }
+    
     LARGE_INTEGER li;
-
-    if (!(timer = CreateWaitableTimer(NULL, TRUE, NULL)))
-        return;
-
-    li.QuadPart = -usec * 10; 
+    li.QuadPart = -(LONGLONG)(usec * 10); // mcs to 100 nanosecs intervals
     if (!SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE)) {
-        CloseHandle(timer);
         return;
     }
-
+    
     WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
+    
+    #else
+    struct timespec ts;
+    ts.tv_sec = usec / 1000000;          // seconds
+    ts.tv_nsec = (usec % 1000000) * 1000; // nanosecs
+    nanosleep(&ts, NULL);
+    #endif
 }
-#endif
 
 #pragma endregion
 
@@ -395,7 +401,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
 	while(libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
 	{
         if (sleepMode){
-            SLEEP(ms);
+            SLEEP(MILISECOND);
         }
 
         clientSocket = accept(server->listenSocket, NULL, NULL);
@@ -477,7 +483,7 @@ DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     server->taskId = taskId;
 
     #ifdef _DEBUG
-    printf("[socketListen]\n\tlisten socket id = %d in taks with id = %d\n\n", listenSocket, taskId);
+    printf("[socketListen]\n\tlisten socket id = %d in taks with id = %d\n\n", server->listenSocket, taskId);
     #endif
 
     MArgument_setInteger(Res, taskId);
@@ -607,7 +613,7 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
         }
         #endif
 
-        SLEEP(timeout * ms);
+        SLEEP(timeout * MILISECOND);
         timeout += TIMEOUT_INIT_MS;
 
         if (timeout > TIMEOUT_INIT_MS * TIMEOUT_MAX_MULTIPLIER) {

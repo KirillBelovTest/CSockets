@@ -197,13 +197,22 @@ With[{byteArray = ByteArray[data]},
 ]; 
 
 
+createServer = LibraryFunctionLoad[$libFile, "createServer", {Integer, Integer}, Integer]; 
+
+
+getServerListenSocket = LibraryFunctionLoad[$libFile, "getServerListenSocket", {Integer}, Integer]; 
+
+
+getServerClients = LibraryFunctionLoad[$libFile, "getServerClients", {Integer}, {Integer, 1}]; 
+
+
 socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String}, Integer]; 
 
 
 socketClose = LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
 
 
-socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer, Integer}, Integer]; 
+socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer}, Integer]; 
 
 
 socketListenerTaskRemove = LibraryFunctionLoad[$libFile, "socketListenerTaskRemove", {Integer}, Integer]; 
@@ -228,9 +237,6 @@ socketPort = LibraryFunctionLoad[$libFile, "socketPort", {Integer}, Integer];
 
 
 socketHostname = LibraryFunctionLoad[$libFile, "socketHostname", {Integer}, String]; 
-
-
-socketClients = LibraryFunctionLoad[$libFile, "socketClients", {Integer}, {Integer, 1}]; 
 
 
 End[]; 
