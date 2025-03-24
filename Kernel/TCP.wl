@@ -10,6 +10,14 @@ CSocketObject::usage =
 "CSocketObject[socketId] socket representation."; 
 
 
+CServerObject::usage = 
+"CServerObject[serverPtr] server representation."; 
+
+
+CServerCreate::usage =
+"CServerCreate[port, bufferSize] creates new server object.";
+
+
 CSocketOpen::usage = 
 "CSocketOpen[port] returns new server socket opened on localhost.
 CSocketOpen[host, port] returns new server socket opened on specific host."; 
@@ -39,25 +47,34 @@ CSocketObject[socketId_Integer]["DestinationHostname"] :=
 socketHostname[socketId]; 
 
 
-CSocketObject[socketId_Integer]["ConnectedClients"] := 
-Map[CSocketObject] @ socketClients[socketId]; 
+CServerObject[serverPrt_Integer]["ListenSocket"] := 
+CSocketObject[getServerListenSocket[serverPrt]];
 
 
-CSocketOpen[host_String: "localhost", port_Integer] := 
-CSocketObject[socketOpen[host, ToString[port]]]; 
+CServerObject[serverPrt_Integer]["Clients"] :=
+Map[CSocketObject, getServerClients[serverPrt]];
 
 
-CSocketOpen[address_String] /; 
-StringMatchQ[address, __ ~~ ":" ~~ NumberString] := 
+Options[CSocketOpen] = {"BufferSize" -> $bufferSize};
+
+
+CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
+CServerObject[createServer[socketOpen[host, ToString[port]], OptionValue["BufferSize"]]]; 
+
+
+CSocketOpen[address_String] /; StringMatchQ[address, __ ~~ ":" ~~ NumberString] := 
 CSocketObject[Apply[socketOpen, StringSplit[address, ":"]]]; 
+
+
+CServerCreate[listenPort_Integer, bufferSize_Integer] :=
+CServerObject[createServer[listenPort, bufferSize]];
 
 
 CSocketConnect[host_String: "localhost", port_Integer] := 
 CSocketObject[socketConnect[host, ToString[port]]]; 
 
 
-CSocketConnect[address_String] /; 
-StringMatchQ[address, __ ~~ ":" ~~ NumberString] := 
+CSocketConnect[address_String] /; StringMatchQ[address, __ ~~ ":" ~~ NumberString] := 
 CSocketObject[Apply[socketConnect, StringSplit[address, ":"]]]; 
 
 
@@ -85,15 +102,17 @@ CSocketObject /: Close[CSocketObject[socketId_Integer]] :=
 socketClose[socketId]; 
 
 
-CSocketObject /: SocketListen[socket: CSocketObject[socketId_Integer], handler_, OptionsPattern[{SocketListen, "BufferSize" -> $bufferSize}]] := 
+CServerObject /: SocketListen[server: CServerObject[serverPtr_Integer], handler_, OptionsPattern[{SocketListen, "BufferSize" -> $bufferSize}]] := 
 Module[{task}, 
-	task = Internal`CreateAsynchronousTask[socketListen, {socketId, OptionValue["BufferSize"]}, handler[toPacket[##]]&]; 
+	task = Internal`CreateAsynchronousTask[socketListen, {serverPtr}, handler[toPacket[##]]&]; 
 	CSocketListener[<|
-		"Socket" -> socket, 
-		"Host" -> socket["DestinationHostname"], 
-		"Port" -> socket["DestinationPort"], 
+		(*"Server" -> server, 
+		"Socket" -> server["ListenSocket"],
+		"Clients" -> server["Clients"],
+		"Host" -> server["ListenSocket"]["DestinationHostname"], 
+		"Port" -> server["ListenSocket"]["DestinationPort"], 
 		"Handler" -> handler, 
-		"TaskId" -> task[[2]], 
+		"TaskId" -> task[[2]], *)
 		"Task" -> task
 	|>]
 ]; 

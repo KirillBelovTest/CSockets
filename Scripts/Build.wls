@@ -32,7 +32,7 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 
     CreateLibrary @@ {$libSrc, lib, 
         "TargetDirectory" -> $libDir, 
-        "Debug" -> False, 
+        "Debug" -> True, 
         If[prot === Automatic, Nothing, "TransferProtocolLibrary" -> "WSTP"],
         "ShellCommandFunction" -> Print, 
         "SystemCompileOptions" -> "/Ox /GL"
