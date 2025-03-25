@@ -93,79 +93,42 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 #pragma endregion
 
-#pragma region SLEEP
+#pragma region timer
 
-void SLEEP(uint64_t usec) {
+#ifdef _WIN32
+HANDLE create_timer(void) {
+    return CreateWaitableTimer(NULL, TRUE, NULL);
+}
+
+void destroy_timer(HANDLE timer) {
+    if (timer) CloseHandle(timer);
+}
+#endif
+
+void SLEEP(uint64_t usec, void* timer_ptr) {
     #ifdef _WIN32
-    // windows
-    static HANDLE timer = NULL;
-    if (!timer) {
-        timer = CreateWaitableTimer(NULL, TRUE, NULL);
+        HANDLE timer = (HANDLE)timer_ptr;
         if (!timer) return;
-    }
     
-    LARGE_INTEGER li;
-    li.QuadPart = -(LONGLONG)(usec * 10); // mcs to 100 nanosecs intervals
-    if (!SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE)) {
-        return;
-    }
+        LARGE_INTEGER li;
+        li.QuadPart = -(LONGLONG)(usec * 10); // microseconds to 100-nanosecond intervals
+        if (!SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE)) {
+            return;
+        }
     
-    WaitForSingleObject(timer, INFINITE);
-    
+        WaitForSingleObject(timer, INFINITE);
     #else
-    struct timespec ts;
-    ts.tv_sec = usec / 1000000;           // seconds
-    ts.tv_nsec = (usec % 1000000) * 1000; // nanosecs
-    nanosleep(&ts, NULL);
+        (void)timer_ptr; // unused on POSIX
+        struct timespec ts;
+        ts.tv_sec = usec / 1000000;
+        ts.tv_nsec = (usec % 1000000) * 1000;
+        nanosleep(&ts, NULL);
     #endif
 }
 
 #pragma endregion
 
 #pragma region server
-
-typedef struct Server_st {
-    SOCKET listenSocket;
-    WolframLibraryData libData;
-    mint taskId; 
-    size_t clientsLength;
-    size_t clientsLengthMax;
-    size_t clientsLengthInvalid;
-    SOCKET *clients;
-    size_t bufferSize;
-    BYTE *buffer;
-}* Server;
-
-//createServer[socketId_Integer, bufferSize_Integer]: serverPtr_Integer
-DLLEXPORT int createServer(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET listenSocket = (SOCKET)MArgument_getInteger(Args[0]);
-    size_t bufferSize = (size_t)MArgument_getInteger(Args[1]);
-    
-    void* ptr = malloc(sizeof(struct Server_st)); 
-    Server server = (Server)ptr;
-
-    server->taskId = 0;
-
-    server->libData = libData;
-
-    server->listenSocket = listenSocket; 
-
-    server->bufferSize = bufferSize; 
-
-    server->clients = malloc(4 * sizeof(SOCKET));
-    server->clientsLength = 0;
-    server->clientsLengthMax = 4;
-    server->clientsLengthInvalid = 0;
-
-    server->clients[0] = INVALID_SOCKET;
-    server->clients[1] = INVALID_SOCKET;
-    server->clients[2] = INVALID_SOCKET;
-    server->clients[3] = INVALID_SOCKET;
-    
-    MArgument_setInteger(Res, ptr); 
-
-    return LIBRARY_NO_ERROR; 
-}
 
 //getServerListenSocket[serverPtr_Integer]: listenSocketId_Integer
 DLLEXPORT int getServerListenSocket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
@@ -185,6 +148,8 @@ DLLEXPORT int getServerClients(WolframLibraryData libData, mint Argc, MArgument 
     memcpy(array, server->clients, server->clientsLength * sizeof(SOCKET));
 
     MArgument_setMTensor(Res, clients); 
+    MNumericArray_disown(clients);
+
     return LIBRARY_NO_ERROR; 
 }
 
@@ -254,18 +219,39 @@ MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint
 
 #pragma region socketOpen
 
-//socketOpen[host_String, port_String]: socketId_Integer
+typedef struct Server_st {
+    SOCKET listenSocket;
+    SOCKET *clients;
+    size_t clientsLength;
+    size_t clientsLengthMax;
+    size_t clientsLengthInvalid;
+    BYTE *buffer;
+    size_t bufferSize;
+    size_t sndBufSize;
+    size_t rcvBufSize;
+    char *host;
+    char *port;
+    WolframLibraryData libData;
+}* Server;
+
+
+
+//socketOpen[host_String, port_String, bufferSize, modeNoDelay, mode]: socketId_Integer
 DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     char* host = MArgument_getUTF8String(Args[0]);
     char* port = MArgument_getUTF8String(Args[1]);
-
+    
+    int bufferSize = (size_t)MArgument_getInteger(Args[2]);
+    size_t sndBufSize = (size_t)MArgument_getInteger(Args[3]);
+    size_t rcvBufSize = (size_t)MArgument_getInteger(Args[4]);
+    int iModeNoDelay = (int)MArgument_getInteger(Args[5]); // 0 | 1 default 0
+    int iMode = (int)MArgument_getInteger(Args[6]); // 0 | 1 default 1
+    
     int iResult;
     SOCKET listenSocket = INVALID_SOCKET;
     struct addrinfo hints;
     struct addrinfo *address = NULL;
-    int iMode = 1;
-    int buffSize = 1048576 * 16;
-
+    
     ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -289,8 +275,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    int iModeNoDelay = 0;
-
     iResult = setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&iModeNoDelay, sizeof(iModeNoDelay));
     if (iResult == SOCKET_ERROR) {
         #ifdef _DEBUG
@@ -309,7 +293,7 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&buffSize, sizeof(buffSize));
+    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
     if (iResult == SOCKET_ERROR) {
         #ifdef _DEBUG
         printf("[socketOpen->ERROR]\n\tsetsockopt(SO_RCVBUF) for port = %d returns error = %d\n\n", port, GETSOCKETERRNO());
@@ -318,7 +302,7 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&buffSize, sizeof(buffSize));
+    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
     if (iResult == SOCKET_ERROR) {
         #ifdef _DEBUG
         printf("[socketOpen->ERROR]\n\tsetsockopt(SO_SNDBUF) for port = %d returns error = %d\n\n", port, GETSOCKETERRNO());
@@ -359,11 +343,29 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
     }
 
+    void *ptr = malloc(sizeof(struct Server_st));
+    Server server = (Server)ptr;
+    
+    server->listenSocket = listenSocket;
+    server->clients = malloc(4 * sizeof(SOCKET));
+    server->clientsLength = 0;
+    server->clientsLengthMax = 4;
+    server->clientsLengthInvalid = 0;
+    server->bufferSize = bufferSize;
+    server->buffer = (char*)malloc(bufferSize * sizeof(char));
+
+    server->host = (char*)malloc(strlen(host) + 1);
+    server->port = (char*)malloc(strlen(port) + 1);
+    srtcpy(server->host, host);
+    srtcpy(server->port, port);
+
+    server->libData = libData;
+
     freeaddrinfo(address);
     libData->UTF8String_disown(host);
     libData->UTF8String_disown(port);
 
-    MArgument_setInteger(Res, listenSocket);
+    MArgument_setInteger(Res, ptr);
     return LIBRARY_NO_ERROR;
 }
 
@@ -409,6 +411,16 @@ static void socketListenerTask(mint taskId, void* vtarg)
     time_t readTime = time(NULL);
     BOOL sleepMode = True;
 
+    #ifdef _WIN32
+    HANDLE global_timer = create_timer();
+    if (!global_timer) {
+        fprintf(stderr, "Failed to create timer\n");
+        exit(EXIT_FAILURE);
+    }
+    #else
+    void* global_timer = NULL; // Для POSIX таймер не нужен
+    #endif
+
     //funcions
 
     WolframIOLibrary_Functions ioFuncs = libData->ioLibraryFunctions;
@@ -426,7 +438,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
 	while(asynchronousTaskAliveQFunc(taskId))
 	{
         if (sleepMode){
-            SLEEP(MILISECOND);
+            SLEEP(MILISECOND, global_timer);
         }
 
         clientSocket = accept(listenSocket, NULL, NULL);
@@ -500,6 +512,10 @@ static void socketListenerTask(mint taskId, void* vtarg)
         raiseAsyncEventFunc(taskId, "Closed", ds); 
         CLOSESOCKET(clients[i]);
     }
+
+    #ifdef _WIN32
+    destroy_timer(global_timer);
+    #endif
 
     free(server->clients);
     free(buffer);
@@ -616,6 +632,16 @@ int socketReadyForWriteQ(SOCKET socketId) {
 int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
     int sentBytes, chunkSize;
     int timeout = TIMEOUT_INIT_MS;
+    
+    #ifdef _WIN32
+    HANDLE timer = create_timer();
+    if (!timer) {
+        fprintf(stderr, "Failed to create timer\n");
+        exit(EXIT_FAILURE);
+    }
+    #else
+    void* timer = NULL; // Для POSIX таймер не нужен
+    #endif
 
     for (int offset = 0; offset < dataLength;) {
         chunkSize = (dataLength - offset > bufferSize) ? bufferSize : dataLength - offset;
@@ -646,7 +672,7 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
         }
         #endif
 
-        SLEEP(timeout * MILISECOND);
+        SLEEP(timeout * MILISECOND, timer);
         timeout += TIMEOUT_INIT_MS;
 
         if (timeout > TIMEOUT_INIT_MS * TIMEOUT_MAX_MULTIPLIER) {
