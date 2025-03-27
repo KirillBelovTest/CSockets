@@ -6,80 +6,91 @@ BeginPackage["KirillBelov`CSockets`TCP`", {
 }]; 
 
 
-TCPClientSocket::usage = 
-"TCPClientSocket[socketId] socket representation."; 
+CSocketObject::usage = 
+"CSocketObject[socketId] socket representation."; 
 
 
-TCPServerSocket::usage = 
-"TCPServerSocket[serverPtr] server representation."; 
+CServerObject::usage = 
+"CServerObject[serverPtr] server representation."; 
 
-TCPSocketOpen::usage = 
+CSocketOpen::usage = 
 "CSocketOpen[port] returns new server socket opened on localhost.
 CSocketOpen[host, port] returns new server socket opened on specific host."; 
 
 
-TCPSocketConnect::usage = 
+CSocketConnect::usage = 
 "CSocketConnect[port] connect to socket on localhost.
 CSocketConnect[host, port] connect to socket."; 
 
 
-TCPSocketListener::usage = 
-"TCPSocketListener[assoc] listener object."; 
+CSocketListener::usage = 
+"CSocketListener[assoc] listener object."; 
 
 
 Begin["`Private`"]; 
 
 
-Options[TCPSocketOpen] = {
-    "BufferSize" :> $bufferSize
+Options[CSocketOpen] = {
+    "BufferSize" :> $bufferSize, 
+    "ModeNoDelay" :> $modeNoDelay,
+    "Mode" :> $mode, 
+    "SendBufferSize" :> $sendBufferSize,
+    "RecvBufferSize" :> $recvBufferSize
 };
 
 
-TCPSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
-TCPServerSocket[socketOpen[host, ToString[port], OptionValue["BufferSize"]]]; 
+CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
+CServerObject[socketOpen[
+    host, 
+    ToString[port], 
+    OptionValue["BufferSize"], 
+    OptionValue["SendBufferSize"],
+    OptionValue["RecvBufferSize"], 
+    OptionValue["ModeNoDelay"],
+    OptionValue["Mode"]    
+]]; 
 
 
-Options[TCPSocketConnect] = {
-    "BufferSize" :> $bufferSize
-};
+CSocketConnect[host_String: "localhost", port_Integer] := 
+CSocketObject[socketConnect[host, ToString[port]]]; 
 
 
-TCPSocketConnect[host_String: "localhost", port_Integer, OptionsPattern[]] := 
-TCPClientSocket[socketConnect[host, ToString[port]], OptionValue["BufferSize"]]; 
-
-
-TCPClientSocket /: BinaryWrite[TCPClientSocket[socketId_Integer], data_ByteArray, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
-socketBinaryWrite[socketId, data, Length[data], OptionValue[Flatten[{opts}], "BufferSize"]]; 
-
-
-TCPClientSocket /: WriteString[TCPClientSocket[socketId_Integer], data_String, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
-socketWriteString[socketId, data, StringLength[data], OptionValue[Flatten[{opts}], "BufferSize"]]; 
-
-
-TCPClientSocket /: SocketReadMessage[TCPClientSocket[socketId_Integer]] := 
-socketReadMessage[socketId, $bufferSize]; 
-
-
-TCPClientSocket /: SocketReadMessage[TCPClientSocket[socketId_Integer], bufferSize_Integer] := 
-socketReadMessage[socketId, bufferSize]; 
-
-
-TCPClientSocket /: SocketReadyQ[TCPClientSocket[socketId_Integer]] := 
-socketReadyQ[socketId]; 
-
-
-TCPClientSocket /: Close[TCPClientSocket[socketId_Integer]] := 
-socketClose[socketId]; 
-
-
-TCPServerSocket /: SocketListen[server: TCPServerSocket[serverPtr_Integer], handler_, OptionsPattern[{SocketListen, "BufferSize" :> $bufferSize}]] := 
-Module[{task}, 
-    task = Internal`CreateAsynchronousTask[socketListen, {serverPtr}, handler[toPacket[##]]&]; 
-    TCPListener[task, server, handler]
+CSocketObject /: BinaryWrite[CSocketObject[socketId_Integer], data_ByteArray, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
+With[{bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"]},
+    socketBinaryWrite[socketId, data, Length[data], bufferSize]
 ]; 
 
 
-TCPSocketListener /: DeleteObject[TCPSocketListener[taskId_, ___]] := 
+CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
+With[{bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"]},
+    socketWriteString[socketId, data, StringLength[data], bufferSize]
+]; 
+
+
+CSocketObject /: SocketReadMessage[CSocketObject[socketId_Integer]] := 
+socketReadMessage[socketId, $bufferSize]; 
+
+
+CSocketObject /: SocketReadMessage[CSocketObject[socketId_Integer], bufferSize_Integer] := 
+socketReadMessage[socketId, bufferSize]; 
+
+
+CSocketObject /: SocketReadyQ[CSocketObject[socketId_Integer]] := 
+socketReadyQ[socketId]; 
+
+
+CSocketObject /: Close[CSocketObject[socketId_Integer]] := 
+socketClose[socketId]; 
+
+
+CServerObject /: SocketListen[server: CServerObject[serverPtr_Integer], handler_] := 
+Module[{task}, 
+    task = Internal`CreateAsynchronousTask[socketListen, {serverPtr}, handler[toPacket[##]]&]; 
+    CSocketListener[task, server, handler]
+]; 
+
+
+CSocketListener /: DeleteObject[CSocketListener[taskId_, ___]] := 
 RemoveAsynchronousTask[taskId]; 
 
 
@@ -109,7 +120,19 @@ $libFile = FileNameJoin[{
 }]; 
 
 
-$bufferSize = 8 * 8192; 
+$bufferSize = 4 * 1024; 
+
+
+$modeNoDelay = 0;
+
+
+$mode = 1;
+
+
+$sendBufferSize = 64 * 1024; 
+
+
+$recvBufferSize = 64 * 1024; 
 
 
 If[!FileExistsQ[$libFile], 
@@ -162,8 +185,8 @@ socketClose = LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer];
 socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer}, Integer]; 
 
 
-(*socketConnect["host", "port", bufferSize] -> socketId*)
-socketConnect = LibraryFunctionLoad[$libFile, "socketConnect", {String, String, Integer}, Integer]; 
+(*socketConnect["host", "port"] -> socketId*)
+socketConnect = LibraryFunctionLoad[$libFile, "socketConnect", {String, String}, Integer]; 
 
 
 (*socketBinaryWrite[socketId, data, length, bufferSize] -> length*)

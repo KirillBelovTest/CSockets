@@ -15,7 +15,6 @@
     #define GETSOCKETERRNO() (WSAGetLastError())
     #pragma comment (lib, "Ws2_32.lib")
 #else
-    #include <string.h>
     #include <sys/types.h>
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -44,6 +43,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
@@ -90,6 +90,26 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
     return;
 }
+
+#pragma endregion
+
+#pragma region server struct
+
+
+typedef struct Server_st {
+    SOCKET listenSocket;
+    SOCKET *clients;
+    size_t clientsLength;
+    size_t clientsLengthMax;
+    size_t clientsLengthInvalid;
+    BYTE *buffer;
+    size_t bufferSize;
+    size_t sndBufSize;
+    size_t rcvBufSize;
+    char *host;
+    char *port;
+    WolframLibraryData libData;
+}* Server;
 
 #pragma endregion
 
@@ -144,11 +164,11 @@ DLLEXPORT int getServerClients(WolframLibraryData libData, mint Argc, MArgument 
     MTensor clients;
     libData->MTensor_new(MType_Integer, 1, &server->clientsLength, &clients);
 
-    int *array = libData->MTensor_getIntegerData(clients);
+    mint *array = libData->MTensor_getIntegerData(clients);
     memcpy(array, server->clients, server->clientsLength * sizeof(SOCKET));
 
     MArgument_setMTensor(Res, clients); 
-    MNumericArray_disown(clients);
+    libData->numericarrayLibraryFunctions->MNumericArray_disown(clients);
 
     return LIBRARY_NO_ERROR; 
 }
@@ -218,23 +238,6 @@ MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint
 #pragma endregion
 
 #pragma region socketOpen
-
-typedef struct Server_st {
-    SOCKET listenSocket;
-    SOCKET *clients;
-    size_t clientsLength;
-    size_t clientsLengthMax;
-    size_t clientsLengthInvalid;
-    BYTE *buffer;
-    size_t bufferSize;
-    size_t sndBufSize;
-    size_t rcvBufSize;
-    char *host;
-    char *port;
-    WolframLibraryData libData;
-}* Server;
-
-
 
 //socketOpen[host_String, port_String, bufferSize, modeNoDelay, mode]: socketId_Integer
 DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
@@ -344,20 +347,48 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     }
 
     void *ptr = malloc(sizeof(struct Server_st));
+    if (!ptr) {
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tmalloc() for Server struct on port = %d returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
     Server server = (Server)ptr;
-    
+
     server->listenSocket = listenSocket;
+
     server->clients = malloc(4 * sizeof(SOCKET));
+    if (!server->clients){
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tmalloc() for clients array on port = %d returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        free(ptr);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+    
     server->clientsLength = 0;
-    server->clientsLengthMax = 4;
+    server->clientsLengthMax = 2;
     server->clientsLengthInvalid = 0;
+
     server->bufferSize = bufferSize;
     server->buffer = (char*)malloc(bufferSize * sizeof(char));
+    if (!server->buffer){
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tmalloc() for buffer on port = %d returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        free(server->clients);
+        free(ptr);
+        return LIBRARY_FUNCTION_ERROR;
+    }
 
     server->host = (char*)malloc(strlen(host) + 1);
     server->port = (char*)malloc(strlen(port) + 1);
-    srtcpy(server->host, host);
-    srtcpy(server->port, port);
+    strcpy(server->host, host);
+    strcpy(server->port, port);
 
     server->libData = libData;
 
@@ -365,7 +396,9 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     libData->UTF8String_disown(host);
     libData->UTF8String_disown(port);
 
-    MArgument_setInteger(Res, ptr);
+    uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
+
+    MArgument_setInteger(Res, serverPtr);
     return LIBRARY_NO_ERROR;
 }
 
@@ -428,10 +461,10 @@ static void socketListenerTask(mint taskId, void* vtarg)
     DataStore (*createDataStoreFunc)() = ioFuncs->createDataStore;
     void (*addIntegerFunc)(DataStore, mint) = ioFuncs->DataStore_addInteger;
     void (*addMNumericArrayFunc)(DataStore, MNumericArray) = ioFuncs->DataStore_addMNumericArray;
-    void (*raiseAsyncEventFunc)(mint, const char*, DataStore) = ioFuncs->raiseAsyncEvent;
+    void (*raiseAsyncEventFunc)(mint, char*, DataStore) = ioFuncs->raiseAsyncEvent;
     mbool (*asynchronousTaskAliveQFunc)(mint) = ioFuncs->asynchronousTaskAliveQ;
-    mint (*removeAsynchronousTaskFunc)(DataStore) = ioFuncs->removeAsynchronousTask;
-    errcode_t (*newNArrFunc)(mint, mint*, MNumericArray*) = naFuncs->MNumericArray_new;
+    mint (*removeAsynchronousTaskFunc)(mint) = ioFuncs->removeAsynchronousTask;
+    errcode_t (*newNArrFunc)(const numericarray_data_t, const mint, const mint*, MNumericArray*) = naFuncs->MNumericArray_new;
     void (*disownNArrFunc)(MNumericArray) = naFuncs->MNumericArray_disown;
     void *(*getNArrDataFunc)(MNumericArray) = naFuncs->MNumericArray_getData;
 
@@ -471,7 +504,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     #endif
                     sleepMode = False;
                     dims[0] = iResult;
-                    newNArrFunc(MNumericArray_Type_UBit8, 1, dims, &data);
+                    newNArrFunc(MNumericArray_Type_UBit8, (mint)1, dims, &data);
                     memcpy(getNArrDataFunc(data), buffer, iResult);
                     ds = createDataStoreFunc();
                     addIntegerFunc(ds, listenSocket);
@@ -527,7 +560,6 @@ DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     mint taskId;
 
     taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketListenerTask, server);
-    server->taskId = taskId;
 
     #ifdef _DEBUG
     printf("[socketListen]\n\tlisten socket id = %d in taks with id = %d\n\n", server->listenSocket, taskId);
