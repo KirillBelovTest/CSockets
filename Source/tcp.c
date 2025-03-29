@@ -735,7 +735,7 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
         exit(EXIT_FAILURE);
     }
     #else
-    void* timer = NULL; // Для POSIX таймер не нужен
+    void* timer = NULL; // POSIX does not require a timer
     #endif
 
     for (int offset = 0; offset < dataLength;) {

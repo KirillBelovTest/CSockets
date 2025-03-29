@@ -80,8 +80,11 @@ With[{bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"]},
 
 
 CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
-With[{bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"]},
-    socketWriteString[socketId, data, StringLength[data], bufferSize]
+With[{
+    bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"], 
+    len = StringLength[data]
+},
+    socketWriteString[socketId, data, len, bufferSize]
 ]; 
 
 
@@ -229,7 +232,7 @@ socketBinaryWrite = LibraryFunctionLoad[$libFile, "socketBinaryWrite", {Integer,
 
 
 (*socketWriteString[socketId, data, length, bufferSize] -> length*)
-socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, String, Integer, Integer}, Integer]; 
+socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, {String, "Shared"}, Integer, Integer}, Integer]; 
 
 
 (*socketReadyQ[socketId] -> readyState*)
