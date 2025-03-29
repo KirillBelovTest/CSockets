@@ -51,6 +51,24 @@ CServerObject[socketOpen[
 ]]; 
 
 
+CServerObject[serverPtr_Integer]["ListenSocket" | "Socket"] :=
+CSocketObject[serverGetListenSocket[serverPtr]]; 
+
+
+CServerObject[serverPtr_Integer]["DestinationHostname" | "Host"] :=
+With[{socketId = serverGetListenSocket[serverPtr]}, 
+    socketGetHostname[socketId]
+];
+
+
+CServerObject[serverPtr_Integer]["DestinationPort" | "Port"] :=
+socketGetPort[serverGetListenSocket[serverPtr]]; 
+
+
+CServerObject[serverPtr_Integer]["ConnectedClients" | "Clients"] :=
+Map[CSocketObject, serverGetClients[serverPtr]]; 
+
+
 CSocketConnect[host_String: "localhost", port_Integer] := 
 CSocketObject[socketConnect[host, ToString[port]]]; 
 
@@ -177,12 +195,29 @@ With[{byteArray = ByteArray[data]},
 ] -> serverPtr*)
 socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
 
+
 (*socketClose[socketId] -> socketId*)
 socketClose = LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
 
 
 (*socketListen[serverPtr] -> taskId*)
-socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer}, Integer]; 
+socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer}, {Integer}]; 
+
+
+(*serverGetListenSocket[serverPtr] -> listenSocket*)
+serverGetListenSocket = LibraryFunctionLoad[$libFile, "serverGetListenSocket", {Integer}, Integer]; 
+
+
+(*socketGetHostname[socketId] -> hostname*)
+socketGetHostname = LibraryFunctionLoad[$libFile, "socketGetHostname", {Integer}, String]; 
+
+
+(*socketGetPort[serverPtr] -> port*)
+socketGetPort = LibraryFunctionLoad[$libFile, "socketGetPort", {Integer}, Integer]; 
+
+
+(*serverGetClients[serverPtr] -> port*)
+serverGetClients = LibraryFunctionLoad[$libFile, "serverGetClients", {Integer}, {Integer, 1}]; 
 
 
 (*socketConnect["host", "port"] -> socketId*)
