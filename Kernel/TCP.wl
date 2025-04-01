@@ -232,7 +232,7 @@ socketBinaryWrite = LibraryFunctionLoad[$libFile, "socketBinaryWrite", {Integer,
 
 
 (*socketWriteString[socketId, data, length, bufferSize] -> length*)
-socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, {String, "Shared"}, Integer, Integer}, Integer]; 
+socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, String, Integer, Integer}, Integer]; 
 
 
 (*socketReadyQ[socketId] -> readyState*)

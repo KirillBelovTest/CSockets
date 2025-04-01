@@ -462,6 +462,9 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
 
     MArgument_setInteger(Res, serverPtr);
+    #ifdef _DEBUG
+    printf("[socketOpen]\n\tserverPtr = %I64d\n\tlisten socket id = %I64d\n\n", serverPtr, listenSocket);
+    #endif
     return LIBRARY_NO_ERROR;
 }
 
@@ -539,9 +542,6 @@ static void socketListenerTask(mint taskId, void* vtarg)
 
         clientSocket = accept(listenSocket, NULL, NULL);
         if (ISVALIDSOCKET(clientSocket)) {
-            #ifdef _DEBUG
-            printf("[socketListenerTask]\n\taccepted socket id = %d\n\n", (int)clientSocket);
-            #endif
             addClient(server, clientSocket);
             clientsLength = server->clientsLength;
             clientsLengthMax = server->clientsLengthMax;
@@ -553,6 +553,9 @@ static void socketListenerTask(mint taskId, void* vtarg)
             raiseAsyncEventFunc(taskId, "Accepted", ds);
 
             sleepMode = False;
+            #ifdef _DEBUG
+            printf("[socketListenerTask]\n\taccepted socket id = %d\n\n", (int)clientSocket);
+            #endif
         }
 
         sleepMode = True;
@@ -562,9 +565,6 @@ static void socketListenerTask(mint taskId, void* vtarg)
             if (client != INVALID_SOCKET) {
                 iResult = recv(client, buffer, bufferSize, 0);
                 if (iResult > 0) {
-                    #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
-                    #endif
                     sleepMode = False;
                     dims[0] = iResult;
                     newNArrFunc(MNumericArray_Type_UBit8, (mint)1, dims, &data);
@@ -574,10 +574,10 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     addIntegerFunc(ds, client);
                     addMNumericArrayFunc(ds, data);
                     raiseAsyncEventFunc(taskId, "Received", ds);
-                } else if (iResult == 0) {
                     #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
+                    printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
                     #endif
+                } else if (iResult == 0) {
                     ds = createDataStoreFunc();
                     addIntegerFunc(ds, listenSocket);
                     addIntegerFunc(ds, client);
@@ -585,6 +585,9 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     raiseAsyncEventFunc(taskId, "Closed", ds);
                     clients[i] = INVALID_SOCKET;
                     clientsLengthInvalid++;
+                    #ifdef _DEBUG
+                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
+                    #endif
 
                     if (2 * clientsLengthInvalid > clientsLengthMax) {
                         removeInvalidClients(server);
@@ -800,6 +803,9 @@ DLLEXPORT int socketBinaryWrite(WolframLibraryData libData, mint Argc, MArgument
 
     MArgument_setInteger(Res, clientId);
     libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
+    #ifdef _DEBUG
+    printf("[socketBinaryWrite]\n\tsocket id = %I64d sent = %d bytes\n\n", clientId, iResult);
+    #endif
     return LIBRARY_NO_ERROR;
 }
 
@@ -820,6 +826,9 @@ DLLEXPORT int socketWriteString(WolframLibraryData libData, mint Argc, MArgument
 
     MArgument_setInteger(Res, socketId);
     libData->UTF8String_disown(data);
+    #ifdef _DEBUG
+    printf("[socketWriteString]\n\tsocket id = %I64d sent = %d bytes\n\n", socketId, iResult);
+    #endif
     return LIBRARY_NO_ERROR;
 }
 
