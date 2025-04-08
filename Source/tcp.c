@@ -486,10 +486,38 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
 
 #pragma region socketListen
 
+void pushNumericArrayEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET client, char *eventName, BYTE *buffer, size_t size){
+    MNumericArray numericArray;
+    mint rank = 1; 
+    mint dims[1]; 
+    dims[0] = size; 
+    libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, rank, dims, &numericArray); 
+    BYTE *numericArrayData = libData->numericarrayLibraryFunctions->MNumericArray_getData(numericArray);  
+    memcpy(buffer, numericArrayData, size); 
+
+    DataStore dataStore = libData->ioLibraryFunctions->createDataStore(); 
+    libData->ioLibraryFunctions->DataStore_addInteger(dataStore, listenSocket); 
+    libData->ioLibraryFunctions->DataStore_addInteger(dataStore, client);
+    libData->ioLibraryFunctions->DataStore_addMNumericArray(dataStore, numericArray);
+    
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, eventName, dataStore); 
+    libData->ioLibraryFunctions->deleteDataStore(dataStore);
+}
+
+void pushEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET client, char *event){
+    DataStore dataStore = libData->ioLibraryFunctions->createDataStore(); 
+    libData->ioLibraryFunctions->DataStore_addInteger(dataStore, listenSocket); 
+    libData->ioLibraryFunctions->DataStore_addInteger(dataStore, client);
+    libData->ioLibraryFunctions->DataStore_addInteger(dataStore, 0);
+    
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, event, dataStore); 
+    libData->ioLibraryFunctions->deleteDataStore(dataStore); 
+}
+
 static void socketListenerTask(mint taskId, void* vtarg)
 {
     Server server = (Server)vtarg;
-	WolframLibraryData libData = server->libData;
+    WolframLibraryData libData = server->libData;
 
     int iResult;
     int len; 
@@ -497,7 +525,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
     char *buffer = (char*)malloc(server->bufferSize * sizeof(char));
     mint dims[1];
     MNumericArray data;
-	DataStore ds;
+    DataStore ds;
     BYTE *array; 
     SOCKET client; 
     SOCKET listenSocket = server->listenSocket;
@@ -517,10 +545,8 @@ static void socketListenerTask(mint taskId, void* vtarg)
         exit(EXIT_FAILURE);
     }
     #else
-    void* global_timer = NULL; // Для POSIX таймер не нужен
+    void* global_timer = NULL; 
     #endif
-
-    //funcions
 
     WolframIOLibrary_Functions ioFuncs = libData->ioLibraryFunctions;
     WolframNumericArrayLibrary_Functions naFuncs = libData->numericarrayLibraryFunctions;
@@ -534,81 +560,66 @@ static void socketListenerTask(mint taskId, void* vtarg)
     void (*disownNArrFunc)(MNumericArray) = naFuncs->MNumericArray_disown;
     void *(*getNArrDataFunc)(MNumericArray) = naFuncs->MNumericArray_getData;
 
-	while(asynchronousTaskAliveQFunc(taskId))
-	{
+    while(asynchronousTaskAliveQFunc(taskId))
+    {
         if (sleepMode){
             SLEEP(MILISECOND, global_timer);
+            removeInvalidClients(server);
         }
 
-        clientSocket = accept(listenSocket, NULL, NULL);
-        if (ISVALIDSOCKET(clientSocket)) {
-            addClient(server, clientSocket);
-            clientsLength = server->clientsLength;
-            clientsLengthMax = server->clientsLengthMax;
-
-            ds = createDataStoreFunc();
-            addIntegerFunc(ds, listenSocket);
-            addIntegerFunc(ds, clientSocket);
-            addIntegerFunc(ds, 0);
-            raiseAsyncEventFunc(taskId, "Accepted", ds);
-
+        client = accept(listenSocket, NULL, NULL);
+        if (ISVALIDSOCKET(client)) {
             sleepMode = False;
+            addClient(server, client);
+            pushEvent(libData, taskId, listenSocket, client, "Accepted");
+
             #ifdef _DEBUG
-            printf("[socketListenerTask]\n\taccepted socket id = %d\n\n", (int)clientSocket);
+            printf("[socketListenerTask]\n\taccepted socket id = %d\n\n", (int)client);
             #endif
         }
 
-        sleepMode = True;
-        len = clientsLength; 
-        for (int i = 0; i < len; i++) {
+        clientsLength = server->clientsLength; 
+        for (int i = 0; i < clientsLength; i++) {
             client = clients[i];
             if (client != INVALID_SOCKET) {
                 iResult = recv(client, buffer, bufferSize, 0);
                 if (iResult > 0) {
                     sleepMode = False;
-                    dims[0] = iResult;
-                    newNArrFunc(MNumericArray_Type_UBit8, (mint)1, dims, &data);
-                    memcpy(getNArrDataFunc(data), buffer, iResult);
-                    ds = createDataStoreFunc();
-                    addIntegerFunc(ds, listenSocket);
-                    addIntegerFunc(ds, client);
-                    addMNumericArrayFunc(ds, data);
-                    raiseAsyncEventFunc(taskId, "Received", ds);
+                    pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, iResult);
                     #ifdef _DEBUG
                     printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
                     #endif
-                } else if (iResult == 0) {
-                    ds = createDataStoreFunc();
-                    addIntegerFunc(ds, listenSocket);
-                    addIntegerFunc(ds, client);
-                    addIntegerFunc(ds, 0);
-                    raiseAsyncEventFunc(taskId, "Closed", ds);
+                } else if (iResult < 0) {
+                    int err = GETSOCKETERRNO();
+                    if (err == EINTR || err == EAGAIN || err == EWOULDBLOCK || err == 10035 || err == 35) {
+                        #ifdef _DEBUG
+                        printf("[socketListenerTask]\n\tsocket %d is not ready for read\n\n", (int)(client));
+                        #endif
+                    } else {
+                        pushEvent(libData, taskId, listenSocket, client, "Closed");
+                        clients[i] = INVALID_SOCKET;
+                        clientsLengthInvalid++;
+                        #ifdef _DEBUG
+                        printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
+                        #endif
+
+                    }
+                } else {
+                    pushEvent(libData, taskId, listenSocket, client, "Closed");
                     clients[i] = INVALID_SOCKET;
-                    clientsLengthInvalid++;
                     #ifdef _DEBUG
                     printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
                     #endif
-
-                    if (2 * clientsLengthInvalid > clientsLengthMax) {
-                        removeInvalidClients(server);
-                        clientsLength = server->clientsLength;
-                        clientsLengthMax = server->clientsLengthMax;
-                        clientsLengthInvalid = server->clientsLengthInvalid;
-                    }
                 }
             }
         }
-	}
+    }
 
     for (int i = 0; i < clientsLength; i++) {
         #ifdef _DEBUG
         printf("[socketListenerTask]\n\tclose socket id = %d\n\n", (int)(clients[i]));
         #endif
-        ds = createDataStoreFunc();
-        addIntegerFunc(ds, listenSocket);
-        addIntegerFunc(ds, clients[i]);
-        addIntegerFunc(ds, 0);        
-        raiseAsyncEventFunc(taskId, "Closed", ds); 
+        pushEvent(libData, taskId, listenSocket, clients[i], "Closed");
         CLOSESOCKET(clients[i]);
     }
 

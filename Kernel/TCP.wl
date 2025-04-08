@@ -190,11 +190,11 @@ With[{byteArray = ByteArray[data]},
 
 
 (*socketOpen["host", "port", 
-	bufferSize_Integer,
-	sndBufSize_Integer, 
-	rcvBufSize_Integer, 
-	modeNoDelay: 0 | 1: 0, 
-	mode: 0 | 1: 1, 
+    bufferSize_Integer,
+    sndBufSize_Integer, 
+    rcvBufSize_Integer, 
+    modeNoDelay: 0 | 1: 0, 
+    mode: 0 | 1: 1, 
 ] -> serverPtr*)
 socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
 
