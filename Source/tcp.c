@@ -3,11 +3,12 @@
 #undef UNICODE
 
 #define SECOND 1000000
-#define MILISECOND 1000
-#define _DEBUG 1
+#define MININTERVAL 1000
+//#define _DEBUG 0
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
+    #define FD_SETSIZE 4096
     #include <windows.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
@@ -45,6 +46,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
@@ -102,6 +105,7 @@ typedef struct Server_st {
     size_t clientsLength;
     size_t clientsLengthMax;
     size_t clientsLengthInvalid;
+    SOCKET maxSocket;
     BYTE *buffer;
     size_t bufferSize;
     size_t sndBufSize;
@@ -238,6 +242,12 @@ void addClient(Server server, SOCKET client){
     printf("[addClient]\n\tadded new client id = %d\n\n", (int)client);
     #endif
 
+    if (server->clientsLength == 0){
+        server->maxSocket = client;
+    } else if (client > server->maxSocket){
+        server->maxSocket = client;
+    }
+
     server->clients[server->clientsLength] = client;
     server->clientsLength++;
 
@@ -255,22 +265,22 @@ void addClient(Server server, SOCKET client){
 }
 
 void removeInvalidClients(Server server){
+    if (2 * server->clientsLengthInvalid <= server->clientsLength) return;
+
     size_t j = 0;
-    for (size_t i = 0; i < server->clientsLength; i++){
+    server->maxSocket = 0;
+    size_t clientsLength = server->clientsLength; 
+    for (size_t i = 0; i < clientsLength; i++){
         if (server->clients[i] > 0) {
             server->clients[j] = server->clients[i];
+            server->maxSocket = server->clients[i] > server->maxSocket ? server->clients[i] : server->maxSocket;
             j++;
         }
-        #ifdef _DEBUG
-        else {
-            printf("[removeInvalidClients]\n\tremove client with id = %I64d\n\n", server->clients[i]);
-        }
-        #endif
     }
 
     server->clientsLength = j;
     server->clientsLengthInvalid = 0;
-    while ((2 * server->clientsLength < server->clientsLengthMax) && server->clientsLengthMax > 1) {
+    while ((2 * server->clientsLength <= server->clientsLengthMax) && server->clientsLengthMax > 1) {
         server->clientsLengthMax = server->clientsLengthMax / 2;
         server->clients = realloc(server->clients, sizeof(SOCKET) * server->clientsLengthMax);
         #ifdef _DEBUG
@@ -501,7 +511,6 @@ void pushNumericArrayEvent(WolframLibraryData libData, mint taskId, SOCKET liste
     libData->ioLibraryFunctions->DataStore_addMNumericArray(dataStore, numericArray);
     
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, eventName, dataStore); 
-    libData->ioLibraryFunctions->deleteDataStore(dataStore);
 }
 
 void pushEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET client, char *event){
@@ -511,7 +520,37 @@ void pushEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOC
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, 0);
     
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, event, dataStore); 
-    libData->ioLibraryFunctions->deleteDataStore(dataStore); 
+}
+
+bool clientsReadyQ(Server server, fd_set *read_set) {
+    size_t clientsLength = server->clientsLength;
+    SOCKET *clients = server->clients;
+    SOCKET maxSocket = server->maxSocket;
+    
+    if (!server->clients || clientsLength == 0) {
+        return false;
+    }
+
+    FD_ZERO(read_set);
+
+    for (size_t i = 0; i < clientsLength; i++) {
+        if (clients[i] != INVALID_SOCKET) {
+            FD_SET(clients[i], read_set);
+        }
+    }
+
+    struct timeval timeout = {0, 0}; // 0 seconds, 0 microseconds
+
+    int result = select((int)maxSocket + 1, read_set, NULL, NULL, &timeout);
+
+    if (result == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("[clientsReadyQ]\n\tselect() error = %d\n\n", GETSOCKETERRNO());
+        #endif
+        return false;
+    }
+
+    return (result > 0);
 }
 
 static void socketListenerTask(mint taskId, void* vtarg)
@@ -520,7 +559,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
     WolframLibraryData libData = server->libData;
 
     int iResult;
-    int len; 
+    fd_set read_set;
     SOCKET clientSocket = INVALID_SOCKET;
     char *buffer = (char*)malloc(server->bufferSize * sizeof(char));
     mint dims[1];
@@ -531,9 +570,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
     SOCKET listenSocket = server->listenSocket;
     size_t bufferSize = server->bufferSize;
     SOCKET *clients = server->clients;
-    size_t clientsLength = server->clientsLength;
-    size_t clientsLengthMax = server->clientsLengthMax;
-    size_t clientsLengthInvalid = server->clientsLengthInvalid;
+    size_t clientsLength;
 
     time_t readTime = time(NULL);
     BOOL sleepMode = True;
@@ -549,21 +586,13 @@ static void socketListenerTask(mint taskId, void* vtarg)
     #endif
 
     WolframIOLibrary_Functions ioFuncs = libData->ioLibraryFunctions;
-    WolframNumericArrayLibrary_Functions naFuncs = libData->numericarrayLibraryFunctions;
-    DataStore (*createDataStoreFunc)() = ioFuncs->createDataStore;
-    void (*addIntegerFunc)(DataStore, mint) = ioFuncs->DataStore_addInteger;
-    void (*addMNumericArrayFunc)(DataStore, MNumericArray) = ioFuncs->DataStore_addMNumericArray;
-    void (*raiseAsyncEventFunc)(mint, char*, DataStore) = ioFuncs->raiseAsyncEvent;
-    mbool (*asynchronousTaskAliveQFunc)(mint) = ioFuncs->asynchronousTaskAliveQ;
-    mint (*removeAsynchronousTaskFunc)(mint) = ioFuncs->removeAsynchronousTask;
-    errcode_t (*newNArrFunc)(const numericarray_data_t, const mint, const mint*, MNumericArray*) = naFuncs->MNumericArray_new;
-    void (*disownNArrFunc)(MNumericArray) = naFuncs->MNumericArray_disown;
-    void *(*getNArrDataFunc)(MNumericArray) = naFuncs->MNumericArray_getData;
+    mbool (*asynchronousTaskAliveQ)(mint) = ioFuncs->asynchronousTaskAliveQ;
+    mint (*removeAsynchronousTask)(mint) = ioFuncs->removeAsynchronousTask;
 
-    while(asynchronousTaskAliveQFunc(taskId))
+    while(asynchronousTaskAliveQ(taskId))
     {
         if (sleepMode){
-            SLEEP(MILISECOND, global_timer);
+            SLEEP(MININTERVAL, global_timer);
             removeInvalidClients(server);
         }
 
@@ -579,39 +608,50 @@ static void socketListenerTask(mint taskId, void* vtarg)
         }
 
         clientsLength = server->clientsLength; 
-        for (int i = 0; i < clientsLength; i++) {
-            client = clients[i];
-            if (client != INVALID_SOCKET) {
-                iResult = recv(client, buffer, bufferSize, 0);
-                if (iResult > 0) {
-                    sleepMode = False;
-                    pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, iResult);
-                    #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
-                    #endif
-                } else if (iResult < 0) {
-                    int err = GETSOCKETERRNO();
-                    if (err == EINTR || err == EAGAIN || err == EWOULDBLOCK || err == 10035 || err == 35) {
+        if (clientsReadyQ(server, &read_set)) {
+            sleepMode = False;
+
+            for (int i = 0; i < clientsLength; i++) {
+                client = clients[i];
+                if (client != INVALID_SOCKET && FD_ISSET(client, &read_set)) {
+                    iResult = recv(client, buffer, bufferSize, 0);
+                    if (iResult > 0) {
+                        pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, iResult);
+
+                        //DEBUG
                         #ifdef _DEBUG
-                        printf("[socketListenerTask]\n\tsocket %d is not ready for read\n\n", (int)(client));
+                        printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
                         #endif
+                    
+                    } else if (iResult < 0) {
+                        int err = GETSOCKETERRNO();
+                        if (err == EINTR || err == EAGAIN || err == EWOULDBLOCK || err == 10035 || err == 35) {
+                            
+                            //DEBUG
+                            #ifdef _DEBUG
+                            printf("[socketListenerTask]\n\tsocket %d is not ready for read\n\n", (int)(client));
+                            #endif
+                            
+                        } else {
+                            pushEvent(libData, taskId, listenSocket, client, "Closed");
+                            clients[i] = INVALID_SOCKET;
+
+                            #ifdef _DEBUG
+                            printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
+                            #endif
+    
+                        }
                     } else {
                         pushEvent(libData, taskId, listenSocket, client, "Closed");
                         clients[i] = INVALID_SOCKET;
-                        clientsLengthInvalid++;
                         #ifdef _DEBUG
                         printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
                         #endif
-
                     }
-                } else {
-                    pushEvent(libData, taskId, listenSocket, client, "Closed");
-                    clients[i] = INVALID_SOCKET;
-                    #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
-                    #endif
                 }
             }
+        } else {
+            sleepMode = True;
         }
     }
 
@@ -781,7 +821,7 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
         }
         #endif
 
-        SLEEP(timeout * MILISECOND, timer);
+        SLEEP(timeout * MININTERVAL, timer);
         timeout += TIMEOUT_INIT_MS;
 
         if (timeout > TIMEOUT_INIT_MS * TIMEOUT_MAX_MULTIPLIER) {
