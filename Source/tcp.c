@@ -522,7 +522,23 @@ void pushEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOC
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, event, dataStore); 
 }
 
-bool clientsReadyQ(Server server, fd_set *read_set) {
+void destroyServer(Server server){
+    CLOSESOCKET(server->listenSocket); 
+    size_t clientsLength = server->clientsLength;
+
+    for (size_t i = 0; i < clientsLength; i++){
+        if (ISVALIDSOCKET(server->clients[i])){
+            CLOSESOCKET(server->clients[i]);
+        }
+    }
+    
+    free(server->buffer);
+    free(server->clients);
+    free(server->port);
+    free(server->host);
+}
+
+bool clientsReadyQ(Server server, fd_set *read_set, fd_set *err_set) {
     size_t clientsLength = server->clientsLength;
     SOCKET *clients = server->clients;
     SOCKET maxSocket = server->maxSocket;
@@ -532,16 +548,18 @@ bool clientsReadyQ(Server server, fd_set *read_set) {
     }
 
     FD_ZERO(read_set);
+    FD_ZERO(err_set);
 
     for (size_t i = 0; i < clientsLength; i++) {
         if (clients[i] != INVALID_SOCKET) {
             FD_SET(clients[i], read_set);
+            FD_SET(clients[i], err_set); 
         }
     }
 
     struct timeval timeout = {0, 0}; // 0 seconds, 0 microseconds
 
-    int result = select((int)maxSocket + 1, read_set, NULL, NULL, &timeout);
+    int result = select((int)maxSocket + 1, read_set, NULL, err_set, &timeout);
 
     if (result == SOCKET_ERROR) {
         #ifdef _DEBUG
@@ -557,27 +575,28 @@ static void socketListenerTask(mint taskId, void* vtarg)
 {
     Server server = (Server)vtarg;
     WolframLibraryData libData = server->libData;
+    WolframIOLibrary_Functions ioFuncs = libData->ioLibraryFunctions;
+    mbool (*asynchronousTaskAliveQ)(mint) = ioFuncs->asynchronousTaskAliveQ;
+    mint (*removeAsynchronousTask)(mint) = ioFuncs->removeAsynchronousTask;
 
     int iResult;
     fd_set read_set;
-    SOCKET clientSocket = INVALID_SOCKET;
-    char *buffer = (char*)malloc(server->bufferSize * sizeof(char));
-    mint dims[1];
-    MNumericArray data;
-    DataStore ds;
-    BYTE *array; 
+    fd_set err_set; 
+
     SOCKET client; 
     SOCKET listenSocket = server->listenSocket;
-    size_t bufferSize = server->bufferSize;
-    SOCKET *clients = server->clients;
-    size_t clientsLength;
 
-    time_t readTime = time(NULL);
+    size_t bufferSize = server->bufferSize;
+    char *buffer = server->buffer;
+
+    size_t clientsLength;
+    SOCKET *clients = server->clients;
+
     BOOL sleepMode = True;
 
     #ifdef _WIN32
-    HANDLE global_timer = create_timer();
-    if (!global_timer) {
+    HANDLE timer = create_timer();
+    if (!timer) {
         fprintf(stderr, "Failed to create timer\n");
         exit(EXIT_FAILURE);
     }
@@ -585,14 +604,10 @@ static void socketListenerTask(mint taskId, void* vtarg)
     void* global_timer = NULL; 
     #endif
 
-    WolframIOLibrary_Functions ioFuncs = libData->ioLibraryFunctions;
-    mbool (*asynchronousTaskAliveQ)(mint) = ioFuncs->asynchronousTaskAliveQ;
-    mint (*removeAsynchronousTask)(mint) = ioFuncs->removeAsynchronousTask;
-
     while(asynchronousTaskAliveQ(taskId))
     {
         if (sleepMode){
-            SLEEP(MININTERVAL, global_timer);
+            SLEEP(MININTERVAL, timer);
             removeInvalidClients(server);
         }
 
@@ -608,17 +623,16 @@ static void socketListenerTask(mint taskId, void* vtarg)
         }
 
         clientsLength = server->clientsLength; 
-        if (clientsReadyQ(server, &read_set)) {
+        if (clientsReadyQ(server, &read_set, &err_set)) {
             sleepMode = False;
 
             for (int i = 0; i < clientsLength; i++) {
                 client = clients[i];
                 if (client != INVALID_SOCKET && FD_ISSET(client, &read_set)) {
-                    iResult = recv(client, buffer, bufferSize, 0);
+                    iResult = recv(client, buffer, server->bufferSize, 0);
                     if (iResult > 0) {
                         pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, iResult);
 
-                        //DEBUG
                         #ifdef _DEBUG
                         printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
                         #endif
@@ -627,7 +641,6 @@ static void socketListenerTask(mint taskId, void* vtarg)
                         int err = GETSOCKETERRNO();
                         if (err == EINTR || err == EAGAIN || err == EWOULDBLOCK || err == 10035 || err == 35) {
                             
-                            //DEBUG
                             #ifdef _DEBUG
                             printf("[socketListenerTask]\n\tsocket %d is not ready for read\n\n", (int)(client));
                             #endif
@@ -644,31 +657,32 @@ static void socketListenerTask(mint taskId, void* vtarg)
                     } else {
                         pushEvent(libData, taskId, listenSocket, client, "Closed");
                         clients[i] = INVALID_SOCKET;
+                        
                         #ifdef _DEBUG
                         printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
                         #endif
                     }
+                } else if (client != INVALID_SOCKET && FD_ISSET(client, &err_set)) {
+                    pushEvent(libData, taskId, listenSocket, client, "Closed");
+                    clients[i] == INVALID_SOCKET;
+
+                    #ifdef _DEBUG
+                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
+                    #endif
                 }
+                
             }
         } else {
             sleepMode = True;
         }
     }
 
-    for (int i = 0; i < clientsLength; i++) {
-        #ifdef _DEBUG
-        printf("[socketListenerTask]\n\tclose socket id = %d\n\n", (int)(clients[i]));
-        #endif
-        pushEvent(libData, taskId, listenSocket, clients[i], "Closed");
-        CLOSESOCKET(clients[i]);
-    }
+    destroyServer(server);
 
     #ifdef _WIN32
-    destroy_timer(global_timer);
+    destroy_timer(timer);
     #endif
 
-    free(server->clients);
-    free(buffer);
 }
 
 //socketListen[serverPtr_Integer]: taskId_Integer
