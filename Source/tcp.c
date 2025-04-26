@@ -953,3 +953,60 @@ DLLEXPORT int socketReadMessage(WolframLibraryData libData, mint Argc, MArgument
 }
 
 #pragma endregion
+
+bool socketAliveQ(SOCKET socketId) {
+    if (socketId == INVALID_SOCKET) {
+        return false;
+    }
+
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(socketId, &readfds);
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0; // 0 seconds, 0 microseconds
+
+    int result = select(socketId + 1, &readfds, NULL, NULL, &timeout);
+    if (result == -1) {
+        // select error
+        return false;
+    }
+
+    if (result == 0) {
+        // Нет активности — считаем, что соединение живо
+        return true;
+    }
+
+    // Сокет готов к чтению — проверим, не закрыт ли он
+    char buffer;
+#ifdef _WIN32
+    int flags = MSG_PEEK;
+    int recvResult = recv(socketId, &buffer, 1, flags);
+#else
+    ssize_t recvResult = recv(socketId, &buffer, 1, MSG_PEEK);
+#endif
+
+    if (recvResult == 0) {
+        // Получен TCP FIN — соединение закрыто клиентом
+        return false;
+    } else if (recvResult < 0) {
+    #ifdef _WIN32
+        int err = WSAGetLastError();
+        if (err == WSAEWOULDBLOCK) {
+            return true;  // Просто нет данных, соединение живо
+        } else {
+            return false; // Другая ошибка — считаем соединение разорванным
+        }
+    #else
+        if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            return true;  // Соединение живо
+        } else {
+            return false; // Соединение разорвано
+        }
+    #endif
+    }
+
+    // Есть данные для чтения — соединение живо
+    return true;
+}
