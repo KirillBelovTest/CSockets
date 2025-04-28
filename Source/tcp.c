@@ -4,7 +4,7 @@
 
 #define SECOND 1000000
 #define MININTERVAL 1000
-//#define _DEBUG 0
+#define _DEBUG 1
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -118,6 +118,11 @@ typedef struct Server_st {
 DLLEXPORT int serverGetListenSocket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     Server server = (Server)MArgument_getInteger(Args[0]);
     MArgument_setInteger(Res, server->listenSocket);
+
+    #ifdef _DEBUG
+    printf("[serverGetListenSocket]\n\tlistenSocket = %I64d\n\n", server->listenSocket);
+    #endif
+
     return LIBRARY_NO_ERROR;
 }
 
@@ -131,11 +136,12 @@ DLLEXPORT int socketGetPort(WolframLibraryData libData, mint Argc, MArgument *Ar
     getsockname(socketId, (struct sockaddr *)&sin, &addrlen);
     port = ntohs(sin.sin_port);
 
+    MArgument_setInteger(Res, port);
+
     #ifdef _DEBUG
-    printf("[socketHostname]\n\tsocket id = %I64d hostname = %d\n\n", (int64_t)socketId, port);
+    printf("[socketGetPort]\n\tsocket id = %I64d port = %d\n\n", (int64_t)socketId, port);
     #endif
 
-    MArgument_setInteger(Res, port);
     return LIBRARY_NO_ERROR;
 }
 
@@ -151,12 +157,12 @@ DLLEXPORT int socketGetHostname(WolframLibraryData libData, mint Argc, MArgument
     struct in_addr ip = sin.sin_addr;
     inet_ntop(AF_INET, &ip, str, INET_ADDRSTRLEN);
 
-    #ifdef _DEBUG
-    printf("[socketHostname]\n\tsocket id = %I64d hostname = %s\n\n", (int64_t)socketId, str);
-    #endif
-
     MArgument_setUTF8String(Res, str);
     
+    #ifdef _DEBUG
+    printf("[socketGetHostname]\n\tsocket id = %I64d hostname = %s\n\n", (int64_t)socketId, str);
+    #endif
+
     free(str);
 
     return LIBRARY_NO_ERROR;
@@ -181,12 +187,13 @@ DLLEXPORT int serverGetClients(WolframLibraryData libData, mint Argc, MArgument 
     }
 
     mint *array = libData->MTensor_getIntegerData(clients);
-    #ifdef _DEBUG
-    printf("[getServerClients]\n\tclientsLength = %zd\n\n", server->clientsLength);
-    #endif
     memcpy(array, (mint *)server->clients, server->clientsLength * sizeof(SOCKET));
 
     MArgument_setMTensor(Res, clients); 
+
+    #ifdef _DEBUG
+    printf("[serverGetClients]\n\tclientsLength = %zd\n\n", server->clientsLength);
+    #endif
 
     return LIBRARY_NO_ERROR; 
 }
@@ -229,13 +236,6 @@ void SLEEP(uint64_t usec, void* timer_ptr) {
 #pragma endregion
 
 #pragma region server
-
-//getServerListenSocket[serverPtr_Integer]: listenSocketId_Integer
-DLLEXPORT int getServerListenSocket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    Server server = (Server)MArgument_getInteger(Args[0]);
-    MArgument_setInteger(Res, server->listenSocket); 
-    return LIBRARY_NO_ERROR; 
-}
 
 void addClient(Server server, SOCKET client){
     #ifdef _DEBUG
@@ -628,7 +628,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
 
             for (int i = 0; i < clientsLength; i++) {
                 client = clients[i];
-                if (client != INVALID_SOCKET && FD_ISSET(client, &read_set)) {
+                if (FD_ISSET(client, &read_set)) {
                     iResult = recv(client, buffer, server->bufferSize, 0);
                     if (iResult > 0) {
                         pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, iResult);
@@ -642,7 +642,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
                         if (err == EINTR || err == EAGAIN || err == EWOULDBLOCK || err == 10035 || err == 35) {
                             
                             #ifdef _DEBUG
-                            printf("[socketListenerTask]\n\tsocket %d is not ready for read\n\n", (int)(client));
+                            printf("[socketListenerTask]\n\tsocket %I64d is not ready for read\n\n", client);
                             #endif
                             
                         } else {
@@ -820,6 +820,11 @@ int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
                     #ifdef _DEBUG
                     printf("[socketWrite] Write paused for %d ms\n", timeout);
                     #endif
+                } else if (err == 10038) {
+                    #ifdef _DEBUG
+                    printf("[socketWrite] Write error for %d\n", socketId);
+                    #endif
+                    return SOCKET_ERROR;
                 } else {
                     return SOCKET_ERROR;
                 }
