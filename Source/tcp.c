@@ -496,20 +496,12 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
 
 #pragma region socketListen
 
-void pushNumericArrayEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET client, char *eventName, BYTE *buffer, size_t size){
-    MNumericArray numericArray;
-    mint rank = 1; 
-    mint dims[1]; 
-    dims[0] = size; 
-    libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, rank, dims, &numericArray); 
-    BYTE *numericArrayData = libData->numericarrayLibraryFunctions->MNumericArray_getData(numericArray);  
-    memcpy(buffer, numericArrayData, size); 
-
+void pushNumericArrayEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET client, char *eventName, BYTE *buffer, mint size){
+    MNumericArray numericArray = createByteArray(libData, buffer, size);
     DataStore dataStore = libData->ioLibraryFunctions->createDataStore(); 
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, listenSocket); 
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, client);
     libData->ioLibraryFunctions->DataStore_addMNumericArray(dataStore, numericArray);
-    
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, eventName, dataStore); 
 }
 
@@ -517,7 +509,6 @@ void pushEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOC
     DataStore dataStore = libData->ioLibraryFunctions->createDataStore(); 
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, listenSocket); 
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, client);
-    libData->ioLibraryFunctions->DataStore_addInteger(dataStore, 0);
     
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, event, dataStore); 
 }
@@ -538,7 +529,7 @@ void destroyServer(Server server){
     free(server->host);
 }
 
-bool clientsReadyQ(Server server, fd_set *read_set, fd_set *err_set) {
+bool clientsReadyQ(Server server, fd_set *read_set) {
     size_t clientsLength = server->clientsLength;
     SOCKET *clients = server->clients;
     SOCKET maxSocket = server->maxSocket;
@@ -548,18 +539,16 @@ bool clientsReadyQ(Server server, fd_set *read_set, fd_set *err_set) {
     }
 
     FD_ZERO(read_set);
-    FD_ZERO(err_set);
 
     for (size_t i = 0; i < clientsLength; i++) {
         if (clients[i] != INVALID_SOCKET) {
             FD_SET(clients[i], read_set);
-            FD_SET(clients[i], err_set); 
         }
     }
 
     struct timeval timeout = {0, 0}; // 0 seconds, 0 microseconds
 
-    int result = select((int)maxSocket + 1, read_set, NULL, err_set, &timeout);
+    int result = select((int)maxSocket + 1, read_set, NULL, NULL, &timeout);
 
     if (result == SOCKET_ERROR) {
         #ifdef _DEBUG
@@ -623,7 +612,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
         }
 
         clientsLength = server->clientsLength; 
-        if (clientsReadyQ(server, &read_set, &err_set)) {
+        if (clientsReadyQ(server, &read_set)) {
             sleepMode = False;
 
             for (int i = 0; i < clientsLength; i++) {
@@ -631,13 +620,21 @@ static void socketListenerTask(mint taskId, void* vtarg)
                 if (FD_ISSET(client, &read_set)) {
                     iResult = recv(client, buffer, server->bufferSize, 0);
                     if (iResult > 0) {
-                        pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, iResult);
+                        pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, (mint)iResult);
 
                         #ifdef _DEBUG
                         printf("[socketListenerTask]\n\treceived %d bytes from socket %d\n\n", iResult, (int)(client));
                         #endif
                     
-                    } else if (iResult < 0) {
+                    } else if (iResult == 0){
+                        pushEvent(libData, taskId, listenSocket, client, "Closed");
+                        clients[i] = INVALID_SOCKET;
+                        
+                        #ifdef _DEBUG
+                        printf("[socketListenerTask]\n\tsocket %I64d closed\n\n", client);
+                        #endif
+                    }
+                    else {
                         int err = GETSOCKETERRNO();
                         if (err == EINTR || err == EAGAIN || err == EWOULDBLOCK || err == 10035 || err == 35) {
                             
@@ -654,21 +651,7 @@ static void socketListenerTask(mint taskId, void* vtarg)
                             #endif
     
                         }
-                    } else {
-                        pushEvent(libData, taskId, listenSocket, client, "Closed");
-                        clients[i] = INVALID_SOCKET;
-                        
-                        #ifdef _DEBUG
-                        printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
-                        #endif
                     }
-                } else if (client != INVALID_SOCKET && FD_ISSET(client, &err_set)) {
-                    pushEvent(libData, taskId, listenSocket, client, "Closed");
-                    clients[i] == INVALID_SOCKET;
-
-                    #ifdef _DEBUG
-                    printf("[socketListenerTask]\n\tclosed socket id = %d\n\n", (int)(client));
-                    #endif
                 }
                 
             }

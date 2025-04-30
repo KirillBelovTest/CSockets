@@ -161,20 +161,7 @@ If[!FileExistsQ[$libFile],
 ]; 
 
 
-toPacket[task_, event: "Accepted" | "Closed", {serverId_, clientId_, data_Integer}] := 
-<|
-    "Event" -> event, 
-    "TimeStamp" -> Now, 
-    "Socket" :> CSocketObject[serverId], 
-    "SourceSocket" :> CSocketObject[clientId], 
-    "DataByteArray" :> ByteArray[{}], 
-    "Data" :> "", 
-    "DataBytes" :> {}, 
-    "MultipartComplete" -> True
-|>; 
-
-
-toPacket[task_, event: "Received", {serverId_, clientId_, data_}] := 
+toPacket[task_, event_, {serverId_, clientId_, data_}] := 
 With[{byteArray = ByteArray[data]}, 
     <|
         "Event" -> event, 
@@ -187,6 +174,15 @@ With[{byteArray = ByteArray[data]},
         "MultipartComplete" -> True
     |>
 ]; 
+
+
+toPacket[task_, event_, {serverId_, clientId_}] := 
+<|
+    "Event" -> event, 
+    "TimeStamp" -> Now, 
+    "Socket" :> CSocketObject[serverId], 
+    "SourceSocket" :> CSocketObject[clientId]
+|>; 
 
 
 (*socketOpen["host", "port", 
