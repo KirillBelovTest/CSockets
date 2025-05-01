@@ -5,6 +5,9 @@
 #define SECOND 1000000
 #define MININTERVAL 1000
 #define _DEBUG 1
+#define RESET "\033[0m"
+#define RED "\033[91m"
+#define GREEN "\033[92m"
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -59,7 +62,7 @@
 
 DLLEXPORT mint WolframLibrary_getVersion() {
     #ifdef _DEBUG
-    printf("[WolframLibrary_getVersion]\n\tWolframLibraryVersion = %d\n\n", WolframLibraryVersion);
+    printf("%s[WolframLibrary_getVersion]%s\n\tWolframLibraryVersion = %d\n\n", GREEN, RESET, WolframLibraryVersion);
     #endif
 
     return WolframLibraryVersion;
@@ -97,6 +100,199 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 #pragma endregion
 
+#pragma region socketOpen
+
+//socketOpen[host_String, port_String, blocking, noDelay, sndBufferSize, rcvBufferSize]: socketId_Integer
+DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    char* host = MArgument_getUTF8String(Args[0]);
+    char* port = MArgument_getUTF8String(Args[1]);
+    int blocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 1
+    int keepAlive = (int)MArgument_getInteger(Args[3]); // 0 | 1 default 1
+    int noDelay = (int)MArgument_getInteger(Args[4]); // 0 | 1 default 0
+    size_t sndBufSize = (size_t)MArgument_getInteger(Args[5]);
+    size_t rcvBufSize = (size_t)MArgument_getInteger(Args[6]);
+    
+    int iResult;
+    SOCKET listenSocket = INVALID_SOCKET;
+    struct addrinfo hints;
+    struct addrinfo *address = NULL;
+    
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    /*resolve hints -> address */
+    iResult = getaddrinfo(host, port, &hints, &address);
+    if (iResult != 0) {
+        #ifdef _DEBUG
+        printf("%s[socketOpen->ERROR]%s\n\tgetaddrinfo() for port = %s returns error = %d\n\n", RED, RESET, port, GETSOCKETERRNO());
+        #endif
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*create socket*/
+    listenSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+    if (!ISVALIDSOCKET(listenSocket)) {
+        #ifdef _DEBUG
+        printf("%s[socketOpen->ERROR]%s\n\tsocket() for port = %s returns error = %d\n\n", RED, RESET, port, GETSOCKETERRNO());
+        #endif
+        freeaddrinfo(address);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*host:port <=> socket*/
+    iResult = bind(listenSocket, address->ai_addr, (int)address->ai_addrlen);
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tbind() for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        freeaddrinfo(address);
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*address no longer needed*/
+    freeaddrinfo(address);
+
+    /*set blocking mode*/
+    #ifdef _WIN32
+    iResult = ioctlsocket(listenSocket, FIONBIO, &blocking);
+    #else
+    int flags = fcntl(listenSocket, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    flags |= O_ASYNC;
+    iResult = fcntl(listenSocket, F_SETFL, flags, &blocking);
+    #endif
+    if (iResult != NO_ERROR) {
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tioctlsocket(FIONBIO) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*reducing [a b] [c d] [e] -> [a b c d e]*/
+    iResult = setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tsetsockopt(TCP_NODELAY) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*ping <-> pong*/
+    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tsetsockopt(SO_KEEPALIVE) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*size of <=*/
+    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%s[socketOpen->ERROR]%s\n\tsetsockopt(SO_RCVBUF) for port = %s returns error = %d\n\n", RED, RESET, port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*size of =>*/
+    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%s[socketOpen->ERROR]%s\n\tsetsockopt(SO_SNDBUF) for port = %s returns error = %d\n\n", RED, RESET, port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    /*wait clients*/
+    iResult = listen(listenSocket, SOMAXCONN);
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%s[socketOpen->ERROR]%s\n\tblisten() for port = %s returns error = %d\n\n", RED, RESET, port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%s[socketOpen]%s\n\tlisten socket id = %I64d\n\n", GREEN, RESET, listenSocket);
+    #endif
+
+    MArgument_setInteger(Res, listenSocket);
+    return LIBRARY_NO_ERROR;
+}
+
+/*createServer
+    void *ptr = malloc(sizeof(struct Server_st));
+    if (!ptr) {
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tmalloc() for Server struct on port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    Server server = (Server)ptr;
+
+    server->listenSocket = listenSocket;
+
+    server->clients = malloc(2 * sizeof(SOCKET));
+    if (!server->clients){
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tmalloc() for clients array on port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        free(ptr);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    server->clients[0] = INVALID_SOCKET;
+    server->clients[1] = INVALID_SOCKET;
+    
+    server->clientsLength = 0;
+    server->clientsLengthMax = 2;
+    server->clientsLengthInvalid = 0;
+
+    server->bufferSize = bufferSize;
+    server->buffer = (char*)malloc(bufferSize * sizeof(char));
+    if (!server->buffer){
+        #ifdef _DEBUG
+        printf("[socketOpen->ERROR]\n\tmalloc() for buffer on port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
+        #endif
+        CLOSESOCKET(listenSocket);
+        free(server->clients);
+        free(ptr);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    server->host = (char*)malloc(strlen(host) + 1);
+    server->port = (char*)malloc(strlen(port) + 1);
+    strcpy(server->host, host);
+    strcpy(server->port, port);
+
+    server->libData = libData;
+
+    freeaddrinfo(address);
+    libData->UTF8String_disown(host);
+    libData->UTF8String_disown(port);
+
+    uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
+
+    MArgument_setInteger(Res, serverPtr);
+
+*/
+
+#pragma endregion
+
 #pragma region server struct
 
 typedef struct Server_st {
@@ -114,6 +310,41 @@ typedef struct Server_st {
     char *port;
     WolframLibraryData libData;
 }* Server;
+
+#pragma endregion
+
+#pragma region server functions
+
+void* createServer(SOCKET listenSocketId, void *ptr) {
+    Server server = (Server)ptr;
+    server->listenSocket = listenSocketId;
+}
+
+/*createServer[listenSocketId]*/
+DLLEXPORT int CreateServer(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET listenSocketId = (SOCKET)MArgument_getInteger(Args[0]);
+
+    void *ptr = malloc(sizeof(struct Server_st));
+
+    int result = createServer(listenSocketId, ptr);
+    if (!result) {
+        #ifdef _DEBUG
+        printf("[CSockets_createServer]\n\terror creating server for listen socket id = %I64d\n\n", listenSocketId);
+        #endif
+
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
+
+    #ifdef _DEBUG
+    printf("[CSockets_createServer]\n\tserver pointer = %I64d\n\tlisten socket id = %I64d\n\n", serverPtr, listenSocketId);
+    #endif
+
+    MArgument_setInteger(Res, serverPtr);
+    return LIBRARY_NO_ERROR;
+}
+
 
 DLLEXPORT int serverGetListenSocket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     Server server = (Server)MArgument_getInteger(Args[0]);
@@ -307,179 +538,6 @@ MNumericArray createByteArray(WolframLibraryData libData, BYTE *data, const mint
 
 #pragma endregion
 
-#pragma region socketOpen
-
-//socketOpen[host_String, port_String, bufferSize, modeNoDelay, mode]: socketId_Integer
-DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    char* host = MArgument_getUTF8String(Args[0]);
-    char* port = MArgument_getUTF8String(Args[1]);
-    
-    int bufferSize = (size_t)MArgument_getInteger(Args[2]);
-    size_t sndBufSize = (size_t)MArgument_getInteger(Args[3]);
-    size_t rcvBufSize = (size_t)MArgument_getInteger(Args[4]);
-    int iModeNoDelay = (int)MArgument_getInteger(Args[5]); // 0 | 1 default 0
-    int iMode = (int)MArgument_getInteger(Args[6]); // 0 | 1 default 1
-    
-    int iResult;
-    SOCKET listenSocket = INVALID_SOCKET;
-    struct addrinfo hints;
-    struct addrinfo *address = NULL;
-    
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-
-    iResult = getaddrinfo(host, port, &hints, &address);
-    if (iResult != 0) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tgetaddrinfo() for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    listenSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-    if (!ISVALIDSOCKET(listenSocket)) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tsocket() for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        freeaddrinfo(address);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&iModeNoDelay, sizeof(iModeNoDelay));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tsetsockopt(TCP_NODELAY) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&iMode, sizeof(iMode));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tsetsockopt(SO_KEEPALIVE) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tsetsockopt(SO_RCVBUF) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tsetsockopt(SO_SNDBUF) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = bind(listenSocket, address->ai_addr, (int)address->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tbind() for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = listen(listenSocket, SOMAXCONN);
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tblisten() for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    #ifdef _WIN32
-    iResult = ioctlsocket(listenSocket, FIONBIO, &iMode);
-    #else
-    int flags = fcntl(listenSocket, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    flags |= O_ASYNC;
-    iResult = fcntl(listenSocket, F_SETFL, flags, &iMode);
-    #endif
-    if (iResult != NO_ERROR) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tioctlsocket(FIONBIO) for port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-    }
-
-    void *ptr = malloc(sizeof(struct Server_st));
-    if (!ptr) {
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tmalloc() for Server struct on port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    Server server = (Server)ptr;
-
-    server->listenSocket = listenSocket;
-
-    server->clients = malloc(2 * sizeof(SOCKET));
-    if (!server->clients){
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tmalloc() for clients array on port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        free(ptr);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    server->clients[0] = INVALID_SOCKET;
-    server->clients[1] = INVALID_SOCKET;
-    
-    server->clientsLength = 0;
-    server->clientsLengthMax = 2;
-    server->clientsLengthInvalid = 0;
-
-    server->bufferSize = bufferSize;
-    server->buffer = (char*)malloc(bufferSize * sizeof(char));
-    if (!server->buffer){
-        #ifdef _DEBUG
-        printf("[socketOpen->ERROR]\n\tmalloc() for buffer on port = %s returns error = %d\n\n", port, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(listenSocket);
-        free(server->clients);
-        free(ptr);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    server->host = (char*)malloc(strlen(host) + 1);
-    server->port = (char*)malloc(strlen(port) + 1);
-    strcpy(server->host, host);
-    strcpy(server->port, port);
-
-    server->libData = libData;
-
-    freeaddrinfo(address);
-    libData->UTF8String_disown(host);
-    libData->UTF8String_disown(port);
-
-    uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
-
-    MArgument_setInteger(Res, serverPtr);
-    #ifdef _DEBUG
-    printf("[socketOpen]\n\tserverPtr = %I64d\n\tlisten socket id = %I64d\n\n", serverPtr, listenSocket);
-    #endif
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
 #pragma region socketClose
 
 //socketClose[socketId_Integer]: socketId_Integer
@@ -509,7 +567,6 @@ void pushEvent(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOC
     DataStore dataStore = libData->ioLibraryFunctions->createDataStore(); 
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, listenSocket); 
     libData->ioLibraryFunctions->DataStore_addInteger(dataStore, client);
-    
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, event, dataStore); 
 }
 
@@ -534,21 +591,26 @@ bool clientsReadyQ(Server server, fd_set *read_set) {
     SOCKET *clients = server->clients;
     SOCKET maxSocket = server->maxSocket;
     
+    printf("[clientsReadyQ]\n\tmaxSocket = %d\n\n", maxSocket);
+
     if (!server->clients || clientsLength == 0) {
         return false;
     }
 
     FD_ZERO(read_set);
 
+    printf("[clientsReadyQ]\n\tclients[%d]: [", clientsLength);
     for (size_t i = 0; i < clientsLength; i++) {
+        printf("%d, ", clients[i]);
         if (clients[i] != INVALID_SOCKET) {
             FD_SET(clients[i], read_set);
         }
     }
+    printf("]\n\n");
 
-    struct timeval timeout = {0, 0}; // 0 seconds, 0 microseconds
+    struct timeval timeout = {10, 0}; // 0 seconds, 0 microseconds
 
-    int result = select((int)maxSocket + 1, read_set, NULL, NULL, &timeout);
+    int result = select((int)(maxSocket + 1), read_set, NULL, NULL, &timeout);
 
     if (result == SOCKET_ERROR) {
         #ifdef _DEBUG
@@ -556,6 +618,8 @@ bool clientsReadyQ(Server server, fd_set *read_set) {
         #endif
         return false;
     }
+
+    printf("[clientsReadyQ]\n\tready clients = %d\n\n", result);
 
     return (result > 0);
 }
@@ -618,7 +682,16 @@ static void socketListenerTask(mint taskId, void* vtarg)
             for (int i = 0; i < clientsLength; i++) {
                 client = clients[i];
                 if (FD_ISSET(client, &read_set)) {
+                    #ifdef _DEBUG
+                    printf("[socketListenerTask]\n\ttry recv from socket %d\n\n", (int)(client));
+                    #endif
+
                     iResult = recv(client, buffer, server->bufferSize, 0);
+                    
+                    #ifdef _DEBUG
+                    printf("[socketListenerTask]\n\trecv result = %d for socket %d\n\n", iResult, (int)(client));
+                    #endif
+
                     if (iResult > 0) {
                         pushNumericArrayEvent(libData, taskId, listenSocket, client, "Received", buffer, (mint)iResult);
 

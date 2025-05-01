@@ -24,3 +24,20 @@ If there are some issues with a shipped binaries, one can try to compile it.
 ```bash
 wolframscript -f Scritps/BuildLibrary.wls
 ```
+
+## Documentation
+
+### tcp.c
+
+socketOpen(hostname, port, opts...): listenSocketId;
+socketClose(socketId): successState
+socketConnect(hostname, port): clientSocketId
+socketWriteString(socketId, string): successState
+socketBinaryWrite(socketId, byteArray): successState
+socketGetPort(socketId): portNumber
+socketGetHostname(socketId): hostname
+
+serverCreate
+serverDestroy
+serverAccept
+serverRecv

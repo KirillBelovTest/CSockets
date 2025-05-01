@@ -11,9 +11,9 @@ response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Type: text/html\r\n\
 
 
 func[packet_] := (
-	If[packet["Event"] === "Received", 
-		WriteString[packet["SourceSocket"], response]
-	];
+    If[packet["Event"] === "Received", 
+        WriteString[packet["SourceSocket"], response]
+    ];
 ); 
 
 
