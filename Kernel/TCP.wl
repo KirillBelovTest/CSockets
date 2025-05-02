@@ -6,36 +6,20 @@ BeginPackage["KirillBelov`CSockets`TCP`", {
 }]; 
 
 
-CSocketObject::usage = 
-"CSocketObject[socketId] socket representation."; 
-
-
-CServerObject::usage = 
-"CServerObject[serverPtr] server representation."; 
-
 CSocketOpen::usage = 
 "CSocketOpen[port] returns new server socket opened on localhost.
 CSocketOpen[host, port] returns new server socket opened on specific host."; 
-
-
-CSocketConnect::usage = 
-"CSocketConnect[port] connect to socket on localhost.
-CSocketConnect[host, port] connect to socket."; 
-
-
-CSocketListener::usage = 
-"CSocketListener[assoc] listener object."; 
 
 
 Begin["`Private`"]; 
 
 
 Options[CSocketOpen] = {
-    "BufferSize" :> $bufferSize, 
-    "ModeNoDelay" :> $modeNoDelay,
-    "Mode" :> $mode, 
-    "SendBufferSize" :> $sendBufferSize,
-    "RecvBufferSize" :> $recvBufferSize
+    "NonBlocking" :> True, 
+    "KeepAlive" :> True, 
+    "NoDelay" :> False,
+    "SendBufferSize" :> 256 * 1024,
+    "RecvBufferSize" :> 256 * 1024
 };
 
 
@@ -43,11 +27,11 @@ CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] :=
 CServerObject[socketOpen[
     host, 
     ToString[port], 
-    OptionValue["BufferSize"], 
+    OptionValue["Blocking"], 
+    OptionValue["KeepAlive"],
+    OptionValue["NoDelay"], 
     OptionValue["SendBufferSize"],
-    OptionValue["RecvBufferSize"], 
-    OptionValue["ModeNoDelay"],
-    OptionValue["Mode"]    
+    OptionValue["RecvBufferSize"]    
 ]]; 
 
 
@@ -144,16 +128,19 @@ $libFile = FileNameJoin[{
 $bufferSize = 4 * 1024; 
 
 
-$modeNoDelay = 0;
+$nonBlocking = 1; 
 
 
-$mode = 1;
+$keepAlive = 1;
 
 
-$sendBufferSize = 64 * 1024; 
+$noDelay = 0;
 
 
-$recvBufferSize = 64 * 1024; 
+$sendBufferSize = 512 * 1024; 
+
+
+$recvBufferSize = 512 * 1024; 
 
 
 If[!FileExistsQ[$libFile], 
@@ -186,12 +173,12 @@ toPacket[task_, event_, {serverId_, clientId_}] :=
 
 
 (*socketOpen["host", "port", 
-    bufferSize_Integer,
-    sndBufSize_Integer, 
-    rcvBufSize_Integer, 
-    modeNoDelay: 0 | 1: 0, 
-    mode: 0 | 1: 1, 
-] -> serverPtr*)
+    nonBlocking: 0 | 1: 1,
+    keepAlive_Integer: 0 | 1: 1, 
+    noDelay_Integer: 0 | 1: 0, 
+    sendBufferSize_Integer?Positive, 
+    recvBufferSize_Integer?Positive, 
+] -> listenSocketId*)
 socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
 
 

@@ -104,13 +104,13 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 //socketOpen[host_String, port_String, blocking, noDelay, sndBufferSize, rcvBufferSize]: socketId_Integer
 DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    char* host = MArgument_getUTF8String(Args[0]);
+    char* host = MArgument_getUTF8String(Args[0]); // localhost by default
     char* port = MArgument_getUTF8String(Args[1]);
-    int blocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 1
+    int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 1
     int keepAlive = (int)MArgument_getInteger(Args[3]); // 0 | 1 default 1
     int noDelay = (int)MArgument_getInteger(Args[4]); // 0 | 1 default 0
-    size_t sndBufSize = (size_t)MArgument_getInteger(Args[5]);
-    size_t rcvBufSize = (size_t)MArgument_getInteger(Args[6]);
+    size_t sndBufSize = (size_t)MArgument_getInteger(Args[5]); // 512 kB by default
+    size_t rcvBufSize = (size_t)MArgument_getInteger(Args[6]); // 512 kB by default
     
     int iResult;
     SOCKET listenSocket = INVALID_SOCKET;
@@ -155,15 +155,17 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     /*address no longer needed*/
     freeaddrinfo(address);
+    libData->UTF8String_disown(host);
+    libData->UTF8String_disown(port);
 
     /*set blocking mode*/
     #ifdef _WIN32
-    iResult = ioctlsocket(listenSocket, FIONBIO, &blocking);
+    iResult = ioctlsocket(listenSocket, FIONBIO, &nonBlocking);
     #else
     int flags = fcntl(listenSocket, F_GETFL, 0);
     flags |= O_NONBLOCK;
     flags |= O_ASYNC;
-    iResult = fcntl(listenSocket, F_SETFL, flags, &blocking);
+    iResult = fcntl(listenSocket, F_SETFL, flags, &nonBlocking);
     #endif
     if (iResult != NO_ERROR) {
         #ifdef _DEBUG
@@ -193,7 +195,7 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    /*size of <=*/
+    /*size of [..]<=*/
     iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
     if (iResult == SOCKET_ERROR) {
         #ifdef _DEBUG
@@ -203,7 +205,7 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    /*size of =>*/
+    /*size of [..]=>*/
     iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
     if (iResult == SOCKET_ERROR) {
         #ifdef _DEBUG
