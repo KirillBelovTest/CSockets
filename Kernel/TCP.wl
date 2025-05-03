@@ -6,6 +6,10 @@ BeginPackage["KirillBelov`CSockets`TCP`", {
 }]; 
 
 
+CSocketObject::usage = 
+"CSocketObject[socketId]";
+
+
 CSocketOpen::usage = 
 "CSocketOpen[port] returns new server socket opened on localhost.
 CSocketOpen[host, port] returns new server socket opened on specific host."; 
@@ -24,15 +28,26 @@ Options[CSocketOpen] = {
 
 
 CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
-CServerObject[socketOpen[
-    host, 
-    ToString[port], 
-    OptionValue["Blocking"], 
-    OptionValue["KeepAlive"],
-    OptionValue["NoDelay"], 
-    OptionValue["SendBufferSize"],
-    OptionValue["RecvBufferSize"]    
-]]; 
+With[{
+    socketId = socketOpen[
+        host, 
+        ToString[port], 
+        If[OptionValue["NonBlocking"], 1, 0], 
+        If[OptionValue["KeepAlive"], 1, 0],
+        If[OptionValue["NoDelay"], 1, 0], 
+        OptionValue["SendBufferSize"],
+        OptionValue["RecvBufferSize"]
+    ]
+}, 
+    CSocketObject[socketId]
+];
+
+
+CSocketClose[CSocketObject[socketId_Integer]] := 
+With[{result = socketClose[socketId]}, 
+    (*Returns success or not*)
+    result === 0
+];
 
 
 CServerObject[serverPtr_Integer]["ListenSocket" | "Socket"] :=
