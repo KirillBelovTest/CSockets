@@ -465,6 +465,36 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma region server add client
 
+void addClient(Server server, SOCKET client){
+    #ifdef _DEBUG
+    printf("%s[addClient->SUCCESS]%s\n\tadd client = %I64d\n\n", GREEN, RESET, client);
+    #endif
+
+    server->clients[server->clientsLength] = client;
+    server->clientsLength++;
+
+    if (client > server->maxClientId){
+        server->maxClientId = client;
+    }
+}
+
+DLLEXPORT int serverAddClient(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    Server server = (Server)MArgument_getInteger(Args[0]);
+    SOCKET client = (SOCKET)MArgument_getInteger(Args[1]);
+    
+    addClient(server, client);
+
+    #ifdef _DEBUG
+    printf("%s[serverAddClient->SUCCESS]%s\n\tadd client = %I64d\n\n", GREEN, RESET, client);
+    #endif
+
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+#pragma region server get listen socket
+
 DLLEXPORT int serverGetListenSocket(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     Server server = (Server)MArgument_getInteger(Args[0]);
     MArgument_setInteger(Res, server->listenSocket);
