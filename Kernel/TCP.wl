@@ -7,12 +7,21 @@ BeginPackage["KirillBelov`CSockets`TCP`", {
 
 
 CSocketObject::usage = 
-"CSocketObject[socketId]";
+"CSocketObject[socketId] socket representation object.";
 
 
 CSocketOpen::usage = 
 "CSocketOpen[port] returns new server socket opened on localhost.
 CSocketOpen[host, port] returns new server socket opened on specific host."; 
+
+
+CSocketClose::usage =
+"CSocketClose[socket] closes the socket.";
+
+
+CSocketConnect::usage = 
+"CSocketConnect[port] returns new server socket opened on localhost.
+CSocketConnect[host, port] returns new server socket opened on specific host."; 
 
 
 Begin["`Private`"]; 
@@ -21,7 +30,7 @@ Begin["`Private`"];
 Options[CSocketOpen] = {
     "NonBlocking" :> True, 
     "KeepAlive" :> True, 
-    "NoDelay" :> False,
+    "NoDelay" :> True,
     "SendBufferSize" :> 256 * 1024,
     "RecvBufferSize" :> 256 * 1024
 };
@@ -50,71 +59,33 @@ With[{result = socketClose[socketId]},
 ];
 
 
-CServerObject[serverPtr_Integer]["ListenSocket" | "Socket"] :=
-CSocketObject[serverGetListenSocket[serverPtr]]; 
+Options[CSocketConnect] = {
+    "NonBlocking" :> False, 
+    "KeepAlive" :> True, 
+    "NoDelay" :> True,
+    "SendBufferSize" :> 256 * 1024,
+    "RecvBufferSize" :> 256 * 1024
+};
 
 
-CServerObject[serverPtr_Integer]["DestinationHostname" | "Host"] :=
-With[{socketId = serverGetListenSocket[serverPtr]}, 
-    socketGetHostname[socketId]
+CSocketConnect[host_String: "localhost", port_Integer, OptionsPattern[]] :=
+With[{
+    socketId = socketConnect[
+        host, 
+        ToString[port], 
+        If[OptionValue["NonBlocking"], 1, 0],
+        If[OptionValue["KeepAlive"], 1, 0],
+        If[OptionValue["NoDelay"], 1, 0],
+        OptionValue["SendBufferSize"],
+        OptionValue["RecvBufferSize"]
+    ]
+}, 
+    CSocketObject[socketId]
 ];
 
 
-CServerObject[serverPtr_Integer]["DestinationPort" | "Port"] :=
-socketGetPort[serverGetListenSocket[serverPtr]]; 
-
-
-CServerObject[serverPtr_Integer]["ConnectedClients" | "Clients"] :=
-Map[CSocketObject, serverGetClients[serverPtr]]; 
-
-
-CSocketConnect[host_String: "localhost", port_Integer] := 
-CSocketObject[socketConnect[host, ToString[port]]]; 
-
-
-CSocketObject /: BinaryWrite[CSocketObject[socketId_Integer], data_ByteArray, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
-With[{bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"]},
-    socketBinaryWrite[socketId, data, Length[data], bufferSize]
-]; 
-
-
-CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String, opts: OptionsPattern[{"BufferSize" :> $bufferSize}]] := 
-With[{
-    bufferSize = OptionValue[CSocketOpen, Flatten[{opts}], "BufferSize"], 
-    len = StringLength[data]
-},
-    socketWriteString[socketId, data, len, bufferSize]
-]; 
-
-
-CSocketObject /: SocketReadMessage[CSocketObject[socketId_Integer]] := 
-socketReadMessage[socketId, $bufferSize]; 
-
-
-CSocketObject /: SocketReadMessage[CSocketObject[socketId_Integer], bufferSize_Integer] := 
-socketReadMessage[socketId, bufferSize]; 
-
-
-CSocketObject /: SocketReadyQ[CSocketObject[socketId_Integer]] := 
-socketReadyQ[socketId]; 
-
-
-CSocketObject /: Close[CSocketObject[socketId_Integer]] := 
-socketClose[socketId]; 
-
-
-CServerObject /: SocketListen[server: CServerObject[serverPtr_Integer], handler_] := 
-Module[{task}, 
-    task = Internal`CreateAsynchronousTask[socketListen, {serverPtr}, handler[toPacket[##]]&]; 
-    CSocketListener[task, server, handler]
-]; 
-
-
-CSocketListener /: DeleteObject[CSocketListener[taskId_, ___]] := 
-RemoveAsynchronousTask[taskId]; 
-
-
-$directory = DirectoryName[$InputFileName, 2]; 
+$directory = 
+DirectoryName[$InputFileName, 2]; 
 
 
 $socketIcon = 
@@ -125,11 +96,8 @@ $ListenreIcon =
 Import[FileNameJoin[{$directory, "Images", "ListenerIcon.png"}]]; 
 
 
-$libraryLinkVersion := $libraryLinkVersion = 
+$libraryLinkVersion = 
 LibraryVersionInformation[FindLibrary["demo"]]["WolframLibraryVersion"]; 
-
-
-Once[$libraryLinkVersion]; 
 
 
 $libFile = FileNameJoin[{
@@ -138,24 +106,6 @@ $libFile = FileNameJoin[{
     $SystemID <> "-v" <> ToString[$libraryLinkVersion], 
     "tcp." <> Internal`DynamicLibraryExtension[]
 }]; 
-
-
-$bufferSize = 4 * 1024; 
-
-
-$nonBlocking = 1; 
-
-
-$keepAlive = 1;
-
-
-$noDelay = 0;
-
-
-$sendBufferSize = 512 * 1024; 
-
-
-$recvBufferSize = 512 * 1024; 
 
 
 If[!FileExistsQ[$libFile], 
@@ -188,17 +138,35 @@ toPacket[task_, event_, {serverId_, clientId_}] :=
 
 
 (*socketOpen["host", "port", 
-    nonBlocking: 0 | 1: 1,
-    keepAlive_Integer: 0 | 1: 1, 
-    noDelay_Integer: 0 | 1: 0, 
-    sendBufferSize_Integer?Positive, 
-    recvBufferSize_Integer?Positive, 
-] -> listenSocketId*)
-socketOpen = LibraryFunctionLoad[$libFile, "socketOpen", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
+    nonBlocking:        0 | 1: 1,
+    keepAlive_Integer:  0 | 1: 1, 
+    noDelay_Integer:    0 | 1: 1, 
+    sendBufferSize:     _Integer?Positive: 256*1024, 
+    recvBufferSize:     _Integer?Positive: 256*1024, 
+]-> listenSocketId*)
+socketOpen = 
+LibraryFunctionLoad[$libFile, "socketOpen", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
 
 
 (*socketClose[socketId] -> socketId*)
-socketClose = LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
+socketClose = 
+LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
+
+
+(*socketConnect["host", "port", 
+    nonBlocking:        0 | 1: 0,
+    keepAlive_Integer:  0 | 1: 1, 
+    noDelay_Integer:    0 | 1: 1, 
+    sendBufferSize:     _Integer?Positive: 256*1024, 
+    recvBufferSize:     _Integer?Positive: 256*1024, 
+]-> connectSocketId*)
+socketConnect = 
+LibraryFunctionLoad[$libFile, "socketConnect", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
+
+
+(*socketGetSocketId[socketId, clientsLengthMax, bufferSize] -> serverPtr*)
+serverCreate = 
+LibraryFunctionLoad[$libFile, "serverCreate", {Integer, Integer, Integer}, Integer]; 
 
 
 (*socketListen[serverPtr] -> taskId*)
@@ -219,10 +187,6 @@ socketGetPort = LibraryFunctionLoad[$libFile, "socketGetPort", {Integer}, Intege
 
 (*serverGetClients[serverPtr] -> port*)
 serverGetClients = LibraryFunctionLoad[$libFile, "serverGetClients", {Integer}, {Integer, 1}]; 
-
-
-(*socketConnect["host", "port"] -> socketId*)
-socketConnect = LibraryFunctionLoad[$libFile, "socketConnect", {String, String}, Integer]; 
 
 
 (*socketBinaryWrite[socketId, data, length, bufferSize] -> length*)
