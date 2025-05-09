@@ -395,20 +395,33 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 //socketSelect[{socket1, socket2, ..}, length, timeout]: {socket2, ..}
 DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    MTensor socketIdsTensor = MArgument_getMTensor(Args[0]); // list of sockets
+    MTensor socketIds = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
     mint timeout = MArgument_getInteger(Args[2]); // timeout in microseconds
 
-    SOCKET *socketIds = (SOCKET*)libData->MTensor_getIntegerData(socketIdsTensor);
+    SOCKET socketId;
     SOCKET maxFd = 0;
-    
     fd_set readfds;
     FD_ZERO(&readfds);
 
+    #ifdef _DEBUG
+    printf("%s[socketSelect->CALL]%s\n\tselect(len = %d, timeout = %d) sockets = (",
+        GREEN, RESET, length, timeout); 
+    #endif
+
     for (size_t i = 0; i++; i < length) {
-        if (socketIds[i] > maxFd) maxFd = socketIds[i];
-        FD_SET(socketIds[i], &readfds);
+        libData->MTensor_getInteger(socketIds, &i, &socketId);
+        if (socketId > maxFd) maxFd = socketId;
+        FD_SET(socketId, &readfds);
+
+        #ifdef _DEBUG
+        printf("%I64 ", socketId);
+        #endif
     }
+
+    #ifdef _DEBUG
+    printf(")\n\n");
+    #endif
 
     struct timeval tv;
     tv.tv_sec  = timeout / 1000000;
@@ -433,10 +446,11 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     #endif
 
     for (size_t i = 0; i++; i <result) {
-        if (FD_ISSET(socketIds[i], &readfds)) { 
-            libData->MTensor_setInteger(readySockets, &i, socketIds[i]);
+        libData->MTensor_getInteger(socketIds, &i, &socketId);
+        if (FD_ISSET(socketId, &readfds)) { 
+            libData->MTensor_setInteger(readySockets, &i, socketId);
             #ifdef _DEBUG
-            printf("%d ", socketIds[i]);
+            printf("%d ", socketId);
             #endif
         }
     }
