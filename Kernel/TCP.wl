@@ -6,29 +6,45 @@ BeginPackage["KirillBelov`CSockets`TCP`", {
 }]; 
 
 
-CSocketObject::usage = 
-"CSocketObject[socketId] socket representation object.";
+TCPSocketObject::usage = 
+"TCPSocketObject[socketId] socket object representation.";
 
 
-CSocketOpen::usage = 
-"CSocketOpen[port] returns new server socket opened on localhost.
-CSocketOpen[host, port] returns new server socket opened on specific host."; 
+TCPSocketOpen::usage = 
+"TCPSocketOpen[port] returns a new server socket opened on localhost.
+TCPSocketOpen[host, port] returns a new server socket opened on specific host.";
 
 
-CSocketClose::usage =
-"CSocketClose[socket] closes the socket.";
+TCPSocketClose::usage =
+"TCPSocketClose[socket] closes the socket.";
 
 
-CSocketConnect::usage = 
-"CSocketConnect[port] returns new server socket opened on localhost.
-CSocketConnect[host, port] returns new server socket opened on specific host."; 
+TCPSocketConnect::usage = 
+"TCPSocketConnect[port] returns a new client socket connected to localhost.
+TCPSocketConnect[host, port] returns a new client socket connected to specific host.";
 
 
-Begin["`Private`"]; 
+TCPSocketsSelect::usage = 
+"TCPSocketsSelect[{sockets}] returns list of ready sockets.";
 
 
-Options[CSocketOpen] = {
-    "NonBlocking" :> True, 
+TCPSocketsAccept::usage = 
+"TCPSocketsAccept[sockets] returns new client.";
+
+
+TCPSocketsRecv::usage = 
+"TCPSocketsRecv[socket] returns received data.";
+
+
+TCPSocketsSend::usage = 
+"TCPSocketsSend[socket, data] send data.";
+
+
+Begin["`Private`"];
+
+
+Options[TCPSocketOpen] = {
+    "NonBlocking" :> False, 
     "KeepAlive" :> True, 
     "NoDelay" :> True,
     "SendBufferSize" :> 256 * 1024,
@@ -36,7 +52,7 @@ Options[CSocketOpen] = {
 };
 
 
-CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
+TCPSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
 With[{
     socketId = socketOpen[
         host, 
@@ -48,18 +64,18 @@ With[{
         OptionValue["RecvBufferSize"]
     ]
 }, 
-    CSocketObject[socketId]
+    TCPSocketObject[socketId]
 ];
 
 
-CSocketClose[CSocketObject[socketId_Integer]] := 
+TCPSocketClose[TCPSocketObject[socketId_Integer]] := 
 With[{result = socketClose[socketId]}, 
     (*Returns success or not*)
     result === 0
 ];
 
 
-Options[CSocketConnect] = {
+Options[TCPSocketConnect] = {
     "NonBlocking" :> False, 
     "KeepAlive" :> True, 
     "NoDelay" :> True,
@@ -68,7 +84,7 @@ Options[CSocketConnect] = {
 };
 
 
-CSocketConnect[host_String: "localhost", port_Integer, OptionsPattern[]] :=
+TCPSocketConnect[host_String: "localhost", port_Integer, OptionsPattern[]] :=
 With[{
     socketId = socketConnect[
         host, 
@@ -80,8 +96,11 @@ With[{
         OptionValue["RecvBufferSize"]
     ]
 }, 
-    CSocketObject[socketId]
+    TCPSocketObject[socketId]
 ];
+
+
+
 
 
 $directory = 
@@ -113,32 +132,8 @@ If[!FileExistsQ[$libFile],
 ]; 
 
 
-toPacket[task_, event_, {serverId_, clientId_, data_}] := 
-With[{byteArray = ByteArray[data]}, 
-    <|
-        "Event" -> event, 
-        "TimeStamp" -> Now, 
-        "Socket" :> CSocketObject[serverId], 
-        "SourceSocket" :> CSocketObject[clientId], 
-        "DataByteArray" :> byteArray, 
-        "Data" :> ByteArrayToString[byteArray], 
-        "DataBytes" :> Normal[byteArray], 
-        "MultipartComplete" -> True
-    |>
-]; 
-
-
-toPacket[task_, event_, {serverId_, clientId_}] := 
-<|
-    "Event" -> event, 
-    "TimeStamp" -> Now, 
-    "Socket" :> CSocketObject[serverId], 
-    "SourceSocket" :> CSocketObject[clientId]
-|>; 
-
-
 (*socketOpen["host", "port", 
-    nonBlocking:        0 | 1: 1,
+    nonBlocking:        0 | 1: 0,
     keepAlive_Integer:  0 | 1: 1, 
     noDelay_Integer:    0 | 1: 1, 
     sendBufferSize:     _Integer?Positive: 256*1024, 
@@ -164,45 +159,23 @@ socketConnect =
 LibraryFunctionLoad[$libFile, "socketConnect", {String, String, Integer, Integer, Integer, Integer, Integer}, Integer]; 
 
 
-(*socketGetSocketId[socketId, clientsLengthMax, bufferSize] -> serverPtr*)
-serverCreate = 
-LibraryFunctionLoad[$libFile, "serverCreate", {Integer, Integer, Integer}, Integer]; 
+(*socketSelect[{listenSocket, client1, ..}, length, timeout]: {client1, ..}*)
+socketSelect = 
+LibraryFunctionLoad[$libFile, "socketSelect", {{Integer, 1}, Integer, Integer}, {Integer, 1}]; 
 
 
-(*socketListen[serverPtr] -> taskId*)
-socketListen = LibraryFunctionLoad[$libFile, "socketListen", {Integer}, {Integer}]; 
+(*socketAccept[listenSocketId] -> clientSocketId*)
+socketAccept = 
+LibraryFunctionLoad[$libFile, "socketAccept", {Integer}, Integer]; 
 
 
-(*serverGetListenSocket[serverPtr] -> listenSocket*)
-serverGetListenSocket = LibraryFunctionLoad[$libFile, "serverGetListenSocket", {Integer}, Integer]; 
+(*socketRecv[clientSocketId, bufferSize] -> *)
+socketRecv = 
+LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, {"ByteArray", "Shared"}];
 
 
-(*socketGetHostname[socketId] -> hostname*)
-socketGetHostname = LibraryFunctionLoad[$libFile, "socketGetHostname", {Integer}, String]; 
-
-
-(*socketGetPort[serverPtr] -> port*)
-socketGetPort = LibraryFunctionLoad[$libFile, "socketGetPort", {Integer}, Integer]; 
-
-
-(*serverGetClients[serverPtr] -> port*)
-serverGetClients = LibraryFunctionLoad[$libFile, "serverGetClients", {Integer}, {Integer, 1}]; 
-
-
-(*socketBinaryWrite[socketId, data, length, bufferSize] -> length*)
-socketBinaryWrite = LibraryFunctionLoad[$libFile, "socketBinaryWrite", {Integer, {"ByteArray", "Shared"}, Integer, Integer}, Integer]; 
-
-
-(*socketWriteString[socketId, data, length, bufferSize] -> length*)
-socketWriteString = LibraryFunctionLoad[$libFile, "socketWriteString", {Integer, String, Integer, Integer}, Integer]; 
-
-
-(*socketReadyQ[socketId] -> readyState*)
-socketReadyQ = LibraryFunctionLoad[$libFile, "socketReadyQ", {Integer}, True | False]; 
-
-
-(*socketReadMessage[socketId, bufferSize] -> message*)
-socketReadMessage = LibraryFunctionLoad[$libFile, "socketReadMessage", {Integer, Integer}, "ByteArray"]; 
+(*socketSend[socketId, data, length] -> length*)
+socketSend = LibraryFunctionLoad[$libFile, "socketSend", {Integer, {"ByteArray", "Shared"}, Integer, Integer}, Integer]; 
 
 
 End[]; 
