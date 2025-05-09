@@ -409,7 +409,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
         GREEN, RESET, length, timeout); 
     #endif
 
-    for (size_t i = 0; i++; i < length) {
+    for (size_t i = 0; i < length; i++) {
         libData->MTensor_getInteger(socketIds, &i, &socketId);
         if (socketId > maxFd) maxFd = socketId;
         FD_SET(socketId, &readfds);
@@ -445,7 +445,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
         GREEN, RESET, GETSOCKETERRNO());
     #endif
 
-    for (size_t i = 0; i++; i <result) {
+    for (size_t i = 0; i <result; i++) {
         libData->MTensor_getInteger(socketIds, &i, &socketId);
         if (FD_ISSET(socketId, &readfds)) { 
             libData->MTensor_setInteger(readySockets, &i, socketId);
