@@ -395,10 +395,11 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 //socketSelect[{socket1, socket2, ..}, length, timeout]: {socket2, ..}
 DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    MTensor socketIds = MArgument_getMTensor(Args[0]); // list of sockets
+    MTensor socketIdsTensor = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
     mint timeout = MArgument_getInteger(Args[2]); // timeout in microseconds
 
+    SOCKET *socketIds = (SOCKET*)libData->MTensor_getIntegerData(socketIdsTensor);
     SOCKET socketId;
     SOCKET maxFd = 0;
     fd_set readfds;
@@ -410,12 +411,12 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     #endif
 
     for (size_t i = 0; i < length; i++) {
-        libData->MTensor_getInteger(socketIds, &i, &socketId);
+        socketId = socketIds[i];
         if (socketId > maxFd) maxFd = socketId;
         FD_SET(socketId, &readfds);
 
         #ifdef _DEBUG
-        printf("%I64 ", socketId);
+        printf("%I64d ", socketId);
         #endif
     }
 
@@ -437,20 +438,27 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    MTensor readySockets;
-    libData->MTensor_new(MType_Integer, 1, &result, &readySockets);
+    mint rank = 1;
+    mint dims[1];
+    dims[0] = result;
+    MTensor readySocketsTensor;
+    libData->MTensor_new(MType_Integer, rank, &dims, &readySocketsTensor);
+    SOCKET *readySockets = (SOCKET*)libData->MTensor_getIntegerData(readySocketsTensor);
 
     #ifdef _DEBUG
-    printf("%s[socketSelect->SUCCESS]%s\n\tselect() returns sockets = \n\n", 
+    printf("%s[socketSelect->SUCCESS]%s\n\tselect() returns sockets = ", 
         GREEN, RESET, GETSOCKETERRNO());
     #endif
 
-    for (size_t i = 0; i <result; i++) {
-        libData->MTensor_getInteger(socketIds, &i, &socketId);
+    int j = 0;
+    for (size_t i = 0; i < result; i++) {
+        socketId = socketIds[i];
         if (FD_ISSET(socketId, &readfds)) { 
-            libData->MTensor_setInteger(readySockets, &i, socketId);
+            readySockets[j] = socketId;
+            j++;
+
             #ifdef _DEBUG
-            printf("%d ", socketId);
+            printf("%I64d ", socketId);
             #endif
         }
     }
@@ -459,7 +467,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     printf("\n\n");
     #endif
 
-    MArgument_setMTensor(Res, readySockets);
+    MArgument_setMTensor(Res, readySocketsTensor);
     return LIBRARY_NO_ERROR;
 }
 
@@ -506,12 +514,15 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
 
         MNumericArray byteArray;
-        libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &result, &byteArray);
+        mint dims[1];
+        dims[0] = result;
+        mint rank = 1;
+        libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, rank, &dims, &byteArray);
         BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
         memcpy(array, buffer, result);
 
         MArgument_setMNumericArray(Res, byteArray);
-        libData->numericarrayLibraryFunctions->MNumericArray_disown(byteArray);
+        free(buffer);
         return LIBRARY_NO_ERROR;
     } else if (result == 0) {
         #ifdef _DEBUG
@@ -539,7 +550,6 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     SOCKET socketId = MArgument_getInteger(Args[0]);
     MNumericArray mArr = MArgument_getMNumericArray(Args[1]);
     int dataLength = MArgument_getInteger(Args[2]);
-    int bufferSize = MArgument_getInteger(Args[3]);
 
     int iResult;
     BYTE *data = (BYTE *)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);

@@ -1,12 +1,30 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
-PacletDirectoryLoad[ParentDirectory[DirectoryName[$InputFileName]]]; 
+If[$FrontEnd === Null, 
+	PacletDirectoryLoad[ParentDirectory[DirectoryName[$InputFileName]]], 
+	PacletDirectoryLoad[NotebookDirectory[]]
+];
 Get["KirillBelov`CSockets`TCP`"];
+server = KirillBelov`CSockets`TCP`Private`socketOpen["localhost", "8080", 0, 1, 1, 256 * 1024, 256 * 1024];
 
 
-server = TCPSocketOpen[8080]
+Echo[server, "SERVER:"];
 
 
-selected = 
-KirillBelov`CSockets`TCP`Private`socketSelect[{1788}, 1, 1000000]
+sockets = {server}; 
+
+
+selected = KirillBelov`CSockets`TCP`Private`socketSelect[sockets, Length[sockets], 1000000];
+
+
+selected
+
+
+client = KirillBelov`CSockets`TCP`Private`socketAccept[server];
+
+
+client
+
+
+data = KirillBelov`CSockets`TCP`Private`socketRecv[client, 8 * 1024];
