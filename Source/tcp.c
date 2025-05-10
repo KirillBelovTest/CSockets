@@ -55,6 +55,7 @@
 #include "WolframLibrary.h"
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
+#include "WolframCompileLibrary.h"
 
 #pragma endregion
 
@@ -397,7 +398,7 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     MTensor socketIdsTensor = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
-    mint timeout = MArgument_getInteger(Args[2]); // timeout in microseconds
+    int timeout = (int)MArgument_getInteger(Args[2]); // timeout in microseconds
 
     SOCKET *socketIds = (SOCKET*)libData->MTensor_getIntegerData(socketIdsTensor);
     SOCKET socketId;
@@ -406,7 +407,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     FD_ZERO(&readfds);
 
     #ifdef _DEBUG
-    printf("%s[socketSelect->CALL]%s\n\tselect(len = %d, timeout = %d) sockets = (",
+    printf("%s[socketSelect->CALL]%s\n\tselect(len = %zd, timeout = %d) sockets = (",
         GREEN, RESET, length, timeout); 
     #endif
 
@@ -428,21 +429,16 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     tv.tv_sec  = timeout / 1000000;
     tv.tv_usec = timeout % 1000000;
 
-    int result = select((int)(maxFd + 1), &readfds, NULL, NULL, &timeout);
-    if (result == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s[socketSelect->ERROR]%s\n\tselect() returns error = %d\n\n", 
-            RED, RESET, GETSOCKETERRNO());
-        #endif
+    int result = select((int)(maxFd + 1), &readfds, NULL, NULL, &tv);
+    if (result >= 0) {
+        
+        return LIBRARY_NO_ERROR;
+    } else {
 
-        return LIBRARY_FUNCTION_ERROR;
     }
 
-    mint rank = 1;
-    mint dims[1];
-    dims[0] = result;
     MTensor readySocketsTensor;
-    libData->MTensor_new(MType_Integer, rank, &dims, &readySocketsTensor);
+    libData->MTensor_new(MType_Integer, 1, &result, &readySocketsTensor);
     SOCKET *readySockets = (SOCKET*)libData->MTensor_getIntegerData(readySocketsTensor);
 
     #ifdef _DEBUG
@@ -522,7 +518,6 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
         memcpy(array, buffer, result);
 
         free(buffer);
-        libData->numericarrayLibraryFunctions->MNumericArray_disown(byteArray);
         MArgument_setMNumericArray(Res, byteArray);
         return LIBRARY_NO_ERROR;
     } else if (result == 0) {
@@ -531,6 +526,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
             RED, RESET, client, GETSOCKETERRNO());
         #endif
 
+        libData->Message("xx", "yy");
         return LIBRARY_FUNCTION_ERROR;
     } else {
         #ifdef _DEBUG
@@ -538,6 +534,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
             RED, RESET, client, GETSOCKETERRNO());
         #endif
 
+        libData->Message("xy", "yz");
         return LIBRARY_FUNCTION_ERROR;
     }
 }
@@ -558,12 +555,11 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     iResult = send(socketId, data, dataLength, 0);
     if (iResult == SOCKET_ERROR) {
-            #ifdef _DEBUG
-            printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
-                RED, RESET, socketId, GETSOCKETERRNO());
-            #endif
+        #ifdef _DEBUG
+        printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
+            RED, RESET, socketId, GETSOCKETERRNO());
+        #endif
 
-        MArgument_setInteger(Res, GETSOCKETERRNO());
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -572,7 +568,6 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
         GREEN, RESET, socketId, iResult);
     #endif
 
-    libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
     MArgument_setInteger(Res, iResult);
     return LIBRARY_NO_ERROR;
 }
