@@ -521,8 +521,9 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
         BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
         memcpy(array, buffer, result);
 
-        MArgument_setMNumericArray(Res, byteArray);
         free(buffer);
+        libData->numericarrayLibraryFunctions->MNumericArray_disown(byteArray);
+        MArgument_setMNumericArray(Res, byteArray);
         return LIBRARY_NO_ERROR;
     } else if (result == 0) {
         #ifdef _DEBUG
@@ -530,10 +531,10 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
             RED, RESET, client, GETSOCKETERRNO());
         #endif
 
-        return LIBRARY_MEMORY_ERROR;
+        return LIBRARY_FUNCTION_ERROR;
     } else {
         #ifdef _DEBUG
-        printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) returns error = %d bytes\n\n", 
+        printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) returns error = %d\n\n", 
             RED, RESET, client, GETSOCKETERRNO());
         #endif
 
@@ -552,10 +553,10 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     int dataLength = MArgument_getInteger(Args[2]);
 
     int iResult;
-    BYTE *data = (BYTE *)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);
+    BYTE *data = (BYTE*)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);
 
 
-    iResult = send(socket, data, dataLength, 0);
+    iResult = send(socketId, data, dataLength, 0);
     if (iResult == SOCKET_ERROR) {
             #ifdef _DEBUG
             printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 

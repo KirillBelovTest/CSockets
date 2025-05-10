@@ -171,7 +171,7 @@ LibraryFunctionLoad[$libFile, "socketAccept", {Integer}, Integer];
 
 (*socketRecv[clientSocketId, bufferSize] -> *)
 socketRecv = 
-LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, "ByteArray"];
+LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, {"ByteArray", "Shared"}];
 
 
 (*socketSend[socketId, data, length] -> length*)
