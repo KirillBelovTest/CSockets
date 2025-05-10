@@ -56,6 +56,8 @@
 #include "WolframIOLibraryFunctions.h"
 #include "WolframNumericArrayLibrary.h"
 #include "WolframCompileLibrary.h"
+#include "WolframRawArrayLibrary.h"
+#include "WolframImageLibrary.h"
 
 #pragma endregion
 
@@ -543,15 +545,14 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 #pragma region send
 
-//socketBinaryWrite[socketId_Integer, data: ByteArray[<>], dataLength_Integer, bufferLength_Integer]: socketId_Integer
+//socketBinaryWrite[socketId_Integer, data: ByteArray[<>], dataLength_Integer]: sentLength_Integer
 DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET socketId = MArgument_getInteger(Args[0]);
-    MNumericArray mArr = MArgument_getMNumericArray(Args[1]);
-    int dataLength = MArgument_getInteger(Args[2]);
+    SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
+    MNumericArray mArr = MArgument_getMNumericArray(Args[1]); 
+    int dataLength = MArgument_getInteger(Args[2]); // positive integer
 
     int iResult;
     BYTE *data = (BYTE*)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);
-
 
     iResult = send(socketId, data, dataLength, 0);
     if (iResult == SOCKET_ERROR) {
