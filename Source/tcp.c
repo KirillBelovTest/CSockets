@@ -433,40 +433,42 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     int result = select((int)(maxFd + 1), &readfds, NULL, NULL, &tv);
     if (result >= 0) {
+        MTensor readySocketsTensor;
+        libData->MTensor_new(MType_Integer, 1, &result, &readySocketsTensor);
+        SOCKET *readySockets = (SOCKET*)libData->MTensor_getIntegerData(readySocketsTensor);
         
+        #ifdef _DEBUG
+        printf("%s[socketSelect->SUCCESS]%s\n\tselect() returns sockets = ", 
+            GREEN, RESET, GETSOCKETERRNO());
+        #endif
+
+        int j = 0;
+        for (size_t i = 0; i < length; i++) {
+            socketId = socketIds[i];
+            if (FD_ISSET(socketId, &readfds)) { 
+                readySockets[j] = socketId;
+                j++;
+
+                #ifdef _DEBUG
+                printf("%I64d ", socketId);
+                #endif
+            }
+        }
+
+        #ifdef _DEBUG
+        printf("\n\n");
+        #endif
+
+        MArgument_setMTensor(Res, readySocketsTensor);
         return LIBRARY_NO_ERROR;
     } else {
+        #ifdef _DEBUG
+        printf("%s[socketSelect->ERROR]%s\n\tselect() returns error = %d",
+            RED, RESET, GETSOCKETERRNO()); 
+        #endif
 
+        return LIBRARY_FUNCTION_ERROR;
     }
-
-    MTensor readySocketsTensor;
-    libData->MTensor_new(MType_Integer, 1, &result, &readySocketsTensor);
-    SOCKET *readySockets = (SOCKET*)libData->MTensor_getIntegerData(readySocketsTensor);
-
-    #ifdef _DEBUG
-    printf("%s[socketSelect->SUCCESS]%s\n\tselect() returns sockets = ", 
-        GREEN, RESET, GETSOCKETERRNO());
-    #endif
-
-    int j = 0;
-    for (size_t i = 0; i < result; i++) {
-        socketId = socketIds[i];
-        if (FD_ISSET(socketId, &readfds)) { 
-            readySockets[j] = socketId;
-            j++;
-
-            #ifdef _DEBUG
-            printf("%I64d ", socketId);
-            #endif
-        }
-    }
-
-    #ifdef _DEBUG
-    printf("\n\n");
-    #endif
-
-    MArgument_setMTensor(Res, readySocketsTensor);
-    return LIBRARY_NO_ERROR;
 }
 
 #pragma endregion
@@ -505,7 +507,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
     
     BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
     int result = recv(client, buffer, bufferSize, 0);
-    if (result >= 0){
+    if (result > 0){
         #ifdef _DEBUG
         printf("%s[serverRecv->SUCCESS]%s\n\trecv(socket = %I64d) received = %d bytes\n\n", 
             GREEN, RESET, client, result);
@@ -528,15 +530,21 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
             RED, RESET, client, GETSOCKETERRNO());
         #endif
 
-        libData->Message("xx", "yy");
+        libData->Message("sockclose");
         return LIBRARY_FUNCTION_ERROR;
     } else {
+        int err = GETSOCKETERRNO();
+
         #ifdef _DEBUG
         printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) returns error = %d\n\n", 
-            RED, RESET, client, GETSOCKETERRNO());
+            RED, RESET, client, err);
         #endif
 
-        libData->Message("xy", "yz");
+        if (err == 10053) {
+            libData->Message("sockclose");
+        } else if (err == 10038) {
+            libData->Message("nonsock");
+        }
         return LIBRARY_FUNCTION_ERROR;
     }
 }
