@@ -620,26 +620,35 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     MNumericArray mArr = MArgument_getMNumericArray(Args[1]); 
     int dataLength = MArgument_getInteger(Args[2]); // positive integer
 
-    int iResult;
+    int result;
     BYTE *data = (BYTE*)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);
 
-    iResult = send(socketId, data, dataLength, 0);
-    if (iResult == SOCKET_ERROR) {
+    result = send(socketId, data, dataLength, 0);
+    if (result > 0) {
+        #ifdef _DEBUG
+        printf("%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
+            GREEN, RESET, socketId, result);
+        #endif
+
+        MArgument_setInteger(Res, result);
+        return LIBRARY_NO_ERROR;
+    }
+    else if (result == SOCKET_ERROR) {
+        int err = GETSOCKETERRNO();
+
         #ifdef _DEBUG
         printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
-            RED, RESET, socketId, GETSOCKETERRNO());
+            RED, RESET, socketId, err);
         #endif
+
+        if (err == WSAEINVAL) {
+            libData->Message("csockargex");
+        } else {
+            libData->Message("csockunexpected");
+        }
 
         return LIBRARY_FUNCTION_ERROR;
     }
-
-    #ifdef _DEBUG
-    printf("%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
-        GREEN, RESET, socketId, iResult);
-    #endif
-
-    MArgument_setInteger(Res, iResult);
-    return LIBRARY_NO_ERROR;
 }
 
 #pragma endregion
