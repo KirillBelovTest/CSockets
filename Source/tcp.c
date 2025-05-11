@@ -73,7 +73,7 @@ DLLEXPORT mint WolframLibrary_getVersion() {
 
 DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
     #ifdef _DEBUG
-    printf("[WolframLibrary_initialize]\n\tinitialization\n\n");
+    printf("%s[WolframLibrary_initialize]%s\n\tinitialization\n\n", GREEN, RESET);
     #endif
 
     #ifdef _WIN32
