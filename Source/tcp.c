@@ -434,8 +434,9 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     int result = select((int)(maxFd + 1), &readfds, NULL, NULL, &tv);
     if (result >= 0) {
+        mint len = (mint)result;
         MTensor readySocketsTensor;
-        libData->MTensor_new(MType_Integer, 1, &result, &readySocketsTensor);
+        libData->MTensor_new(MType_Integer, 1, &len, &readySocketsTensor);
         SOCKET *readySockets = (SOCKET*)libData->MTensor_getIntegerData(readySocketsTensor);
         
         #ifdef _DEBUG
@@ -575,8 +576,9 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
             GREEN, RESET, client, result);
         #endif
 
+        mint len = (mint)result;
         MNumericArray byteArray;
-        libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &result, &byteArray);
+        libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &len, &byteArray);
         BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
         memcpy(array, buffer, result);
 
