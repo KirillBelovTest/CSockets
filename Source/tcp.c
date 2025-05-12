@@ -504,20 +504,29 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma region socket check
 
-//socketCheck[socketList, length]: readySockets
+//socketCheck[sockets, length]: validSockets
 DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     MTensor socketList = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
 
     SOCKET *sockets = (SOCKET*)libData->MTensor_getIntegerData(socketList);
     SOCKET sock;
+    mint validCount = 0;
+    int opt;
+    int err;
+    socklen_t len = sizeof(opt);
+
+    #ifdef _DEBUG
+    printf("%s[socketCheck->CALL]%s\n\tcheck(",
+        GREEN, RESET); 
+    #endif
 
     for (size_t i = 0; i < length; i++) {
         sock = sockets[i];
-        sockets[i] = true; 
 
-        int opt;
-        socklen_t len = sizeof(opt);
+        #ifdef _DEBUG
+        printf("%I64d ", sock); 
+        #endif
 
         #ifdef _WIN32
         int result = getsockopt(sock, SOL_SOCKET, SO_TYPE, (char*)&opt, &len);
@@ -525,12 +534,44 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
         int result = fcntl(sock, F_GETFL)
         #endif
 
-        if (result < 0) {
-            sockets[i] = GETSOCKETERRNO() != WSAENOTSOCK;
+        err = GETSOCKETERRNO();
+
+        if (result >= 0 || 
+            #ifdef _WIN32
+            err != WSAENOTSOCK
+            #else
+            err != EBADF
+            #endif
+        ) {
+            sockets[validCount] = sock;
+            validCount++;
         }
     }
+
+    #ifdef _DEBUG
+    printf(")\n\n"); 
+    #endif
+
+    MTensor validSocketsList;
+    libData->MTensor_new(MType_Integer, (mint)1, &validCount, validSocketsList);
+
+    #ifdef _DEBUG
+    printf("%s[socketCheck->SUCCESS]%s\n\tcheck(",
+        GREEN, RESET); 
+    #endif
+
+    for (mint i = 0; i < validCount; i++) {
+        #ifdef _DEBUG
+        printf("%I64d ", sockets[i]); 
+        #endif
+        libData->MTensor_setInteger(validSocketsList, &i, sockets[i]);
+    }
+
+    #ifdef _DEBUG
+    printf(")\n\n"); 
+    #endif
     
-    MArgument_setMTensor(Res, socketList);
+    MArgument_setMTensor(Res, validSocketsList);
     return LIBRARY_NO_ERROR;
 }
 
