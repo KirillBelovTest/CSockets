@@ -396,7 +396,7 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 #pragma region socket select
 
-//socketSelect[{socket1, socket2, ..}, length, timeout]: {socket2, ..}
+//socketSelect[socketList, length, timeout]: {socket2, ..}
 DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     MTensor socketIdsList = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
@@ -538,6 +538,7 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
 
 #pragma region socket accept
 
+//socketAccept[listenSocket]: clientSocket
 DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET listenSocket = (SOCKET)MArgument_getInteger(Args[0]);
     SOCKET client = accept(listenSocket, NULL, NULL);
