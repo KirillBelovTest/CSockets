@@ -553,7 +553,8 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
     #endif
 
     MTensor validSocketsList;
-    libData->MTensor_new(MType_Integer, (mint)1, &validCount, validSocketsList);
+    libData->MTensor_new(MType_Integer, 1, &validCount, &validSocketsList);
+    SOCKET *validSockets = libData->MTensor_getIntegerData(validSocketsList);
 
     #ifdef _DEBUG
     printf("%s[socketCheck->SUCCESS]%s\n\tcheck(",
@@ -564,7 +565,7 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
         #ifdef _DEBUG
         printf("%I64d ", sockets[i]); 
         #endif
-        libData->MTensor_setInteger(validSocketsList, &i, sockets[i]);
+        validSockets[i] = sockets[i];
     }
 
     #ifdef _DEBUG
@@ -675,8 +676,7 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
 
         MArgument_setInteger(Res, result);
         return LIBRARY_NO_ERROR;
-    }
-    else if (result == SOCKET_ERROR) {
+    } else if (result < 0) {
         int err = GETSOCKETERRNO();
 
         #ifdef _DEBUG
@@ -690,6 +690,16 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
             libData->Message("csockunexpected");
         }
 
+        return LIBRARY_FUNCTION_ERROR;
+    } else {
+        int err = GETSOCKETERRNO();
+
+        #ifdef _DEBUG
+        printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) socket closed\n\n", 
+            RED, RESET, socketId);
+        #endif
+
+        libData->Message("csockclose");
         return LIBRARY_FUNCTION_ERROR;
     }
 }
