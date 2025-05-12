@@ -164,12 +164,17 @@ socketSelect =
 LibraryFunctionLoad[$libFile, "socketSelect", {{Integer, 1}, Integer, Integer}, {Integer, 1}]; 
 
 
-(*socketAccept[listenSocketId] -> clientSocketId*)
+(*socketCheck[sockets, length, timeout]: aliveSockets*)
+socketCheck = 
+LibraryFunctionLoad[$libFile, "socketSelect", {{Integer, 1}, Integer, Integer}, {Integer, 1}]; 
+
+
+(*socketAccept[listenSocketId]: clientSocketId*)
 socketAccept = 
 LibraryFunctionLoad[$libFile, "socketAccept", {Integer}, Integer]; 
 
 
-(*socketRecv[clientSocketId, bufferSize] -> *)
+(*socketRecv[clientSocketId, bufferSize]: byteArray*)
 socketRecv = 
 LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, "ByteArray"];
 

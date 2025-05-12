@@ -504,7 +504,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma region socket check
 
-//socketCheck[{socket1, socket2, ..}, length]: {1, 0, ..}
+//socketCheck[socketList, length]: readySockets
 DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     MTensor socketList = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
@@ -564,6 +564,7 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma region socket recv
 
+//socketRecv[socketId, bufferSize]: byteArray
 DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET client = (SOCKET)MArgument_getInteger(Args[0]);
     mint bufferSize = (mint)MArgument_getInteger(Args[1]);
@@ -614,7 +615,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 #pragma region send
 
-//socketBinaryWrite[socketId_Integer, data: ByteArray[<>], dataLength_Integer]: sentLength_Integer
+//socketSend[socketId, data, dataLength]: sentLength
 DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
     MNumericArray mArr = MArgument_getMNumericArray(Args[1]); 
