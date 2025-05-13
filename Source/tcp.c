@@ -59,6 +59,8 @@
 #include "WolframRawArrayLibrary.h"
 #include "WolframImageLibrary.h"
 
+#include "errors.h"
+
 #pragma endregion
 
 #pragma region initialization
@@ -470,32 +472,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
             RED, RESET, err); 
         #endif
 
-        if (
-            #ifdef _WIN32
-            err == WSAEINTR
-            #else
-            err == EINTR
-            #endif
-        ) {
-            libData->Message("tryagain");
-        } else if (
-            #ifdef _WIN32
-            err == WSAEINVAL
-            #else
-            err == EINVAL
-            #endif
-        ){
-            libData->Message("argserr");
-        } else if (
-            #ifdef _WIN32
-            err == WSAENOTSOCK
-            #else
-            err == EBADF
-            #endif
-        ) {
-            libData->Message("invldsock");
-        }
-
+        selectErrorMessage(libData, err);
         return LIBRARY_FUNCTION_ERROR;
     }
 }
@@ -586,11 +563,13 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
     SOCKET client = accept(listenSocket, NULL, NULL);
     if (client == INVALID_SOCKET){
 
+        int err = GETSOCKETERRNO();
         #ifdef _DEBUG
         printf("%s[serverAccept->ERROR]%s\n\taccept(listenSocket = %I64d) returns error = %d\n\n", 
-            RED, RESET, listenSocket, GETSOCKETERRNO());
+            RED, RESET, listenSocket, err);
         #endif
 
+        acceptErrorMessage(libData, err);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -629,29 +608,18 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
         free(buffer);
         MArgument_setMNumericArray(Res, byteArray);
         return LIBRARY_NO_ERROR;
-    } else if (result == 0) {
-        #ifdef _DEBUG
-        printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) socket close and returns error = %d\n\n", 
-            RED, RESET, client, GETSOCKETERRNO());
-        #endif
-
-        libData->Message("sockclose");
-        return LIBRARY_FUNCTION_ERROR;
-    } else {
-        int err = GETSOCKETERRNO();
-
-        #ifdef _DEBUG
-        printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) returns error = %d\n\n", 
-            RED, RESET, client, err);
-        #endif
-
-        if (err == 10053) {
-            libData->Message("sockclose");
-        } else if (err == 10038) {
-            libData->Message("nonsock");
-        }
-        return LIBRARY_FUNCTION_ERROR;
     }
+    
+    free(buffer);
+    int err = GETSOCKETERRNO();
+    
+    #ifdef _DEBUG
+    printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) returns error = %d\n\n", 
+        RED, RESET, client, err);
+    #endif
+
+    recvErrorMessage(libData, err);
+    return LIBRARY_FUNCTION_ERROR;
 }
 
 #pragma endregion
@@ -676,32 +644,17 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
 
         MArgument_setInteger(Res, result);
         return LIBRARY_NO_ERROR;
-    } else if (result < 0) {
-        int err = GETSOCKETERRNO();
+    } 
+    
+    int err = GETSOCKETERRNO();
 
-        #ifdef _DEBUG
-        printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
-            RED, RESET, socketId, err);
-        #endif
+    #ifdef _DEBUG
+    printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
+        RED, RESET, socketId, err);
+    #endif
 
-        if (err == WSAEINVAL) {
-            libData->Message("csockargex");
-        } else {
-            libData->Message("csockunexpected");
-        }
-
-        return LIBRARY_FUNCTION_ERROR;
-    } else {
-        int err = GETSOCKETERRNO();
-
-        #ifdef _DEBUG
-        printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) socket closed\n\n", 
-            RED, RESET, socketId);
-        #endif
-
-        libData->Message("csockclose");
-        return LIBRARY_FUNCTION_ERROR;
-    }
+    sendErrorMessage(libData, err);
+    return LIBRARY_FUNCTION_ERROR;
 }
 
 #pragma endregion
