@@ -72,8 +72,4 @@ DLLEXPORT void serverRecv(Server server);
 
 DLLEXPORT void serverCheck(Server server);
 
-DLLEXPORT void serverClose(Server server);
-
-DLLEXPORT void serverRaiseEvent(Server server);
-
 DLLEXPORT void serverDestroy(Server server);

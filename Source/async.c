@@ -1,7 +1,3 @@
-/*
-    ASYNC TCP SERVER, LISTENER and CLIENT
-*/
-
 #pragma region header
 
 #undef UNICODE
@@ -73,8 +69,10 @@ struct Server_st {
     struct timeval timeout;
     SOCKET *clients;
     fd_set clientsReadSet;
+    size_t clientsReadSetLength;
     size_t clientsLength;
     BYTE *buffer;
+    mint taskId;
     WolframLibraryData libData;
 };
 
@@ -82,7 +80,7 @@ struct Server_st {
 
 #pragma region server create
 
-DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET listenSocket =    (SOCKET)MArgument_getInteger(Args[0]); // positive integer
     size_t clientsCapacity = (size_t)MArgument_getInteger(Args[1]); // 1024 by default
     size_t bufferSize =      (size_t)MArgument_getInteger(Args[2]); // 64 kB by default
@@ -107,6 +105,7 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
     server->listenSocket = listenSocket;
     server->clientsCapacity = clientsCapacity;
     server->clientsLength = 0;
+    server->clientsReadSetLength = 0;
     server->bufferSize = bufferSize;
     server->timeout = tv;
     server->libData = libData;
@@ -164,11 +163,106 @@ void serverDestroy(Server server){
 
 #pragma region server select
 
-DLLEXPORT void serverSelect(Server server) {
+void serverSelect(Server server) {
+    fd_set *clientsReadSet = &server->clientsReadSet;
+    FD_ZERO(clientsReadSet);
+    int maxFd = server->listenSocket;
+    FD_SET(server->listenSocket, clientsReadSet);
+    SOCKET client;
 
+    #ifdef _DEBUG
+    printf("%s[socketSelect->CALL]%s\n\tselect(len = %zd, timeout = %I64d) sockets = (",
+        GREEN, RESET, server->clientsLength, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec); 
+    #endif
+
+    struct timeval *tv = &server->timeout;
+    size_t count = server->clientsLength;
+    for (size_t i = 0; i < count; i++)
+    {
+        client = server->clients[i];
+        FD_SET(client, clientsReadSet);
+        if (client > maxFd) maxFd = client;
+
+        #ifdef _DEBUG
+        printf("%I64d ", client);
+        #endif
+    }
+
+    #ifdef _DEBUG
+    printf(")\n\n");
+    #endif
+
+    server->clientsReadSetLength = select(maxFd + 1, clientsReadSet, NULL, NULL, tv);
 }
 
 #pragma endregion
+
+#pragma region server accept
+
+void serverAccept(Server server){
+    if (server->clientsReadSetLength > 0 && FD_ISSET(server->listenSocket, &server->clientsReadSet)) {
+        SOCKET client = accept(server->listenSocket, NULL, NULL);
+        if (client > 0) {
+            server->clients[server->clientsLength] = client;
+            server->clientsLength++;
+            DataStore data = server->libData->ioLibraryFunctions->createDataStore();
+            server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
+            server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
+            server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, "Accept", data);
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region server recv
+
+void serverRecv(Server server) {
+    if (server->clientsReadSetLength > 0) {
+        size_t count = server->clientsLength;
+        fd_set *readfds = &server->clientsReadSet;
+        SOCKET client;
+        int readyCount = server->clientsReadSetLength;
+        int j = 0;
+        
+        for (size_t i = 0; i < count; i++) {
+            client = server->clients[i];
+
+            if (FD_ISSET(client, readfds)) {
+                j++;
+
+                int result = recv(client, server->buffer, server->bufferSize, 0);
+                int err = GETSOCKETERRNO();
+                if (result > 0) {
+                    MNumericArray narr;
+                    server->libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &result, narr);
+                    BYTE *array = server->libData->numericarrayLibraryFunctions->MNumericArray_getData(narr);
+                    memcpy(array, server->buffer, result);
+
+                    DataStore data = server->libData->ioLibraryFunctions->createDataStore();
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, data);
+                    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, "Recv", data);
+                } else if (result == 0 || (result < 0 && (err == 10038 || err == 10053))) {
+                    server->clients[i] = INVALID_SOCKET;
+                    DataStore data = server->libData->ioLibraryFunctions->createDataStore();
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
+                    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, "Close", data);
+                } else {
+                    printf("recv unexpected\n\n");
+                }
+            }
+
+            if (j > readyCount) break;
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region server listener task
 
 static void socketListenerTask(mint taskId, void* vtarg)
 {
@@ -303,260 +397,3 @@ DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Arg
 }
 
 #pragma endregion
-
-#pragma region socketListenerTaskRemove
-
-//socketListenerTaskRemove[taskId_Integer]: taskId_Integer
-DLLEXPORT int socketListenerTaskRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mint taskId = MArgument_getInteger(Args[0]);
-
-    #ifdef _DEBUG
-    printf("[socketListenerTaskRemove]\n\tremove taks with id = %I64d\n\n", taskId);
-    #endif
-
-    MArgument_setInteger(Res, libData->ioLibraryFunctions->removeAsynchronousTask(taskId));
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socketWrite
-
-#define TIMEOUT_INIT_MS 10
-#define TIMEOUT_MAX_MULTIPLIER 100
-
-static fd_set global_write_set;
-static struct timeval global_socktimeout = {0, 1000}; // 1 ms
-
-int socketReadyForWriteQ(SOCKET socketId) {
-    FD_ZERO(&global_write_set);
-    FD_SET(socketId, &global_write_set);
-
-    struct timeval socktimeout = global_socktimeout;
-
-    return select(socketId + 1, NULL, &global_write_set, NULL, &socktimeout) == 1;
-}
-
-int socketWrite(SOCKET socketId, BYTE *data, int dataLength, int bufferSize) {
-    int sentBytes, chunkSize;
-    int timeout = TIMEOUT_INIT_MS;
-    
-    #ifdef _WIN32
-    HANDLE timer = create_timer();
-    if (!timer) {
-        fprintf(stderr, "Failed to create timer\n");
-        exit(EXIT_FAILURE);
-    }
-    #else
-    void* timer = NULL; // POSIX does not require a timer
-    #endif
-
-    for (int offset = 0; offset < dataLength;) {
-        chunkSize = (dataLength - offset > bufferSize) ? bufferSize : dataLength - offset;
-
-        if (socketReadyForWriteQ(socketId)) {
-            sentBytes = send(socketId, (char*)&data[offset], chunkSize, 0);
-
-            if (sentBytes == SOCKET_ERROR) {
-                int err = GETSOCKETERRNO();
-                printf("[socketWrite] Error sending %d bytes on socket %d at offset %d, error %d\n", dataLength, (int)socketId, offset, err);
-
-                if (err == 10035 || err == 35) {  // EWOULDBLOCK or similar
-                    #ifdef _DEBUG
-                    printf("[socketWrite] Write paused for %d ms\n", timeout);
-                    #endif
-                } else if (err == 10038) {
-                    #ifdef _DEBUG
-                    printf("[socketWrite] Write error for %d\n", socketId);
-                    #endif
-                    return SOCKET_ERROR;
-                } else {
-                    return SOCKET_ERROR;
-                }
-            } else {
-                offset += sentBytes;
-                timeout = TIMEOUT_INIT_MS; 
-                continue;
-            }
-        } 
-        #ifdef _DEBUG
-        else {
-            printf("[socketWrite] Socket not ready, pausing for %d ms\n", timeout);
-        }
-        #endif
-
-        SLEEP(timeout * MININTERVAL, timer);
-        timeout += TIMEOUT_INIT_MS;
-
-        if (timeout > TIMEOUT_INIT_MS * TIMEOUT_MAX_MULTIPLIER) {
-            #ifdef _DEBUG
-            printf("[socketWrite] Timeout exceeded\n");
-            #endif
-            return SOCKET_ERROR;
-        }
-    }
-
-    return dataLength;
-}
-
-//socketBinaryWrite[socketId_Integer, data: ByteArray[<>], dataLength_Integer, bufferLength_Integer]: socketId_Integer
-DLLEXPORT int socketBinaryWrite(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET clientId = MArgument_getInteger(Args[0]);
-    MNumericArray mArr = MArgument_getMNumericArray(Args[1]);
-
-    int iResult;
-    BYTE *data = (BYTE *)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);
-    int dataLength = MArgument_getInteger(Args[2]);
-    int bufferSize = MArgument_getInteger(Args[3]);
-
-    iResult = socketWrite(clientId, data, dataLength, bufferSize);
-    if (iResult == SOCKET_ERROR) {
-        CLOSESOCKET(clientId);
-        MArgument_setInteger(Res, GETSOCKETERRNO());
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    MArgument_setInteger(Res, clientId);
-    libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
-    #ifdef _DEBUG
-    printf("[socketBinaryWrite]\n\tsocket id = %I64d sent = %d bytes\n\n", clientId, iResult);
-    #endif
-    return LIBRARY_NO_ERROR;
-}
-
-//socketWriteString[socketId_Integer, data_String, dataLength_Integer, bufferLength_Integer]: socketId_Integer
-DLLEXPORT int socketWriteString(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    int iResult;
-    SOCKET socketId = MArgument_getInteger(Args[0]);
-    char* data = MArgument_getUTF8String(Args[1]);
-    int dataLength = MArgument_getInteger(Args[2]);
-    int bufferSize = MArgument_getInteger(Args[3]);
-
-    iResult = socketWrite(socketId, data, dataLength, bufferSize);
-    if (iResult == SOCKET_ERROR) {
-        CLOSESOCKET(socketId);
-        MArgument_setInteger(Res, GETSOCKETERRNO());
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    MArgument_setInteger(Res, socketId);
-    libData->UTF8String_disown(data);
-    #ifdef _DEBUG
-    printf("[socketWriteString]\n\tsocket id = %I64d sent = %d bytes\n\n", socketId, iResult);
-    #endif
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socketReadyQ
-
-//socketReadyQ[socketId_Integer]: readyQ: True | False
-DLLEXPORT int socketReadyQ(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET socketId = MArgument_getInteger(Args[0]);
-
-    int iResult;
-    static BYTE *buffer = NULL; 
-    if (buffer == NULL) {
-        buffer = (BYTE *)malloc(sizeof(BYTE));
-    }
-
-    iResult = recv(socketId, buffer, 1, MSG_PEEK);
-    if (iResult == SOCKET_ERROR){
-        MArgument_setBoolean(Res, False);
-    } else {
-        MArgument_setBoolean(Res, True);
-    }
-
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socketReadMessage
-
-//socketReadMessage[socketId_Integer, bufferSize_Integer]: ByteArray[<>]
-DLLEXPORT int socketReadMessage(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET socketId = MArgument_getInteger(Args[0]);
-    int bufferSize = MArgument_getInteger(Args[1]);
-
-    static BYTE *buffer = NULL; 
-    if (buffer == NULL) {
-       buffer = (BYTE*)malloc(bufferSize * sizeof(BYTE));
-    }
-
-    int iResult;
-    int length = 0;
-
-    iResult = recv(socketId, buffer, bufferSize, 0);
-    if (iResult > 0) {
-        MArgument_setMNumericArray(Res, createByteArray(libData, buffer, iResult));
-    } else {
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    #ifdef _DEBUG
-    printf("[socketReadMessage]\n\tsocket id = %I64d received = %d bytes\n\n", socketId, iResult);
-    #endif
-
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-bool socketAliveQ(SOCKET socketId) {
-    if (socketId == INVALID_SOCKET) {
-        return false;
-    }
-
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(socketId, &readfds);
-
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0; // 0 seconds, 0 microseconds
-
-    int result = select(socketId + 1, &readfds, NULL, NULL, &timeout);
-    if (result == -1) {
-        // select error
-        return false;
-    }
-
-    if (result == 0) {
-        // Нет активности — считаем, что соединение живо
-        return true;
-    }
-
-    // Сокет готов к чтению — проверим, не закрыт ли он
-    char buffer;
-#ifdef _WIN32
-    int flags = MSG_PEEK;
-    int recvResult = recv(socketId, &buffer, 1, flags);
-#else
-    ssize_t recvResult = recv(socketId, &buffer, 1, MSG_PEEK);
-#endif
-
-    if (recvResult == 0) {
-        // Получен TCP FIN — соединение закрыто клиентом
-        return false;
-    } else if (recvResult < 0) {
-    #ifdef _WIN32
-        int err = WSAGetLastError();
-        if (err == WSAEWOULDBLOCK) {
-            return true;  // Просто нет данных, соединение живо
-        } else {
-            return false; // Другая ошибка — считаем соединение разорванным
-        }
-    #else
-        if (errno == EWOULDBLOCK || errno == EAGAIN) {
-            return true;  // Соединение живо
-        } else {
-            return false; // Соединение разорвано
-        }
-    #endif
-    }
-
-    // Есть данные для чтения — соединение живо
-    return true;
-}
