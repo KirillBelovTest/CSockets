@@ -10,7 +10,7 @@
   #include <errno.h>
 #endif
 
-#include "errno.h"
+#include "errors.h"
 
 // acceptErrorMessage: maps accept() errors to Wolfram messages
 void acceptErrorMessage(WolframLibraryData libData, int err) {

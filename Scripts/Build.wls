@@ -41,6 +41,12 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 ]; 
 
 
+build["async"];
+
+
+build["errors"];
+
+
 build["udp"]; 
 
 
