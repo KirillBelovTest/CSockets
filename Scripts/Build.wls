@@ -27,7 +27,6 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
         $SystemID <> "-v" <> ToString[$libraryLinkVersion]
     }]; 
 
-
     If[!FileExistsQ[$libDir], CreateDirectory[]];
 
     CreateLibrary @@ {$libSrc, lib, 
@@ -39,12 +38,6 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
         "SystemCompileOptions" -> "/Ox /GL"
     }
 ]; 
-
-
-build["async"];
-
-
-build["errors"];
 
 
 build["udp"]; 

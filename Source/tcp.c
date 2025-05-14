@@ -59,7 +59,202 @@
 #include "WolframRawArrayLibrary.h"
 #include "WolframImageLibrary.h"
 
-#include "errors.h"
+#pragma endregion
+
+#pragma region errors
+
+// acceptErrorMessage: maps accept() errors to Wolfram messages
+void acceptErrorMessage(WolframLibraryData libData, int err) {
+  #ifdef _WIN32
+  if (err == WSAEINTR)
+  #else
+  if (err == EINTR)
+  #endif
+    libData->Message("acceptRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAEWOULDBLOCK)
+  #else
+  else if (err == EAGAIN || err == EWOULDBLOCK)
+  #endif
+    libData->Message("acceptDelayRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAEMFILE || err == WSAENOBUFS || err == WSAENETDOWN || err == WSAEINVAL)
+  #else
+  else if (err == EMFILE || err == ENFILE || err == ENOBUFS || err == ENOMEM || err == EOPNOTSUPP)
+  #endif
+    libData->Message("acceptCloseSocket");
+
+  #ifdef _WIN32
+  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+  #else
+  else if (err == EBADF || err == EINVAL || err == EFAULT)
+  #endif
+    libData->Message("acceptFixParams");
+
+  #ifdef _WIN32
+  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+    libData->Message("acceptReinitWinsock");
+  #endif
+
+  #ifndef _WIN32
+  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+        || err == ENETUNREACH || err == ENETRESET
+        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+        || err == ESOCKTNOSUPPORT)
+    libData->Message("acceptRestartProcess");
+  #endif
+
+  else
+    libData->Message("acceptUnexpectedError");
+}
+
+// recvErrorMessage: maps recv() errors to Wolfram messages
+void recvErrorMessage(WolframLibraryData libData, int err) {
+  if (err == 0) {
+    libData->Message("recvGracefulClose");
+    return;
+  }
+
+  #ifdef _WIN32
+  if (err == WSAEINTR)
+  #else
+  if (err == EINTR)
+  #endif
+    libData->Message("recvRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAEWOULDBLOCK)
+  #else
+  else if (err == EAGAIN || err == EWOULDBLOCK)
+  #endif
+    libData->Message("recvDelayRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAECONNRESET || err == WSAECONNABORTED || err == WSAESHUTDOWN || err == WSAENOTCONN)
+  #else
+  else if (err == ECONNRESET || err == ECONNABORTED || err == ESHUTDOWN || err == ENOTCONN)
+  #endif
+    libData->Message("recvCloseSocket");
+
+  #ifdef _WIN32
+  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+  #else
+  else if (err == EBADF || err == EINVAL || err == EFAULT)
+  #endif
+    libData->Message("recvFixParams");
+
+  #ifdef _WIN32
+  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+    libData->Message("recvReinitWinsock");
+  #endif
+
+  #ifndef _WIN32
+  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+        || err == ENETUNREACH || err == ENETRESET
+        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+        || err == ESOCKTNOSUPPORT)
+    libData->Message("recvRestartProcess");
+  #endif
+
+  else
+    libData->Message("recvUnexpectedError");
+}
+
+// selectErrorMessage: maps select() errors to Wolfram messages
+void selectErrorMessage(WolframLibraryData libData, int err) {
+  #ifdef _WIN32
+  if (err == WSAEINTR)
+  #else
+  if (err == EINTR)
+  #endif
+    libData->Message("selectRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAENOTSOCK || err == WSAEFAULT || err == WSAEINVAL || err == WSAENOBUFS)
+  #else
+  else if (err == EBADF || err == EFAULT || err == EINVAL || err == ENOMEM)
+  #endif
+    libData->Message("selectClose");
+
+  #ifdef _WIN32
+  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+  #else
+  else if (err == EBADF || err == EINVAL || err == EFAULT)
+  #endif
+    libData->Message("selectFixParams");
+
+  #ifdef _WIN32
+  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+    libData->Message("selectReinitWinsock");
+  #endif
+
+  #ifndef _WIN32
+  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+        || err == ENETUNREACH || err == ENETRESET
+        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+        || err == ESOCKTNOSUPPORT)
+    libData->Message("selectRestartProcess");
+  #endif
+
+  else
+    libData->Message("selectUnexpectedError");
+}
+
+// sendErrorMessage: maps send() errors to Wolfram messages
+void sendErrorMessage(WolframLibraryData libData, int err) {
+  #ifdef _WIN32
+  if (err == WSAEINTR)
+  #else
+  if (err == EINTR)
+  #endif
+    libData->Message("sendRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAEWOULDBLOCK)
+  #else
+  else if (err == EAGAIN || err == EWOULDBLOCK)
+  #endif
+    libData->Message("sendDelayRetry");
+
+  #ifdef _WIN32
+  else if (err == WSAENOTCONN || err == WSAESHUTDOWN || err == WSAECONNRESET)
+  #else
+  else if (err == ENOTCONN || err == EPIPE || err == ECONNRESET || err == ESHUTDOWN)
+  #endif
+    libData->Message("sendCloseSocket");
+
+  #ifdef _WIN32
+  else if (err == WSAEMSGSIZE)
+  #else
+  else if (err == EMSGSIZE)
+  #endif
+    libData->Message("sendMsgSize");
+
+  #ifdef _WIN32
+  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+  #else
+  else if (err == EBADF || err == EINVAL || err == EFAULT)
+  #endif
+    libData->Message("sendFixParams");
+
+  #ifdef _WIN32
+  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+    libData->Message("sendReinitWinsock");
+  #endif
+
+  #ifndef _WIN32
+  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+        || err == ENETUNREACH || err == ENETRESET
+        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+        || err == ESOCKTNOSUPPORT)
+    libData->Message("sendRestartProcess");
+  #endif
+
+  else
+    libData->Message("sendUnexpectedError");
+}
 
 #pragma endregion
 
@@ -655,6 +850,254 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     sendErrorMessage(libData, err);
     return LIBRARY_FUNCTION_ERROR;
+}
+
+#pragma endregion
+
+#pragma region server data
+
+//server data
+typedef struct Server_st *Server;
+
+struct Server_st {
+    SOCKET listenSocket;
+    size_t clientsCapacity;
+    size_t bufferSize;
+    struct timeval timeout;
+    SOCKET *clients;
+    fd_set clientsReadSet;
+    size_t clientsReadSetLength;
+    size_t clientsLength;
+    BYTE *buffer;
+    mint taskId;
+    WolframLibraryData libData;
+};
+
+#pragma endregion
+
+#pragma region server create
+
+int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET listenSocket =    (SOCKET)MArgument_getInteger(Args[0]); // positive integer
+    size_t clientsCapacity = (size_t)MArgument_getInteger(Args[1]); // 1024 by default
+    size_t bufferSize =      (size_t)MArgument_getInteger(Args[2]); // 64 kB by default
+    long timeout =           (long)MArgument_getInteger(Args[3]);   // 1 s by default
+
+    void *ptr = malloc(sizeof(struct Server_st));
+    if (!ptr) {
+        #ifdef _DEBUG
+        printf("%s[serverCreate->ERROR]%s\n\tmalloc(listenSocket = %I64d) returns NULL\n\n", 
+            RED, RESET, listenSocket);
+        #endif
+
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    Server server = (Server)ptr;
+
+    struct timeval tv;
+    tv.tv_sec  = timeout / 1000000;
+    tv.tv_usec = timeout % 1000000;
+
+    server->listenSocket = listenSocket;
+    server->clientsCapacity = clientsCapacity;
+    server->clientsLength = 0;
+    server->clientsReadSetLength = 0;
+    server->bufferSize = bufferSize;
+    server->timeout = tv;
+    server->libData = libData;
+
+    server->clients = malloc(clientsCapacity * sizeof(SOCKET));
+    if (!server->clients){
+        #ifdef _DEBUG
+        printf("%s[serverCreate->ERROR]%s\n\tmalloc(clients length = %zd) returns NULL\n\n", RED, RESET, clientsCapacity);
+        #endif
+
+        free(ptr);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    server->buffer = (char*)malloc(bufferSize * sizeof(char));
+    if (!server->buffer){
+        #ifdef _DEBUG
+        printf("%s[serverCreate->ERROR]%s\n\tmalloc(buffer size = %zd) returns NULL\n\n", RED, RESET, bufferSize);
+        #endif
+
+        free(server->clients);
+        free(ptr);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%s[serverCreate->SUCCESS]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\t\ntimeout = %ld sec and %ld usec\n\n",
+        GREEN, RESET, ptr, listenSocket, clientsCapacity, bufferSize, tv.tv_sec, tv.tv_usec);
+    #endif
+
+    uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
+    MArgument_setInteger(Res, serverPtr);
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+#pragma region server destroy
+
+void serverDestroy(Server server){
+    CLOSESOCKET(server->listenSocket); 
+
+    size_t clientsLength = server->clientsLength;
+    for (size_t i = 0; i < clientsLength; i++){
+        if (ISVALIDSOCKET(server->clients[i])){
+            CLOSESOCKET(server->clients[i]);
+        }
+    }
+    
+    free(server->clients);
+    free(server->buffer);
+    free(server);
+}
+
+#pragma endregion
+
+#pragma region server select
+
+void serverSelect(Server server) {
+    fd_set *clientsReadSet = &server->clientsReadSet;
+    FD_ZERO(clientsReadSet);
+    int maxFd = server->listenSocket;
+    FD_SET(server->listenSocket, clientsReadSet);
+    SOCKET client;
+
+    #ifdef _DEBUG
+    printf("%s[socketSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (",
+        GREEN, RESET, server->clientsLength, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec); 
+    #endif
+
+    struct timeval *tv = &server->timeout;
+    size_t count = server->clientsLength;
+    for (size_t i = 0; i < count; i++)
+    {
+        client = server->clients[i];
+        FD_SET(client, clientsReadSet);
+        if (client > maxFd) maxFd = client;
+
+        #ifdef _DEBUG
+        printf("%I64d ", client);
+        #endif
+    }
+
+    #ifdef _DEBUG
+    printf(")\n\n");
+    #endif
+
+    server->clientsReadSetLength = select(maxFd + 1, clientsReadSet, NULL, NULL, tv);
+}
+
+#pragma endregion
+
+#pragma region server accept
+
+void serverAccept(Server server){
+    if (server->clientsReadSetLength > 0 && FD_ISSET(server->listenSocket, &server->clientsReadSet)) {
+        SOCKET client = accept(server->listenSocket, NULL, NULL);
+        if (client > 0) {
+            server->clients[server->clientsLength] = client;
+            server->clientsLength++;
+            DataStore data = server->libData->ioLibraryFunctions->createDataStore();
+            server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
+            server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
+            server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, "Accept", data);
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region server recv
+
+void serverRecv(Server server) {
+    if (server->clientsReadSetLength > 0) {
+        size_t count = server->clientsLength;
+        fd_set *readfds = &server->clientsReadSet;
+        SOCKET client;
+        int readyCount = server->clientsReadSetLength;
+        int j = 0;
+        
+        for (size_t i = 0; i < count; i++) {
+            client = server->clients[i];
+
+            if (FD_ISSET(client, readfds)) {
+                j++;
+
+                int result = recv(client, server->buffer, server->bufferSize, 0);
+                int err = GETSOCKETERRNO();
+                mint arrLen = (mint)result;
+                if (result > 0) {
+                    MNumericArray narr;
+                    server->libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &arrLen, &narr);
+                    BYTE *array = server->libData->numericarrayLibraryFunctions->MNumericArray_getData(narr);
+                    memcpy(array, server->buffer, result);
+
+                    DataStore data = server->libData->ioLibraryFunctions->createDataStore();
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
+                    server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, narr);
+                    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, "Recv", data);
+                } else if (result == 0 || (result < 0 && (err == 10038 || err == 10053))) {
+                    server->clients[i] = INVALID_SOCKET;
+                    DataStore data = server->libData->ioLibraryFunctions->createDataStore();
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
+                    server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
+                    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, "Close", data);
+                } else {
+                    printf("recv unexpected\n\n");
+                }
+            }
+
+            if (j > readyCount) break;
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region server check
+
+void serverCheck(Server server) {
+    
+}
+
+#pragma endregion
+
+#pragma region server listener task
+
+static void socketListenerTask(mint taskId, void* vtarg)
+{
+    Server server = (Server)vtarg;
+    while (server->libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+    {
+        serverSelect(server);
+        serverCheck(server);
+        serverAccept(server);
+        serverRecv(server);
+    }
+    serverDestroy(server);
+}
+
+//socketListen[serverPtr_Integer]: taskId_Integer
+DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    Server server = (Server)MArgument_getInteger(Args[0]);
+    mint taskId;
+
+    taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketListenerTask, server);
+    server->taskId = taskId;
+
+    #ifdef _DEBUG
+    printf("[socketListen]\n\tlisten socket id = %I64d in taks with id = %I64d\n\n", server->listenSocket, taskId);
+    #endif
+
+    MArgument_setInteger(Res, taskId);
+    return LIBRARY_NO_ERROR;
 }
 
 #pragma endregion
