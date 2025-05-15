@@ -3,7 +3,7 @@
 
 BeginPackage["KirillBelov`CSockets`UDP`", {
     "CCompilerDriver`", 
-	"LibraryLink`"
+    "LibraryLink`"
 }]; 
 
 
@@ -67,7 +67,7 @@ UDPConnect["127.0.0.1", port];
 
 
 Options[UDPReadyQ] = {
-	"Timeout" :> $timeout
+    "Timeout" :> $timeout
 }; 
 
 
@@ -92,21 +92,21 @@ UDPSendString[UDPSocketObject[id_Integer, "Write"], string_String] :=
 
 
 Options[UDPRead] = {
-	"BufferSize" :> $bufferSize
+    "BufferSize" :> $bufferSize
 }; 
 
 
 UDPRead[UDPSocketObject[id_Integer, "Read"], OptionsPattern[]] := 
 With[{
-	result = udpSocketRead[id, OptionValue["BufferSize"]], 
-	handler = getHandler[id]
+    result = udpSocketRead[id, OptionValue["BufferSize"]], 
+    handler = getHandler[id]
 }, 
-	handler[result]
+    handler[result]
 ]; 
 
 
 Options[UDPReadString] = {
-	"BufferSize" :> $bufferSize
+    "BufferSize" :> $bufferSize
 }; 
 
 
@@ -119,31 +119,31 @@ With[{res = udpSocketClose[id]}, res;];
 
 
 Options[UDPCreateListener] = {
-	"Interval" -> 0.01
+    "Interval" -> 0.01
 };
 
 
 UDPCreateListener[UDPSocketObject[id_,_], handler_, OptionsPattern[]] := 
 Module[{taskId, usecInterval}, 
-	usecInterval = Round[OptionValue["Interval"] * 10^6]; 
-	$handlers[id] = handler; 
-	Internal`CreateAsynchronousTask[
-		startAsyncSocketReadCheck, 
-		{id, usecInterval}, 
-		getHandler[id][toEvent[##]]&
-	];
+    usecInterval = Round[OptionValue["Interval"] * 10^6]; 
+    $handlers[id] = handler; 
+    Internal`CreateAsynchronousTask[
+        startAsyncSocketReadCheck, 
+        {id, usecInterval}, 
+        getHandler[id][toEvent[##]]&
+    ];
 ]; 
 
 
 toEvent[task_, event_, {socket_, data_}] := 
 With[{bytes = ByteArray[data], taskId = task[[2]]}, 
-	<|
-		"TaskId" :> taskId, 
-		"Socket" :> socket, 
-		"DataByteArray" :> bytes, 
-		"DataBytes" :> Normal[bytes], 
-		"Data" :> ByteArrayToString[bytes]
-	|>
+    <|
+        "TaskId" :> taskId, 
+        "Socket" :> socket, 
+        "DataByteArray" :> bytes, 
+        "DataBytes" :> Normal[bytes], 
+        "Data" :> ByteArrayToString[bytes]
+    |>
 ]; 
 
 
@@ -158,10 +158,10 @@ Once[$libraryLinkVersion];
 
 
 $libFile = FileNameJoin[{
-	$directory, 
-	"LibraryResources", 
-	$SystemID <> "-v" <> ToString[$libraryLinkVersion], 
-	"udp." <> Internal`DynamicLibraryExtension[]
+    $directory, 
+    "LibraryResources", 
+    $SystemID <> "-v" <> ToString[$libraryLinkVersion], 
+    "udp." <> Internal`DynamicLibraryExtension[]
 }]; 
 
 

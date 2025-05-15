@@ -7,7 +7,47 @@ If[$FrontEnd === Null,
 ];
 Get["KirillBelov`CSockets`TCP`"];
 $ContextPath = DeleteDuplicates[Append[$ContextPath, "KirillBelov`CSockets`TCP`Private`"]];
-server = socketOpen["localhost", "8080", 0, 1, 1, 256 * 1024, 256 * 1024];
+server = socketOpen["localhost", "8080", 0, 1, 1, 256 * 1024, 256 * 1024]
+
+
+client = socketConnect["localhost", "8080", 0, 1, 1, 256 * 1024, 256 * 1024]
+
+
+socketAccept@server
+
+
+socketRecv[1428, 1024]
+
+
+Normal[ByteArray[{1, 2, 3}]]
+
+
+serverPtr = serverCreate[server, 1024, 8192, 5000000]
+task = Internal`CreateAsynchronousTask[
+	serverListen, 
+	{serverPtr}, 
+	handler[Echo[{##}]]&
+]
+
+
+handler[{task_, "Recv", {l_, s_}}] := 
+With[{
+	d = StringToByteArray["HTTP/1.1 200 OK\r\nContent-Length:5\r\n\r\nhello"]
+}, 
+	socketSend[s, d, Length[d]]
+]
+
+
+client = socketConnect["localhost", "8080", 1, 1, 1, 256 * 1024, 256 * 1024]
+
+
+WriteString[client, "hello"]
+
+
+Close[client]
+
+
+
 sockets = {server}; 
 response = StringToByteArray["HTTP/1.1 200 OK\r\nContent-Length:5\r\n\r\nhello"]; 
 

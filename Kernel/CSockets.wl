@@ -3,6 +3,10 @@
 BeginPackage["KirillBelov`CSockets`"]; 
 
 
+Internal`CreateAsynchronousTask::usage = 
+"CreateAsynchronousTask[libFunc, {args}, handlerFunc] creates async task.";
+
+
 EndPackage[]; 
 
 

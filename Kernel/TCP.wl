@@ -179,9 +179,19 @@ socketRecv =
 LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, "ByteArray"];
 
 
-(*socketSend[socketId, data, length] -> length*)
+(*socketSend[socketId, data, length]: length*)
 socketSend = 
 LibraryFunctionLoad[$libFile, "socketSend", {Integer, "ByteArray", Integer}, Integer]; 
+
+
+(*serverCreate[listenSocket, clientsCapacity, bufferSize, selectTimeout]: serverPtr*)
+serverCreate = 
+LibraryFunctionLoad[$libFile, "serverCreate", {Integer, Integer, Integer, Integer}, Integer]; 
+
+
+(*serverListen[serverPtr]: taskId*)
+serverListen = 
+LibraryFunctionLoad[$libFile, "serverListen", {Integer}, Integer]; 
 
 
 End[]; 
