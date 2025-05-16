@@ -6,44 +6,48 @@ BeginPackage["KirillBelov`CSockets`TCP`", {
 }]; 
 
 
-TCPSocketObject::usage = 
-"TCPSocketObject[socketId] socket object representation.";
+CSocketObject::usage = 
+"CSocketObject[socketId] socket object representation.";
 
 
-TCPSocketOpen::usage = 
-"TCPSocketOpen[port] returns a new server socket opened on localhost.
-TCPSocketOpen[host, port] returns a new server socket opened on specific host.";
+CSocketOpen::usage = 
+"CSocketOpen[port] returns a new server socket opened on localhost.
+CSocketOpen[host, port] returns a new server socket opened on specific host.";
 
 
-TCPSocketClose::usage =
-"TCPSocketClose[socket] closes the socket.";
+CSocketClose::usage =
+"CSocketClose[socket] closes the socket.";
 
 
-TCPSocketConnect::usage = 
-"TCPSocketConnect[port] returns a new client socket connected to localhost.
-TCPSocketConnect[host, port] returns a new client socket connected to specific host.";
+CSocketConnect::usage = 
+"CSocketConnect[port] returns a new client socket connected to localhost.
+CSocketConnect[host, port] returns a new client socket connected to specific host.";
 
 
-TCPSocketsSelect::usage = 
-"TCPSocketsSelect[{sockets}] returns list of ready sockets.";
+CSocketsSelect::usage = 
+"CSocketsSelect[{sockets}] returns list of ready sockets.";
 
 
-TCPSocketsAccept::usage = 
-"TCPSocketsAccept[sockets] returns new client.";
+CSocketsAccept::usage = 
+"CSocketsAccept[sockets] returns new client.";
 
 
-TCPSocketsRecv::usage = 
-"TCPSocketsRecv[socket] returns received data.";
+CSocketsRecv::usage = 
+"CSocketsRecv[socket] returns received data.";
 
 
-TCPSocketsSend::usage = 
+CSocketsSend::usage = 
 "TCPSocketsSend[socket, data] send data.";
+
+
+CSocketListener::usage =
+"CSocketListener[assoc] returns a new listener object.";
 
 
 Begin["`Private`"];
 
 
-Options[TCPSocketOpen] = {
+Options[CSocketOpen] = {
     "NonBlocking" :> False, 
     "KeepAlive" :> True, 
     "NoDelay" :> True,
@@ -52,7 +56,7 @@ Options[TCPSocketOpen] = {
 };
 
 
-TCPSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
+CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
 With[{
     socketId = socketOpen[
         host, 
@@ -64,18 +68,18 @@ With[{
         OptionValue["RecvBufferSize"]
     ]
 }, 
-    TCPSocketObject[socketId]
+    CSocketObject[socketId]
 ];
 
 
-TCPSocketClose[TCPSocketObject[socketId_Integer]] := 
+CSocketClose[CSocketObject[socketId_Integer]] := 
 With[{result = socketClose[socketId]}, 
     (*Returns success or not*)
     result === 0
 ];
 
 
-Options[TCPSocketConnect] = {
+Options[CSocketConnect] = {
     "NonBlocking" :> False, 
     "KeepAlive" :> True, 
     "NoDelay" :> True,
@@ -84,7 +88,7 @@ Options[TCPSocketConnect] = {
 };
 
 
-TCPSocketConnect[host_String: "localhost", port_Integer, OptionsPattern[]] :=
+CSocketConnect[host_String: "localhost", port_Integer, OptionsPattern[]] :=
 With[{
     socketId = socketConnect[
         host, 
@@ -96,11 +100,88 @@ With[{
         OptionValue["RecvBufferSize"]
     ]
 }, 
-    TCPSocketObject[socketId]
+    CSocketObject[socketId]
 ];
 
 
+CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_, len_: 256 * 1024] :=
+With[{
+    byteArray = StringToByteArray[data]
+}, 
+    Do[
+        socketSend[socketId, #, Length[#]]& @ byteArray[[i ;; UpTo[i + len - 1]]], 
+        {i, 1, Length[byteArray], len}
+    ];
+];
 
+
+CSocketObject /: BinaryWrite[CSocketObject[socketId_Integer], data_, len_: 256 * 1024] :=
+Do[
+    socketSend[socketId, #, Length[#]]& @ data[[i ;; UpTo[i + len - 1]]], 
+    {i, 1, Length[data], len}
+];
+
+
+CSocketObject /: SocketReadyQ[CSocketObject[socketId_Integer], timeout_: 0] :=
+Length[socketSelect[{socketId}, 1, timeout * 1000000]] > 0;
+
+
+CSocketObject /: SocketListen[CSocketObject[socketId_Integer], handler_, OptionsPattern[{
+    "ClientsCapacity" -> 1024,
+    "BufferSize" -> 8192,
+    "SelectTimeout" -> 10000000, 
+    "Encoding" -> "UTF-8"
+}]] := 
+With[{
+    serverPtr = serverCreate[
+        socketId, 
+        OptionValue["ClientsCapacity"], 
+        OptionValue["BufferSize"], 
+        OptionValue["SelectTimeout"]
+    ], 
+    encoding = OptionValue["Encoding"]
+}, 
+    With[{
+        task = Internal`CreateAsynchronousTask[
+            serverListen, 
+            {serverPtr}, 
+            PreemptProtect[handler[toEvent[encoding][##]]]&
+        ]
+    }, 
+        (*Returns listener*)
+        CSocketListener[<|
+            "Task" -> task, 
+            "Server" -> serverPtr, 
+            "Socket" -> socketId, 
+            "Handler" -> handler,
+            "ClientsCapacity" -> OptionValue["ClientsCapacity"], 
+            "BufferSize" -> OptionValue["BufferSize"], 
+            "SelectTimeout" -> OptionValue["SelectTimeout"]
+        |>]
+    ]
+];
+
+
+toEvent[encoding_][task_, "Recv", {serv_, sock_, data_}] := 
+With[{byteArray = ByteArray[data], time = Now}, <|
+    "Event" :> "Recv", 
+    "TimeStamp" :> time, 
+    "SourceSocket" :> CSocketObject[sock],
+    "Socket" :> CSocketObject[serv],
+    "Data" :> ByteArrayToString[byteArray, encoding],
+    "DataBytes" :> Normal[byteArray],
+    "DataByteArray" :> byteArray, 
+    "MultiPartComplete" :> True
+|>];
+
+
+toEvent[encoding_][task_, event_, {serv_, sock_}] := 
+With[{time = Now}, <|
+    "Event" :> event, 
+    "TimeStamp" :> time, 
+    "SourceSocket" :> CSocketObject[sock],
+    "Socket" :> CSocketObject[serv]
+|>];
 
 
 $directory = 
