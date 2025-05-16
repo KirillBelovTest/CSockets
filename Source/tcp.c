@@ -822,7 +822,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 #pragma endregion
 
-#pragma region send
+#pragma region socket send
 
 //socketSend[socketId, data, dataLength]: sentLength
 DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
@@ -1053,6 +1053,7 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
     server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, arr);
     server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
+    server->libData->numericarrayLibraryFunctions->MNumericArray_disown(arr);
 }
 
 #pragma endregion
@@ -1097,7 +1098,42 @@ void serverRecv(Server server) {
 #pragma region server check
 
 void serverCheck(Server server) {
-    
+    if (server->clientsReadSetLength <= 0) {
+        SOCKET *sockets = server->clients;
+        size_t count = server->clientsLength;
+        SOCKET sock;
+        mint validCount = 0;
+        
+        int opt;
+        int err;
+        socklen_t len = sizeof(opt);
+
+        for (size_t i = 0; i < count; i++) {
+            sock = sockets[i];
+
+            if (sock > 0) {
+                #ifdef _WIN32
+                int result = getsockopt(sock, SOL_SOCKET, SO_TYPE, (char*)&opt, &len);
+                #else
+                int result = fcntl(sock, F_GETFL)
+                #endif
+
+                err = GETSOCKETERRNO();
+                if (result >= 0 || 
+                    #ifdef _WIN32
+                    err != WSAENOTSOCK
+                    #else
+                    err != EBADF
+                    #endif
+                ) {
+                    sockets[validCount] = sock;
+                    validCount++;
+                }
+            }
+        }
+
+        server->clientsLength = validCount;
+    }
 }
 
 #pragma endregion
@@ -1126,7 +1162,7 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     server->taskId = taskId;
 
     #ifdef _DEBUG
-    printf("[socketListen]\n\tlisten socket id = %I64d in taks with id = %I64d\n\n", server->listenSocket, taskId);
+    printf("%s[socketListen->CALL]%s\n\tlisten socket id = %I64d in taks with id = %I64d\n\n", BLUE, RESET, server->listenSocket, taskId);
     #endif
 
     MArgument_setInteger(Res, taskId);
