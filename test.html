@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Jupyter-like Notebook</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        #notebook-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            border-radius: 2px;
+        }
+        
+        .cell {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .cell-toolbar {
+            background-color: #f7f7f7;
+            padding: 5px 10px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .cell-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 8px;
+            margin-left: 5px;
+            font-size: 12px;
+            color: #666;
+            border-radius: 3px;
+        }
+        
+        .cell-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .code-cell {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+            font-size: 14px;
+            border: none;
+            resize: vertical;
+            outline: none;
+            background-color: #fafafa;
+        }
+        
+        .output {
+            padding: 10px;
+            border-top: 1px solid #e0e0e0;
+            background-color: white;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .error {
+            color: #d32f2f;
+        }
+        
+        #add-cell {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        #add-cell:hover {
+            background-color: #388E3C;
+        }
+        
+        .cell-type {
+            margin-right: auto;
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="notebook-container">
+        <button id="add-cell">+ Add Code Cell</button>
+        <div id="cells-container">
+            <!-- Cells will be added here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cellsContainer = document.getElementById('cells-container');
+            const addCellButton = document.getElementById('add-cell');
+            
+            // Add initial cell
+            addCodeCell();
+            
+            // Add cell button event
+            addCellButton.addEventListener('click', addCodeCell);
+            
+            function addCodeCell(code = '') {
+                const cellId = Date.now();
+                
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.id = cellId;
+                
+                const toolbar = document.createElement('div');
+                toolbar.className = 'cell-toolbar';
+                
+                const cellType = document.createElement('div');
+                cellType.className = 'cell-type';
+                cellType.textContent = 'Code';
+                
+                const runBtn = document.createElement('button');
+                runBtn.className = 'cell-btn';
+                runBtn.textContent = 'Run';
+                runBtn.addEventListener('click', () => runCodeCell(cellId));
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'cell-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => {
+                    cell.remove();
+                    if (cellsContainer.children.length === 0) {
+                        addCodeCell();
+                    }
+                });
+                
+                toolbar.appendChild(cellType);
+                toolbar.appendChild(runBtn);
+                toolbar.appendChild(deleteBtn);
+                
+                const textarea = document.createElement('textarea');
+                textarea.className = 'code-cell';
+                textarea.spellcheck = false;
+                textarea.value = code;
+                
+                const output = document.createElement('div');
+                output.className = 'output';
+                
+                cell.appendChild(toolbar);
+                cell.appendChild(textarea);
+                cell.appendChild(output);
+                
+                cellsContainer.appendChild(cell);
+                
+                // Focus the new cell
+                textarea.focus();
+            }
+            
+            function runCodeCell(cellId) {
+                const cell = document.querySelector(`.cell[data-id="${cellId}"]`);
+                const code = cell.querySelector('.code-cell').value;
+                const output = cell.querySelector('.output');
+                
+                output.textContent = '';
+                output.className = 'output';
+                
+                try {
+                    // Capture console.log output
+                    const originalConsoleLog = console.log;
+                    let consoleOutput = '';
+                    
+                    console.log = function() {
+                        const args = Array.from(arguments);
+                        consoleOutput += args.map(arg => {
+                            if (typeof arg === 'object') {
+                                return JSON.stringify(arg, null, 2);
+                            }
+                            return arg.toString();
+                        }).join(' ') + '\n';
+                        originalConsoleLog.apply(console, arguments);
+                    };
+                    
+                    // Execute the code
+                    const result = new Function(code)();
+                    
+                    // Restore original console.log
+                    console.log = originalConsoleLog;
+                    
+                    // Display the result
+                    if (result !== undefined) {
+                        if (typeof result === 'object') {
+                            output.textContent = JSON.stringify(result, null, 2);
+                        } else {
+                            output.textContent = result.toString();
+                        }
+                    }
+                    
+                    // Display any console output
+                    if (consoleOutput) {
+                        if (output.textContent) {
+                            output.textContent += '\n\nConsole output:\n' + consoleOutput;
+                        } else {
+                            output.textContent = 'Console output:\n' + consoleOutput;
+                        }
+                    }
+                    
+                    if (!output.textContent) {
+                        output.textContent = 'Code executed successfully (no output)';
+                    }
+                } catch (error) {
+                    output.className = 'output error';
+                    output.textContent = error.toString();
+                }
+            }
+            
+            // Handle Shift+Enter to run code
+            cellsContainer.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.shiftKey) {
+                    e.preventDefault();
+                    const cell = e.target.closest('.cell');
+                    if (cell) {
+                        const cellId = cell.dataset.id;
+                        runCodeCell(cellId);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

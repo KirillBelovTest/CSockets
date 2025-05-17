@@ -16,9 +16,17 @@ socket = CSocketOpen[8080];
 listener = SocketListen[socket, handler]; 
 
 
+response["/"] := (
+    Get["Handler.wl"]; 
+    "HTTP/1.1 200 Not Found\r\nContent-Length: 6\r\n\r\nloaded"
+)
+
+
 handler = If[#Event === "Recv", 
-    WriteString[#["SourceSocket"], 
-        "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"
+    Module[{path = StringExtract[#["Data"], " " -> 2]}, 
+        WriteString[#["SourceSocket"], 
+            response[path]
+        ]
     ]
 ]&
 
