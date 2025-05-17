@@ -1064,8 +1064,8 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
     server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, arr);
-    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
     server->libData->numericarrayLibraryFunctions->MNumericArray_disown(arr);
+    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
 }
 
 #pragma endregion

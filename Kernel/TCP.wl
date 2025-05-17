@@ -79,6 +79,36 @@ With[{result = socketClose[socketId]},
 ];
 
 
+CSocketObject /: Close[socket_CSocketObject] := 
+CSocketClose[socket];
+
+
+CSocketsSelect[sockets: {__SocketObject}, timeout: _?NumericQ: 1] := 
+With[{socketIds = sockets[[All, 1]], tv = Round[timeout * 1000000]}, 
+    Map[CSocketObject] @ 
+    socketSelect[socketIds, Length[socketIds], tv]
+];
+
+
+CSocketsSelect[sockets: {__SocketObject}, timeout: _?NumericQ: 1] := 
+With[{socketIds = sockets[[All, 1]], tv = Round[timeout * 1000000]}, 
+    Map[CSocketObject] @ 
+    socketSelect[socketIds, Length[socketIds], tv]
+];
+
+
+CSocketObject /: SocketReadyQ[socket_CSocketObject, timeout: _?NumericQ: 0] := 
+CSocketsSelect[{socket}, timeout] === {socket};
+
+
+CSocketsRecv[CSocketObject[socketId_Integer], bufferSize_Integer: 8192] := 
+socketRecv[socketId, bufferSize]; 
+
+
+CSocketObject /: SocketReadMessage[socket_CSocketObject, bufferSize_Integer: 8192] := 
+CSocketsRecv[socket, bufferSize];
+
+
 Options[CSocketConnect] = {
     "NonBlocking" :> False, 
     "KeepAlive" :> True, 
@@ -129,7 +159,7 @@ Length[socketSelect[{socketId}, 1, timeout * 1000000]] > 0;
 CSocketObject /: SocketListen[CSocketObject[socketId_Integer], handler_, OptionsPattern[{
     "ClientsCapacity" -> 1024,
     "BufferSize" -> 8192,
-    "SelectTimeout" -> 10000000, 
+    "SelectTimeout" -> 1, 
     "Encoding" -> "UTF-8"
 }]] := 
 With[{
@@ -137,7 +167,7 @@ With[{
         socketId, 
         OptionValue["ClientsCapacity"], 
         OptionValue["BufferSize"], 
-        OptionValue["SelectTimeout"]
+        Round[OptionValue["SelectTimeout"] * 1000000]
     ], 
     encoding = OptionValue["Encoding"]
 }, 
