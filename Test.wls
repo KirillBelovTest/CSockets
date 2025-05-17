@@ -13,12 +13,12 @@ Get["KirillBelov`CSockets`TCP`"];
 socket = CSocketOpen[8080]; 
 
 
-listener = SocketListen[socket, handler]; 
+listener = SocketListen[socket, handler, "SelectTimeout" -> 5]; 
 
 
 response["/"] := (
     Get["Handler.wl"]; 
-    "HTTP/1.1 200 Not Found\r\nContent-Length: 6\r\n\r\nloaded"
+    "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n\r\nloaded"
 )
 
 
@@ -31,4 +31,4 @@ handler = If[#Event === "Recv",
 ]&
 
 
-While[True, Pause[1]];
+While[True, Pause[0.01]];

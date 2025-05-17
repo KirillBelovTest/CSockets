@@ -62,6 +62,37 @@
 
 #pragma endregion
 
+#pragma region time print
+
+const char* getCurrentTime() {
+    static char time_buffer[64];
+    time_t rawtime;
+    struct tm* timeinfo;
+    
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    
+    strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+    
+    #ifdef _WIN32
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+    snprintf(time_buffer + strlen(time_buffer), 
+             sizeof(time_buffer) - strlen(time_buffer), 
+             ".%03d", st.wMilliseconds);
+    #else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    snprintf(time_buffer + strlen(time_buffer), 
+             sizeof(time_buffer) - strlen(time_buffer), 
+             ".%06ld", tv.tv_usec);
+    #endif
+    
+    return time_buffer;
+}
+
+#pragma endregion
+
 #pragma region errors
 
 // acceptErrorMessage: maps accept() errors to Wolfram messages
@@ -314,7 +345,10 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     size_t rcvBufSize = (size_t)MArgument_getInteger(Args[6]); // 256 kB by default
 
     #ifdef _DEBUG
-    printf("%s[socketOpen->CALL]%s\n\tfor address %s:%s\n\n", BLUE, RESET, host, port);
+    printf("%s\n%s[socketOpen->CALL]%s\n\tfor address %s:%s\n\n", 
+        getCurrentTime(), BLUE, RESET, 
+        host, port
+    );
     #endif
 
     int iResult;
@@ -842,8 +876,8 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     result = send(socketId, (char*)data, dataLength, 0);
     if (result > 0) {
         #ifdef _DEBUG
-        printf("%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
-            GREEN, RESET, socketId, result);
+        printf("%s\n%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
+            getCurrentTime(), GREEN, RESET, socketId, result);
         #endif
 
         MArgument_setInteger(Res, result);
@@ -991,8 +1025,8 @@ void serverSelect(Server server) {
     SOCKET client;
 
     #ifdef _DEBUG
-    printf("%s[serverSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (%I64d",
-        BLUE, RESET, 
+    printf("%s\n%s[serverSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (%I64d",
+        getCurrentTime(), BLUE, RESET, 
         server->clientsLength + 1, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec, server->listenSocket); 
     #endif
 
@@ -1035,8 +1069,8 @@ void serverSelect(Server server) {
 
 void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
     #ifdef _DEBUG
-    printf("%s[socketRaiseEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
-        BLUE, RESET, server->listenSocket, client);
+    printf("%s\n%s[socketRaiseEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
+        getCurrentTime(), BLUE, RESET, server->listenSocket, client);
     #endif
 
     DataStore data = server->libData->ioLibraryFunctions->createDataStore();
@@ -1051,8 +1085,8 @@ void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
 
 void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, BYTE *buffer, int len) {
     #ifdef _DEBUG
-    printf("%s[socketRaiseDataEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %d\n\n", 
-        BLUE, RESET, server->listenSocket, client, len);
+    printf("%s\n%s[socketRaiseDataEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %d\n\n", 
+        getCurrentTime(), BLUE, RESET, server->listenSocket, client, len);
     #endif
     
     MNumericArray arr;
@@ -1064,8 +1098,8 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
     server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, arr);
-    server->libData->numericarrayLibraryFunctions->MNumericArray_disown(arr);
     server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
+    server->libData->numericarrayLibraryFunctions->MNumericArray_disown(arr);
 }
 
 #pragma endregion
