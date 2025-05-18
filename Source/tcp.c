@@ -564,6 +564,53 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
 
 #pragma endregion
 
+#pragma region socket get addr info
+
+//socketAddress[host, port]: addressPtr
+DLLEXPORT int socketAddress(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    char *host = MArgument_getUTF8String(Args[0]); // localhost by default
+    char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
+    
+    #ifdef _DEBUG
+    printf("%s\n%s[socketAddress->CALL]%s\n\t%s:%s\n\n", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        host, port
+    );
+    #endif
+
+    int result;
+    struct addrinfo *address = NULL;
+    struct addrinfo hints;
+
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    result = getaddrinfo(host, port, &hints, &address);
+    if (result != 0){
+        #ifdef _DEBUG
+        printf("%s\n%s[socketConnect->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            host, port, GETSOCKETERRNO()
+        );
+        #endif
+        
+        libData->UTF8String_disown(host);
+        libData->UTF8String_disown(port);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    libData->UTF8String_disown(host);
+    libData->UTF8String_disown(port);
+    MArgument_setInteger(Res, address);
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
 #pragma region socket connect
 
 //socketConnect[host, port, nonBlocking, noDelay, keepAlive, sndBufSize, rcvBufSize]: socketId
@@ -577,7 +624,11 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     int rcvBufSize = (int)MArgument_getInteger(Args[6]); // 256 kB by default
 
     #ifdef _DEBUG
-    printf("%s[socketConnect->CALL]%s\n\tfor address %s:%s\n\n", BLUE, RESET, host, port);
+    printf("%s\n%s[socketConnect->CALL]%s\n\tfor address %s:%s\n\n", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        host, port
+    );
     #endif
 
     int iResult;
@@ -592,10 +643,14 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 
     iResult = getaddrinfo(host, port, &hints, &address);
     if (iResult != 0){
-        return LIBRARY_FUNCTION_ERROR;
         #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", RED, RESET, host, port, GETSOCKETERRNO());
+        printf("%s\n%s[socketConnect->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            host, port, GETSOCKETERRNO()
+        );
         #endif
+        
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
         return LIBRARY_FUNCTION_ERROR;
@@ -604,8 +659,13 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     connectSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
     if (connectSocket == INVALID_SOCKET){
         #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", RED, RESET, host, port, GETSOCKETERRNO());
+        printf("%s\n%s[socketConnect->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            host, port, GETSOCKETERRNO()
+        );
         #endif
+
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
         freeaddrinfo(address);
@@ -623,8 +683,16 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     #endif
     if (iResult != NO_ERROR) {
         #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
+        printf("%s\n%s[socketConnect->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            connectSocket, GETSOCKETERRNO()
+        );
         #endif
+        
+        libData->UTF8String_disown(host);
+        libData->UTF8String_disown(port);
+        freeaddrinfo(address);
         CLOSESOCKET(connectSocket);
         return LIBRARY_FUNCTION_ERROR;
     }
