@@ -1,7 +1,7 @@
-wolframscript -f .\Scripts\Build.wls
+wolframscript -f .\Build.wls
 
 while ($true) {
-    wolframscript -f TestServer.wls
+    wolframscript -f App.wls
 
     "Exit code == $LASTEXITCODE"
     

@@ -1,5 +1,4 @@
 #!/usr/bin/env wolframscript
-(* ::Package:: *)
 
 If[$FrontEnd === Null, 
     PacletDirectoryLoad[DirectoryName[$InputFileName]], 
@@ -17,14 +16,13 @@ listener = SocketListen[socket, handler, "SelectTimeout" -> 5];
 
 
 response["/"] := (
-    Get["Handler.wl"]; 
+    Get["AppResponse.wl"]; 
     "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n\r\nloaded"
 )
 
 
 handler = If[#Event === "Recv", 
     Module[{path = StringExtract[#["Data"], " " -> 2]}, 
-        Echo[#["Data"], "REQV:"];
         WriteString[#["SourceSocket"], 
             response[path]
         ]
@@ -32,4 +30,4 @@ handler = If[#Event === "Recv",
 ]&
 
 
-While[True, Pause[0.01]];
+While[True, Pause[1]];

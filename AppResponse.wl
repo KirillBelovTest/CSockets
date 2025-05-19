@@ -1,6 +1,5 @@
 (* :Package: *)
 
-
 response[_String] := 
 "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\n200";
 
@@ -10,7 +9,7 @@ response["/test"] :=
 
 
 response[path_String?getFileQ] := 
-getFile[Echo[path, "PATH:"]]; 
+getFile[path]; 
 
 
 getFileQ[path_] := 
