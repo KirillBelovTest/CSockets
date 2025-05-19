@@ -175,7 +175,7 @@ With[{
         task = Internal`CreateAsynchronousTask[
             serverListen, 
             {serverPtr}, 
-            PreemptProtect[handler[toEvent[encoding][##]]]&
+            handler[toEvent[encoding][##]]&
         ]
     }, 
         (*Returns listener*)

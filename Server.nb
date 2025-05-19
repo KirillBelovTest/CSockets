@@ -1,0 +1,132 @@
+(* Content-type: application/vnd.wolfram.cdf.text *)
+
+(*** Wolfram CDF File ***)
+(* http://www.wolfram.com/cdf *)
+
+(* CreatedBy='Wolfram 14.2' *)
+
+(*************************************************************************)
+(*                                                                       *)
+(*                                                                       *)
+(*  This file was created under the Wolfram Enterprise licensing terms.  *)
+(*                                                                       *)
+(*       For additional information concerning CDF licensing see:        *)
+(*                                                                       *)
+(*        www.wolfram.com/cdf/adopting-cdf/licensing-options.html        *)
+(*                                                                       *)
+(*                                                                       *)
+(*                                                                       *)
+(*************************************************************************)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[      1060,         20]
+NotebookDataLength[      4051,        111]
+NotebookOptionsPosition[      4050,        104]
+NotebookOutlinePosition[      4453,        120]
+CellTagsIndexPosition[      4410,        117]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"$FrontEnd", " ", "===", " ", "Null"}], ",", " ", "\n", "    ", 
+    RowBox[{"PacletDirectoryLoad", "[", 
+     RowBox[{"DirectoryName", "[", "$InputFileName", "]"}], "]"}], ",", " ", 
+    "\n", "    ", 
+    RowBox[{"PacletDirectoryLoad", "[", 
+     RowBox[{"NotebookDirectory", "[", "]"}], "]"}]}], "\n", "]"}], 
+  ";"}]], "Code",
+ CellLabel->"In[1]:=",ExpressionUUID->"d63854b2-b066-544b-9e7a-db755632bb6d"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Get", "[", "\"\<KirillBelov`CSockets`TCP`\>\"", "]"}], 
+  ";"}]], "Code",
+ CellLabel->"In[2]:=",ExpressionUUID->"8d610f7a-75ff-0c4c-921d-0304fe057c51"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Get", "[", "\"\<KirillBelov`CSockets`Handler`\>\"", "]"}], 
+  ";"}]], "Code",
+ CellLabel->"In[3]:=",ExpressionUUID->"058cf5d0-cedd-c94e-858f-c31527bf9f9a"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"socket", " ", "=", " ", 
+    RowBox[{"CSocketOpen", "[", "8080", "]"}]}], ";"}], " "}]], "Code",
+ CellLabel->"In[4]:=",ExpressionUUID->"0c12d617-43fc-394c-a688-b2d96ee86ac9"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"handler", " ", "=", " ", 
+   RowBox[{"CSocketHandler", "[", "]"}]}], ";"}]], "Code",
+ CellLabel->"In[5]:=",ExpressionUUID->"5decb2aa-10e0-5e45-a5aa-31ab32f9999b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"handler", "[", "\"\<DefaultHandler\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"Function", "[", 
+    RowBox[{"packet", ",", " ", "\n", "    ", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"packet", "[", "\"\<Event\>\"", "]"}], " ", "===", 
+        " ", "\"\<Recv\>\""}], ",", " ", "\n", "        ", 
+       RowBox[{
+        RowBox[{"Get", "[", "\"\<ServerResponse.wl\>\"", "]"}], ";", "\n", 
+        "        ", 
+        RowBox[{"WriteString", "[", 
+         RowBox[{
+          RowBox[{"packet", "[", "\"\<SourceSocket\>\"", "]"}], ",", " ", 
+          "\n", "            ", "\"\<HTTP/1.1 200 OK\\r\\nContent-Length: \
+6\\r\\n\\r\\nloaded\>\""}], "\n", "        ", "]"}]}]}], "\n", "    ", 
+      "]"}]}], "\n", "]"}]}], ";"}]], "Code",
+ CellLabel->"In[6]:=",ExpressionUUID->"3df09d57-66d5-4e48-b936-71e04b74b423"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"listener", " ", "=", " ", 
+    RowBox[{"SocketListen", "[", 
+     RowBox[{"socket", ",", " ", "handler", ",", " ", 
+      RowBox[{"\"\<SelectTimeout\>\"", " ", "->", " ", "10"}]}], "]"}]}], 
+   ";"}], " "}]], "Code",
+ CellChangeTimes->{{3.9566438583086395`*^9, 3.9566438588632317`*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"ba4a172a-8847-314d-865e-a3a8d5dcea62"]
+},
+WindowSize->{958.5, 483},
+WindowMargins->{{Automatic, -5.25}, {Automatic, 0}},
+FrontEndVersion->"14.2 for Microsoft Windows (64-bit) (March 14, 2025)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"3decd7fb-fb0c-6146-98e6-a9f2dde9b3c7"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[1460, 33, 478, 11, 102, "Code",ExpressionUUID->"d63854b2-b066-544b-9e7a-db755632bb6d"],
+Cell[1941, 46, 186, 4, 50, "Code",ExpressionUUID->"8d610f7a-75ff-0c4c-921d-0304fe057c51"],
+Cell[2130, 52, 190, 4, 50, "Code",ExpressionUUID->"058cf5d0-cedd-c94e-858f-c31527bf9f9a"],
+Cell[2323, 58, 221, 5, 50, "Code",ExpressionUUID->"0c12d617-43fc-394c-a688-b2d96ee86ac9"],
+Cell[2547, 65, 197, 4, 50, "Code",ExpressionUUID->"5decb2aa-10e0-5e45-a5aa-31ab32f9999b"],
+Cell[2747, 71, 885, 20, 172, "Code",ExpressionUUID->"3df09d57-66d5-4e48-b936-71e04b74b423"],
+Cell[3635, 93, 411, 9, 50, "Code",ExpressionUUID->"ba4a172a-8847-314d-865e-a3a8d5dcea62"]
+}
+]
+*)
+

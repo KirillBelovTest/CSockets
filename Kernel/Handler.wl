@@ -69,8 +69,10 @@ Module[{above, below},
 
 (handler_CSocketHandler)[packet_Association] := 
 Module[{extendedPacket, result, extraPacket, extraPacketDataLength}, 
+    Echo[packet, "Packet:"]; 
+
     Which[
-        packet["Event"] === "Received", 
+        packet["Event"] === "Recv", 
 
         extendedPacket = getExtendedPacket[handler, packet]; (*Association[]*)
 
@@ -103,10 +105,10 @@ Module[{extendedPacket, result, extraPacket, extraPacketDataLength},
             savePacketToBuffer[handler, extendedPacket]
         ]; , 
 
-        packet["Event"] === "Accepted", 
+        packet["Event"] === "Accept", 
             handler["AcceptHandler"][packet], 
 
-        packet["Event"] === "Closed", 
+        packet["Event"] === "Close", 
             handler["CloseHandler"][packet]
     ]; 
 ]; 

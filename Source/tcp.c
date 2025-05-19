@@ -9,6 +9,7 @@
 #define RED "\033[91m"
 #define GREEN "\033[92m"
 #define BLUE "\033[94m"
+#define YELLOW "\033[93m"
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -324,17 +325,17 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
 }
 
 DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
+    #ifdef _WIN32
+    WSACleanup();
+    #else
+    SLEEP(SECOND);
+    #endif
+
     #ifdef _DEBUG
     printf("%s\n%s[WolframLibrary_uninitialize->SUCCESS]%s\n\tuninitialization\n\n",
         getCurrentTime(),
         GREEN, RESET
     );
-    #endif
-
-    #ifdef _WIN32
-    WSACleanup();
-    #else
-    SLEEP(SECOND);
     #endif
 
     return;
@@ -1173,6 +1174,16 @@ void serverDestroy(Server server){
     free(server->clients);
     free(server->buffer);
     free(server);
+
+    #ifdef _DEBUG
+    printf("%s\n%s[serverDestroy->SUCCESS]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
+        getCurrentTime(), 
+        GREEN, RESET, 
+        server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout.tv_sec, server->timeout.tv_usec
+    );
+    #endif
+
+    server = NULL;
 }
 
 #pragma endregion
@@ -1224,12 +1235,19 @@ void serverSelect(Server server) {
             err
         ); 
         #endif
-    } else {
+    } else if (server->clientsReadSetLength > 0) {
         #ifdef _DEBUG
         printf("%s\n%s[serverSelect->SUCCESS]%s\n\tselect() returns %zd sockets\n\n", 
             getCurrentTime(),
             GREEN, RESET, 
             server->clientsReadSetLength
+        );
+        #endif
+    } else {
+        #ifdef _DEBUG
+        printf("%s\n%s[serverSelect->SKIP]%s\n\tselect() returns 0 sockets\n\n", 
+            getCurrentTime(),
+            YELLOW, RESET
         );
         #endif
     }
@@ -1252,6 +1270,14 @@ void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
     server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
+
+    #ifdef _DEBUG
+    printf("%s\n%s[socketRaiseEvent->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
+        getCurrentTime(), 
+        GREEN, RESET, 
+        server->listenSocket, client
+    );
+    #endif
 }
 
 #pragma endregion
@@ -1277,7 +1303,14 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
     server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, arr);
     server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
-    server->libData->numericarrayLibraryFunctions->MNumericArray_disown(arr);
+
+    #ifdef _DEBUG
+    printf("%s\n%s[socketRaiseDataEvent->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %d\n\n", 
+        getCurrentTime(), 
+        GREEN, RESET, 
+        server->listenSocket, client, len
+    );
+    #endif
 }
 
 #pragma endregion
@@ -1309,6 +1342,14 @@ void serverAccept(Server server){
             server->clientsLength++;
             serverRaiseEvent(server, "Accept", client);
         }
+    } else {
+        #ifdef _DEBUG
+        printf("%s\n%s[serverAccept->SKIP]%s\n\taccept(listenSocket = %I64d) no new clients for socket id = %d\n\n", 
+            getCurrentTime(),
+            YELLOW, RESET, 
+            server->listenSocket
+        );
+        #endif
     }
 }
 
@@ -1324,8 +1365,9 @@ void serverRecv(Server server) {
         server->listenSocket, server->clientsLength
     );
     #endif
-    
-    if (server->clientsReadSetLength > 0) {
+    int result;
+    if ((server->clientsReadSetLength > 1 && FD_ISSET(server->listenSocket, &server->clientsReadSet)) || 
+        server->clientsReadSetLength > 0) {
         size_t count = server->clientsLength;
         fd_set *readfds = &server->clientsReadSet;
         SOCKET client;
@@ -1337,7 +1379,7 @@ void serverRecv(Server server) {
             if (client != INVALID_SOCKET && FD_ISSET(client, readfds)) {
                 j++;
 
-                int result = recv(client, server->buffer, server->bufferSize, 0);
+                result = recv(client, server->buffer, server->bufferSize, 0);
                 int err = GETSOCKETERRNO();
                 mint arrLen = (mint)result;
                 if (result > 0) {
@@ -1353,6 +1395,22 @@ void serverRecv(Server server) {
 
             if (j > readyCount) break;
         }
+
+        #ifdef _DEBUG
+        printf("%s\n%s[socketRecv->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\treceived data len = %zd\n\n", 
+            getCurrentTime(),
+            GREEN, RESET, 
+            server->listenSocket, server->clientsLength, result
+        );
+        #endif
+    } else {
+        #ifdef _DEBUG
+        printf("%s\n%s[socketRecv->SKIP]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\n", 
+            getCurrentTime(),
+            YELLOW, RESET, 
+            server->listenSocket, server->clientsLength
+        );
+        #endif
     }
 }
 
@@ -1404,6 +1462,14 @@ void serverCheck(Server server) {
         }
 
         server->clientsLength = validCount;
+    } else {
+        #ifdef _DEBUG
+        printf("%s\n%s[serverCheck->SKIP]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\n", 
+            getCurrentTime(),
+            YELLOW, RESET, 
+            server->listenSocket, server->clientsLength
+        );
+        #endif
     }
 }
 
@@ -1431,6 +1497,14 @@ static void serverListenerTask(mint taskId, void* vtarg)
         serverRecv(server);
     }
     serverDestroy(server);
+
+    #ifdef _DEBUG
+    printf("%s\n%s[serverListenerTask->END]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
+        getCurrentTime(),
+        YELLOW, RESET, 
+        server->listenSocket, taskId
+    );
+    #endif
 }
 
 //socketListen[serverPtr_Integer]: taskId_Integer
@@ -1438,14 +1512,22 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     Server server = (Server)MArgument_getInteger(Args[0]);
     mint taskId;
 
+    #ifdef _DEBUG
+    printf("%s\n%s[socketListen->CALL]%s\n\tlisten socket id = %I64d\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        server->listenSocket
+    );
+    #endif
+
     taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(serverListenerTask, server);
     server->taskId = taskId;
 
     #ifdef _DEBUG
-    printf("%s\n%s[socketListen->CALL]%s\n\tlisten socket id = %I64d in taks with id = %I64d\n\n", 
+    printf("%s\n%s[socketListen->SUCCESS]%s\n\tlisten task id = %I64d\n\n", 
         getCurrentTime(),
-        BLUE, RESET, 
-        server->listenSocket, taskId
+        GREEN, RESET, 
+        taskId
     );
     #endif
 

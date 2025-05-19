@@ -1,4 +1,5 @@
 #!/usr/bin/env wolframscript
+(* ::Package:: *)
 
 If[$FrontEnd === Null, 
     PacletDirectoryLoad[DirectoryName[$InputFileName]], 
@@ -9,25 +10,26 @@ If[$FrontEnd === Null,
 Get["KirillBelov`CSockets`TCP`"];
 
 
+Get["KirillBelov`CSockets`Handler`"];
+
+
 socket = CSocketOpen[8080]; 
 
 
-listener = SocketListen[socket, handler, "SelectTimeout" -> 5]; 
+handler = CSocketHandler[];
 
 
-response["/"] := (
-    Get["ServerResponse.wl"]; 
-    "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n\r\nloaded"
-)
-
-
-handler = If[#Event === "Recv", 
-    Module[{path = StringExtract[#["Data"], " " -> 2]}, 
-        WriteString[#["SourceSocket"], 
-            response[path]
+handler["DefaultHandler"] = Function[packet, 
+    If[packet["Event"] === "Recv", 
+        Get["ServerResponse.wl"];
+        WriteString[packet["SourceSocket"], 
+            "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n\r\nloaded"
         ]
     ]
-]&
+];
+
+
+listener = SocketListen[socket, handler, "SelectTimeout" -> 10]; 
 
 
 While[True, Pause[1]];
