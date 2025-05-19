@@ -10,7 +10,7 @@ response["/test"] :=
 
 
 response[path_String?getFileQ] := 
-getFile[path]; 
+getFile[Echo[path, "PATH:"]]; 
 
 
 getFileQ[path_] := 
@@ -25,12 +25,11 @@ Module[{
 
     mimeType = getMIMEType[file]; 
 
-    StringTemplate[
+    Join[StringToByteArray[StringTemplate[
         "HTTP/1.1 200 OK\r\n" <> 
-        "Content-Length: `1`\r\n" <> 
-        "Content-Type: `2`\r\n" <> 
-        "Connection: keep-alive\r\n\r\n`3`"
-    ][mimeType, StringLength[#], #]& @ ReadString[file]
+        "Content-Type: `1`\r\n" <> 
+        "Content-Length: `2`\r\n\r\n"
+    ][mimeType, Length[#]]], #]& @ ReadByteArray[file]
 ]; 
 
 
@@ -40,5 +39,5 @@ ToUpperCase[FileExtension[file]] /. {
     "TXT" -> "text/plain", 
     "PNG" -> "image/png", 
     "SVG" -> "image/svg+xml", 
-    "ICO" -> "image/png"
+    "ICO" -> "image/x-icon"
 }

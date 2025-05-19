@@ -24,6 +24,7 @@ response["/"] := (
 
 handler = If[#Event === "Recv", 
     Module[{path = StringExtract[#["Data"], " " -> 2]}, 
+        Echo[#["Data"], "REQV:"];
         WriteString[#["SourceSocket"], 
             response[path]
         ]

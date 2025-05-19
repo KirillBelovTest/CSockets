@@ -97,195 +97,195 @@ const char* getCurrentTime() {
 
 // acceptErrorMessage: maps accept() errors to Wolfram messages
 void acceptErrorMessage(WolframLibraryData libData, int err) {
-  #ifdef _WIN32
-  if (err == WSAEINTR)
-  #else
-  if (err == EINTR)
-  #endif
-    libData->Message("acceptRetry");
+    #ifdef _WIN32
+    if (err == WSAEINTR)
+    #else
+    if (err == EINTR)
+    #endif
+        libData->Message("acceptRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAEWOULDBLOCK)
-  #else
-  else if (err == EAGAIN || err == EWOULDBLOCK)
-  #endif
-    libData->Message("acceptDelayRetry");
+    #ifdef _WIN32
+    else if (err == WSAEWOULDBLOCK)
+    #else
+    else if (err == EAGAIN || err == EWOULDBLOCK)
+    #endif
+        libData->Message("acceptDelayRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAEMFILE || err == WSAENOBUFS || err == WSAENETDOWN || err == WSAEINVAL)
-  #else
-  else if (err == EMFILE || err == ENFILE || err == ENOBUFS || err == ENOMEM || err == EOPNOTSUPP)
-  #endif
-    libData->Message("acceptCloseSocket");
+    #ifdef _WIN32
+    else if (err == WSAEMFILE || err == WSAENOBUFS || err == WSAENETDOWN || err == WSAEINVAL)
+    #else
+    else if (err == EMFILE || err == ENFILE || err == ENOBUFS || err == ENOMEM || err == EOPNOTSUPP)
+    #endif
+        libData->Message("acceptCloseSocket");
 
-  #ifdef _WIN32
-  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
-  #else
-  else if (err == EBADF || err == EINVAL || err == EFAULT)
-  #endif
-    libData->Message("acceptFixParams");
+    #ifdef _WIN32
+    else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+    #else
+    else if (err == EBADF || err == EINVAL || err == EFAULT)
+    #endif
+        libData->Message("acceptFixParams");
 
-  #ifdef _WIN32
-  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
-    libData->Message("acceptReinitWinsock");
-  #endif
+    #ifdef _WIN32
+    else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+        libData->Message("acceptReinitWinsock");
+    #endif
 
-  #ifndef _WIN32
-  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
-        || err == ENETUNREACH || err == ENETRESET
-        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
-        || err == ESOCKTNOSUPPORT)
-    libData->Message("acceptRestartProcess");
-  #endif
+    #ifndef _WIN32
+    else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+            || err == ENETUNREACH || err == ENETRESET
+            || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+            || err == ESOCKTNOSUPPORT)
+        libData->Message("acceptRestartProcess");
+    #endif
 
-  else
-    libData->Message("acceptUnexpectedError");
+    else
+        libData->Message("acceptUnexpectedError");
 }
 
 // recvErrorMessage: maps recv() errors to Wolfram messages
 void recvErrorMessage(WolframLibraryData libData, int err) {
-  if (err == 0) {
-    libData->Message("recvGracefulClose");
-    return;
-  }
+    if (err == 0) {
+        libData->Message("recvGracefulClose");
+        return;
+    }
 
-  #ifdef _WIN32
-  if (err == WSAEINTR)
-  #else
-  if (err == EINTR)
-  #endif
-    libData->Message("recvRetry");
+    #ifdef _WIN32
+    if (err == WSAEINTR)
+    #else
+    if (err == EINTR)
+    #endif
+        libData->Message("recvRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAEWOULDBLOCK)
-  #else
-  else if (err == EAGAIN || err == EWOULDBLOCK)
-  #endif
-    libData->Message("recvDelayRetry");
+    #ifdef _WIN32
+    else if (err == WSAEWOULDBLOCK)
+    #else
+    else if (err == EAGAIN || err == EWOULDBLOCK)
+    #endif
+        libData->Message("recvDelayRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAECONNRESET || err == WSAECONNABORTED || err == WSAESHUTDOWN || err == WSAENOTCONN)
-  #else
-  else if (err == ECONNRESET || err == ECONNABORTED || err == ESHUTDOWN || err == ENOTCONN)
-  #endif
-    libData->Message("recvCloseSocket");
+    #ifdef _WIN32
+    else if (err == WSAECONNRESET || err == WSAECONNABORTED || err == WSAESHUTDOWN || err == WSAENOTCONN)
+    #else
+    else if (err == ECONNRESET || err == ECONNABORTED || err == ESHUTDOWN || err == ENOTCONN)
+    #endif
+        libData->Message("recvCloseSocket");
 
-  #ifdef _WIN32
-  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
-  #else
-  else if (err == EBADF || err == EINVAL || err == EFAULT)
-  #endif
-    libData->Message("recvFixParams");
+    #ifdef _WIN32
+    else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+    #else
+    else if (err == EBADF || err == EINVAL || err == EFAULT)
+    #endif
+        libData->Message("recvFixParams");
 
-  #ifdef _WIN32
-  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
-    libData->Message("recvReinitWinsock");
-  #endif
+    #ifdef _WIN32
+    else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+        libData->Message("recvReinitWinsock");
+    #endif
 
-  #ifndef _WIN32
-  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
-        || err == ENETUNREACH || err == ENETRESET
-        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
-        || err == ESOCKTNOSUPPORT)
-    libData->Message("recvRestartProcess");
-  #endif
+    #ifndef _WIN32
+    else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+            || err == ENETUNREACH || err == ENETRESET
+            || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+            || err == ESOCKTNOSUPPORT)
+        libData->Message("recvRestartProcess");
+    #endif
 
-  else
-    libData->Message("recvUnexpectedError");
+    else
+        libData->Message("recvUnexpectedError");
 }
 
 // selectErrorMessage: maps select() errors to Wolfram messages
 void selectErrorMessage(WolframLibraryData libData, int err) {
-  #ifdef _WIN32
-  if (err == WSAEINTR)
-  #else
-  if (err == EINTR)
-  #endif
-    libData->Message("selectRetry");
+    #ifdef _WIN32
+    if (err == WSAEINTR)
+    #else
+    if (err == EINTR)
+    #endif
+        libData->Message("selectRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAENOTSOCK || err == WSAEFAULT || err == WSAEINVAL || err == WSAENOBUFS)
-  #else
-  else if (err == EBADF || err == EFAULT || err == EINVAL || err == ENOMEM)
-  #endif
-    libData->Message("selectClose");
+    #ifdef _WIN32
+    else if (err == WSAENOTSOCK || err == WSAEFAULT || err == WSAEINVAL || err == WSAENOBUFS)
+    #else
+    else if (err == EBADF || err == EFAULT || err == EINVAL || err == ENOMEM)
+    #endif
+        libData->Message("selectClose");
 
-  #ifdef _WIN32
-  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
-  #else
-  else if (err == EBADF || err == EINVAL || err == EFAULT)
-  #endif
-    libData->Message("selectFixParams");
+    #ifdef _WIN32
+    else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+    #else
+    else if (err == EBADF || err == EINVAL || err == EFAULT)
+    #endif
+        libData->Message("selectFixParams");
 
-  #ifdef _WIN32
-  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
-    libData->Message("selectReinitWinsock");
-  #endif
+    #ifdef _WIN32
+    else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+        libData->Message("selectReinitWinsock");
+    #endif
 
-  #ifndef _WIN32
-  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
-        || err == ENETUNREACH || err == ENETRESET
-        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
-        || err == ESOCKTNOSUPPORT)
-    libData->Message("selectRestartProcess");
-  #endif
+    #ifndef _WIN32
+    else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+            || err == ENETUNREACH || err == ENETRESET
+            || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+            || err == ESOCKTNOSUPPORT)
+        libData->Message("selectRestartProcess");
+    #endif
 
-  else
-    libData->Message("selectUnexpectedError");
+    else
+        libData->Message("selectUnexpectedError");
 }
 
 // sendErrorMessage: maps send() errors to Wolfram messages
 void sendErrorMessage(WolframLibraryData libData, int err) {
-  #ifdef _WIN32
-  if (err == WSAEINTR)
-  #else
-  if (err == EINTR)
-  #endif
-    libData->Message("sendRetry");
+    #ifdef _WIN32
+    if (err == WSAEINTR)
+    #else
+    if (err == EINTR)
+    #endif
+        libData->Message("sendRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAEWOULDBLOCK)
-  #else
-  else if (err == EAGAIN || err == EWOULDBLOCK)
-  #endif
-    libData->Message("sendDelayRetry");
+    #ifdef _WIN32
+    else if (err == WSAEWOULDBLOCK)
+    #else
+    else if (err == EAGAIN || err == EWOULDBLOCK)
+    #endif
+        libData->Message("sendDelayRetry");
 
-  #ifdef _WIN32
-  else if (err == WSAENOTCONN || err == WSAESHUTDOWN || err == WSAECONNRESET)
-  #else
-  else if (err == ENOTCONN || err == EPIPE || err == ECONNRESET || err == ESHUTDOWN)
-  #endif
-    libData->Message("sendCloseSocket");
+    #ifdef _WIN32
+    else if (err == WSAENOTCONN || err == WSAESHUTDOWN || err == WSAECONNRESET)
+    #else
+    else if (err == ENOTCONN || err == EPIPE || err == ECONNRESET || err == ESHUTDOWN)
+    #endif
+        libData->Message("sendCloseSocket");
 
-  #ifdef _WIN32
-  else if (err == WSAEMSGSIZE)
-  #else
-  else if (err == EMSGSIZE)
-  #endif
-    libData->Message("sendMsgSize");
+    #ifdef _WIN32
+    else if (err == WSAEMSGSIZE)
+    #else
+    else if (err == EMSGSIZE)
+    #endif
+        libData->Message("sendMsgSize");
 
-  #ifdef _WIN32
-  else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
-  #else
-  else if (err == EBADF || err == EINVAL || err == EFAULT)
-  #endif
-    libData->Message("sendFixParams");
+    #ifdef _WIN32
+    else if (err == WSAENOTSOCK || err == WSAEINVAL || err == WSAEFAULT)
+    #else
+    else if (err == EBADF || err == EINVAL || err == EFAULT)
+    #endif
+        libData->Message("sendFixParams");
 
-  #ifdef _WIN32
-  else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
-    libData->Message("sendReinitWinsock");
-  #endif
+    #ifdef _WIN32
+    else if (err == WSAEINVALIDPROVIDER || err == WSAEPROVIDERFAILEDINIT || err == WSASYSCALLFAILURE)
+        libData->Message("sendReinitWinsock");
+    #endif
 
-  #ifndef _WIN32
-  else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
-        || err == ENETUNREACH || err == ENETRESET
-        || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
-        || err == ESOCKTNOSUPPORT)
-    libData->Message("sendRestartProcess");
-  #endif
+    #ifndef _WIN32
+    else if (err == ENOBUFS || err == ENOMEM || err == ENETDOWN
+            || err == ENETUNREACH || err == ENETRESET
+            || err == EAFNOSUPPORT || err == EPROTONOSUPPORT
+            || err == ESOCKTNOSUPPORT)
+        libData->Message("sendRestartProcess");
+    #endif
 
-  else
-    libData->Message("sendUnexpectedError");
+    else
+        libData->Message("sendUnexpectedError");
 }
 
 #pragma endregion
@@ -294,7 +294,11 @@ void sendErrorMessage(WolframLibraryData libData, int err) {
 
 DLLEXPORT mint WolframLibrary_getVersion() {
     #ifdef _DEBUG
-    printf("%s[WolframLibrary_getVersion]%s\n\tWolframLibraryVersion = %d\n\n", GREEN, RESET, WolframLibraryVersion);
+    printf("%s\n%s[WolframLibrary_getVersion->SUCCESS]%s\n\tWolframLibraryVersion = %d\n\n", 
+        getCurrentTime(),
+        GREEN, RESET, 
+        WolframLibraryVersion
+    );
     #endif
 
     return WolframLibraryVersion;
@@ -302,7 +306,10 @@ DLLEXPORT mint WolframLibrary_getVersion() {
 
 DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
     #ifdef _DEBUG
-    printf("%s[WolframLibrary_initialize]%s\n\tinitialization\n\n", GREEN, RESET);
+    printf("%s\n%s[WolframLibrary_initialize->SUCCESS]%s\n\tinitialization\n\n", 
+        getCurrentTime(),
+        GREEN, RESET
+    );
     #endif
 
     #ifdef _WIN32
@@ -318,7 +325,10 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
 
 DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #ifdef _DEBUG
-    printf("[WolframLibrary_uninitialize]\n\tuninitialization\n\n");
+    printf("%s\n%s[WolframLibrary_uninitialize->SUCCESS]%s\n\tuninitialization\n\n",
+        getCurrentTime(),
+        GREEN, RESET
+    );
     #endif
 
     #ifdef _WIN32
@@ -517,7 +527,11 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     }
 
     #ifdef _DEBUG
-    printf("%s[socketOpen->SUCCESS]%s\n\tsocket id = %I64d\n\n", GREEN, RESET, listenSocket);
+    printf("%s\n%s[socketOpen->SUCCESS]%s\n\tsocket id = %I64d\n\n", 
+        getCurrentTime(),
+        GREEN, RESET, 
+        listenSocket
+    );
     #endif
 
     MArgument_setInteger(Res, listenSocket);
@@ -1058,15 +1072,21 @@ DLLEXPORT serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, M
     long timeout =           (long)MArgument_getInteger(Args[3]);   // 1 s by default
 
     #ifdef _DEBUG
-    printf("%s[serverCreate->CALL]%s\n\tlistenSocket = %I64d\n\tclientsCapacity = %zd\n\tbufferSize = %zd\n\ttimeout = %ld\n\n", 
-        BLUE, RESET, listenSocket, clientsCapacity, bufferSize, timeout);
+    printf("%s\n%s[serverCreate->CALL]%s\n\tlistenSocket = %I64d\n\tclientsCapacity = %zd\n\tbufferSize = %zd\n\ttimeout = %ld\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        listenSocket, clientsCapacity, bufferSize, timeout
+    );
     #endif
 
     void *ptr = malloc(sizeof(struct Server_st));
     if (!ptr) {
         #ifdef _DEBUG
-        printf("%s[serverCreate->ERROR]%s\n\tmalloc(listenSocket = %I64d) returns NULL\n\n", 
-            RED, RESET, listenSocket);
+        printf("%s\n%s[serverCreate->ERROR]%s\n\tmalloc(listenSocket = %I64d) returns NULL\n\n", 
+            getCurrentTime(),
+            RED, RESET, 
+            listenSocket
+        );
         #endif
 
         return LIBRARY_FUNCTION_ERROR;
@@ -1089,7 +1109,11 @@ DLLEXPORT serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, M
     server->clients = malloc(clientsCapacity * sizeof(SOCKET));
     if (!server->clients){
         #ifdef _DEBUG
-        printf("%s[serverCreate->ERROR]%s\n\tmalloc(clients length = %zd) returns NULL\n\n", RED, RESET, clientsCapacity);
+        printf("%s\n%s[serverCreate->ERROR]%s\n\tmalloc(clients length = %zd) returns NULL\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            clientsCapacity
+        );
         #endif
 
         free(ptr);
@@ -1099,7 +1123,11 @@ DLLEXPORT serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, M
     server->buffer = (char*)malloc(bufferSize * sizeof(char));
     if (!server->buffer){
         #ifdef _DEBUG
-        printf("%s[serverCreate->ERROR]%s\n\tmalloc(buffer size = %zd) returns NULL\n\n", RED, RESET, bufferSize);
+        printf("%s\n%s[serverCreate->ERROR]%s\n\tmalloc(buffer size = %zd) returns NULL\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            bufferSize
+        );
         #endif
 
         free(server->clients);
@@ -1108,8 +1136,11 @@ DLLEXPORT serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, M
     }
 
     #ifdef _DEBUG
-    printf("%s[serverCreate->SUCCESS]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
-        GREEN, RESET, ptr, listenSocket, clientsCapacity, bufferSize, tv.tv_sec, tv.tv_usec);
+    printf("%s\n%s[serverCreate->SUCCESS]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
+        getCurrentTime(), 
+        GREEN, RESET, 
+        ptr, listenSocket, clientsCapacity, bufferSize, tv.tv_sec, tv.tv_usec
+    );
     #endif
 
     uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
@@ -1123,8 +1154,11 @@ DLLEXPORT serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, M
 
 void serverDestroy(Server server){
     #ifdef _DEBUG
-    printf("%s[serverDestroy->CALL]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
-        BLUE, RESET, server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout.tv_sec, server->timeout.tv_usec);
+    printf("%s\n%s[serverDestroy->CALL]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
+        getCurrentTime(), 
+        BLUE, RESET, 
+        server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout.tv_sec, server->timeout.tv_usec
+    );
     #endif
 
     CLOSESOCKET(server->listenSocket); 
@@ -1156,8 +1190,10 @@ void serverSelect(Server server) {
 
     #ifdef _DEBUG
     printf("%s\n%s[serverSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (%I64d",
-        getCurrentTime(), BLUE, RESET, 
-        server->clientsLength + 1, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec, server->listenSocket); 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        server->clientsLength + 1, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec, server->listenSocket
+    ); 
     #endif
 
     size_t count = server->clientsLength;
@@ -1182,13 +1218,19 @@ void serverSelect(Server server) {
     if (server->clientsReadSetLength < 0) {
         int err = GETSOCKETERRNO();
         #ifdef _DEBUG
-        printf("%s[serverSelect->ERROR]%s\n\tselect() returns error = %d\n\n", 
-            RED, RESET, err); 
+        printf("%s\n%s[serverSelect->ERROR]%s\n\tselect() returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            err
+        ); 
         #endif
     } else {
         #ifdef _DEBUG
-        printf("%s[serverSelect->SUCCESS]%s\n\tselect() returns %zd sockets\n\n", 
-            GREEN, RESET, server->clientsReadSetLength);
+        printf("%s\n%s[serverSelect->SUCCESS]%s\n\tselect() returns %zd sockets\n\n", 
+            getCurrentTime(),
+            GREEN, RESET, 
+            server->clientsReadSetLength
+        );
         #endif
     }
 }
@@ -1200,7 +1242,10 @@ void serverSelect(Server server) {
 void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
     #ifdef _DEBUG
     printf("%s\n%s[socketRaiseEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
-        getCurrentTime(), BLUE, RESET, server->listenSocket, client);
+        getCurrentTime(), 
+        BLUE, RESET, 
+        server->listenSocket, client
+    );
     #endif
 
     DataStore data = server->libData->ioLibraryFunctions->createDataStore();
@@ -1216,7 +1261,10 @@ void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
 void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, BYTE *buffer, int len) {
     #ifdef _DEBUG
     printf("%s\n%s[socketRaiseDataEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %d\n\n", 
-        getCurrentTime(), BLUE, RESET, server->listenSocket, client, len);
+        getCurrentTime(), 
+        BLUE, RESET, 
+        server->listenSocket, client, len
+    );
     #endif
     
     MNumericArray arr;
@@ -1229,7 +1277,6 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
     server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
     server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, arr);
     server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
-    server->libData->numericarrayLibraryFunctions->MNumericArray_disown(arr);
 }
 
 #pragma endregion
@@ -1238,16 +1285,23 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
 
 void serverAccept(Server server){
     #ifdef _DEBUG
-    printf("%s[serverAccept->CALL]%s\n\taccept(listenSocket = %I64d)\n\n", 
-        BLUE, RESET, server->listenSocket);
+    printf("%s\n%s[serverAccept->CALL]%s\n\taccept(listenSocket = %I64d)\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        server->listenSocket
+    );
     #endif
 
     if (server->clientsReadSetLength > 0 && FD_ISSET(server->listenSocket, &server->clientsReadSet)) {
         SOCKET client = accept(server->listenSocket, NULL, NULL);
         if (client != INVALID_SOCKET) {
             #ifdef _DEBUG
-            printf("%s[serverAccept->SUCCESS]%s\n\taccept(listenSocket = %I64d) new client id = %I64d\n\n", 
-                GREEN, RESET, server->listenSocket, client);
+            printf("%s\n%s[serverAccept->SUCCESS]%s\n\taccept(listenSocket = %I64d) new client id = %I64d\n\n", 
+                getCurrentTime(),
+                GREEN, RESET, 
+                server->listenSocket, 
+                client
+            );
             #endif
 
             server->clients[server->clientsLength] = client;
@@ -1263,8 +1317,11 @@ void serverAccept(Server server){
 
 void serverRecv(Server server) {
     #ifdef _DEBUG
-    printf("%s[socketRecv->CALL]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\n", 
-        BLUE, RESET, server->listenSocket, server->clientsLength);
+    printf("%s\n%s[socketRecv->CALL]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        server->listenSocket, server->clientsLength
+    );
     #endif
     
     if (server->clientsReadSetLength > 0) {
@@ -1304,9 +1361,11 @@ void serverRecv(Server server) {
 
 void serverCheck(Server server) {
     #ifdef _DEBUG
-    printf("%s[serverCheck->CALL]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\n", 
+    printf("%s\n%s[serverCheck->CALL]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\n", 
+        getCurrentTime(),
         BLUE, RESET, 
-        server->listenSocket, server->clientsLength);
+        server->listenSocket, server->clientsLength
+    );
     #endif
     
     if (server->clientsReadSetLength <= 0) {
@@ -1356,8 +1415,11 @@ static void serverListenerTask(mint taskId, void* vtarg)
     Server server = (Server)vtarg;
     
     #ifdef _DEBUG
-    printf("%s[serverListenerTask->CALL]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
-        BLUE, RESET, server->listenSocket, taskId);
+    printf("%s\n%s[serverListenerTask->CALL]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        server->listenSocket, taskId
+    );
     #endif
     
     while (server->libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
@@ -1379,7 +1441,11 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     server->taskId = taskId;
 
     #ifdef _DEBUG
-    printf("%s[socketListen->CALL]%s\n\tlisten socket id = %I64d in taks with id = %I64d\n\n", BLUE, RESET, server->listenSocket, taskId);
+    printf("%s\n%s[socketListen->CALL]%s\n\tlisten socket id = %I64d in taks with id = %I64d\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        server->listenSocket, taskId
+    );
     #endif
 
     MArgument_setInteger(Res, taskId);

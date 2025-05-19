@@ -13,7 +13,7 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
     $directory = DirectoryName[If[$InputFileName == "", 
         NotebookFileName[], 
         $InputFileName
-    ], 2]; 
+    ], 1]; 
 
     $libSrc = File[FileNameJoin[{
         $directory, 
@@ -40,7 +40,7 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 ]; 
 
 
-build["udp"]; 
+(*build["udp"]; *)
 
 
 build["tcp"]; 
