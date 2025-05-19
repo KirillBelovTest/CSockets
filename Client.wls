@@ -7,7 +7,19 @@ If[$FrontEnd === Null,
 ];
 
 
+<<KirillBelov`LTP`
 
+
+c1 = CSocketConnect[8080]
+
+
+LTPSend[c1, "hw"]
+
+
+jc = JavaNew["kirillbelov.ltp.LTPClient", 8080]
+
+
+jc@send["hw"]
 
 
 Get["KirillBelov`CSockets`TCP`"];
