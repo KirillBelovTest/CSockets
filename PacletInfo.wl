@@ -7,7 +7,7 @@ PacletObject[
     "Creator" -> "Kirill Belov",
     "License" -> "MIT",
     "PublisherID" -> "KirillBelov",
-    "Version" -> "1.0.24",
+    "Version" -> "1.0.26",
     "WolframVersion" -> "13.3+",
     "PrimaryContext" -> "KirillBelov`CSockets`",
     "Extensions" -> {
@@ -36,8 +36,6 @@ PacletObject[
           {"License", "./LICENSE"},
           {"ReadMe", "./README.md"},
           {"Source", "./Source"},
-          {"Scripts", "./Scripts"},
-          {"Tests", "./Tests"},
           {"Images", "./Images"}
         }
       }

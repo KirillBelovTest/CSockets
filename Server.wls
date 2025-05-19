@@ -16,7 +16,7 @@ listener = SocketListen[socket, handler, "SelectTimeout" -> 5];
 
 
 response["/"] := (
-    Get["AppResponse.wl"]; 
+    Get["ServerResponse.wl"]; 
     "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n\r\nloaded"
 )
 
