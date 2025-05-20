@@ -101,7 +101,12 @@ void mutexUnlock(Mutex mutex) {
     #endif
 }
 
+// Platform-specific global:
+#if defined(_WIN32) || defined(_WIN64)
 static Mutex globalMutex = NULL;
+#else
+static Mutex globalMutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 #pragma endregion
 
@@ -755,10 +760,10 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     #ifdef _WIN32
     iResult = ioctlsocket(connectSocket, FIONBIO, &nonBlocking);
     #else
-    int flags = fcntl(listenSocket, F_GETFL, 0);
+    int flags = fcntl(connectSocket, F_GETFL, 0);
     flags |= O_NONBLOCK;
     flags |= O_ASYNC;
-    iResult = fcntl(listenSocket, F_SETFL, flags, &nonBlocking);
+    iResult = fcntl(connectSocket, F_SETFL, flags, &nonBlocking);
     #endif
     if (iResult != NO_ERROR) {
         #ifdef _DEBUG
@@ -963,7 +968,7 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
         #ifdef _WIN32
         int result = getsockopt(sock, SOL_SOCKET, SO_TYPE, (char*)&opt, &len);
         #else
-        int result = fcntl(sock, F_GETFL)
+        int result = fcntl(sock, F_GETFL);
         #endif
 
         err = GETSOCKETERRNO();
@@ -1552,7 +1557,7 @@ void serverCheck(Server server) {
                 #ifdef _WIN32
                 int result = getsockopt(sock, SOL_SOCKET, SO_TYPE, (char*)&opt, &len);
                 #else
-                int result = fcntl(sock, F_GETFL)
+                int result = fcntl(sock, F_GETFL);
                 #endif
 
                 err = GETSOCKETERRNO();

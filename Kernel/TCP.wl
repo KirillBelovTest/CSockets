@@ -24,20 +24,20 @@ CSocketConnect::usage =
 CSocketConnect[host, port] returns a new client socket connected to specific host.";
 
 
-CSocketsSelect::usage = 
-"CSocketsSelect[{sockets}] returns list of ready sockets.";
+CSocketSelect::usage = 
+"CSocketSelect[{sockets}] returns list of ready sockets.";
 
 
-CSocketsAccept::usage = 
-"CSocketsAccept[sockets] returns new client.";
+CSocketAccept::usage = 
+"CSocketAccept[socket] returns new client.";
 
 
-CSocketsRecv::usage = 
-"CSocketsRecv[socket] returns received data.";
+CSocketRecv::usage = 
+"CSocketRecv[socket] returns received data.";
 
 
-CSocketsSend::usage = 
-"TCPSocketsSend[socket, data] send data.";
+CSocketSend::usage = 
+"CSocketSend[socket, data] send data.";
 
 
 CSocketListener::usage =
@@ -83,14 +83,7 @@ CSocketObject /: Close[socket_CSocketObject] :=
 CSocketClose[socket];
 
 
-CSocketsSelect[sockets: {__SocketObject}, timeout: _?NumericQ: 1] := 
-With[{socketIds = sockets[[All, 1]], tv = Round[timeout * 1000000]}, 
-    Map[CSocketObject] @ 
-    socketSelect[socketIds, Length[socketIds], tv]
-];
-
-
-CSocketsSelect[sockets: {__SocketObject}, timeout: _?NumericQ: 1] := 
+CSocketSelect[sockets: {__CSocketObject}, timeout: _?NumericQ: 1] := 
 With[{socketIds = sockets[[All, 1]], tv = Round[timeout * 1000000]}, 
     Map[CSocketObject] @ 
     socketSelect[socketIds, Length[socketIds], tv]
