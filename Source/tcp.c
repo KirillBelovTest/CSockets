@@ -1477,11 +1477,26 @@ void serverRecv(Server server) {
                 if (result > 0) {
                     serverRaiseDataEvent(server, "Recv", client, server->buffer, result);
                 } else if (result == 0 || (result < 0 && (err == 10038 || err == 10053))) {
+                    #ifdef _DEBUG
+                    printf("%s\n%s[serverRecv->ERROR]%s\n\tclient = %I64d\n\terror = %d\n\n", 
+                        getCurrentTime(),
+                        RED, RESET, 
+                        client, err
+                    );
+                    #endif
+
                     server->clients[i] = INVALID_SOCKET;
                     serverRaiseEvent(server, "Close", client);
                 } else {
-                    printf("recv unexpected\n\n");
-                    serverRaiseEvent(server, "Unexpected", client);
+                    #ifdef _DEBUG
+                    printf("%s\n%s[serverRecv->ERROR]%s\n\tclient = %I64d\n\tunexpected error = %d\n\n", 
+                        getCurrentTime(),
+                        RED, RESET, 
+                        client, err
+                    );
+                    #endif
+
+                    serverRaiseEvent(server, "Close", client);
                 }
                 mutexUnlock(globalMutex);
             }
