@@ -69,8 +69,6 @@ Module[{above, below},
 
 (handler_CSocketHandler)[packet_Association] := 
 Module[{extendedPacket, result, extraPacket, extraPacketDataLength}, 
-    Echo[packet, "Packet:"]; 
-
     Which[
         packet["Event"] === "Recv", 
 
