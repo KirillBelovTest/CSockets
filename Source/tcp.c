@@ -1288,7 +1288,12 @@ void serverDestroy(Server server){
 
 void serverSelect(Server server) {
     fd_set *clientsReadSet = &server->clientsReadSet;
+    #ifdef _WIN32
     struct timeval *tv = &server->timeout;
+    #else
+    struct timeval tv_copy = server->timeout;
+    struct timeval *tv = &tv_copy;
+    #endif
     int maxFd = server->listenSocket;
 
     FD_ZERO(clientsReadSet);
@@ -1296,7 +1301,7 @@ void serverSelect(Server server) {
     SOCKET client;
 
     #ifdef _DEBUG
-    printf("%s\n%s[serverSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (%I64d",
+    printf("%s\n%s[serverSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (%ld",
         getCurrentTime(), 
         BLUE, RESET, 
         server->clientsLength + 1, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec, server->listenSocket
