@@ -35,6 +35,7 @@
     #include <netinet/tcp.h>
     #include <sys/select.h>
     #include <time.h>
+    #include <sys/time.h>
     #include <pthread.h>
     #define INVALID_SOCKET -1
     #define NO_ERROR 0
@@ -377,7 +378,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #ifdef _WIN32
     WSACleanup();
     #else
-    SLEEP(SECOND);
+    sleep(1);
     #endif
 
     #ifdef _DEBUG
@@ -686,7 +687,7 @@ DLLEXPORT int socketAddress(WolframLibraryData libData, mint Argc, MArgument *Ar
     libData->UTF8String_disown(host);
     libData->UTF8String_disown(port);
     mutexUnlock(globalMutex);
-    MArgument_setInteger(Res, address);
+    MArgument_setInteger(Res, (uint64_t)(uintptr_t)address);
     return LIBRARY_NO_ERROR;
 }
 
@@ -991,7 +992,7 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
 
     MTensor validSocketsList;
     libData->MTensor_new(MType_Integer, 1, &validCount, &validSocketsList);
-    SOCKET *validSockets = libData->MTensor_getIntegerData(validSocketsList);
+    SOCKET *validSockets = (SOCKET*)libData->MTensor_getIntegerData(validSocketsList);
 
     #ifdef _DEBUG
     printf("%s[socketCheck->SUCCESS]%s\n\tcheck(",
@@ -1153,7 +1154,7 @@ struct Server_st {
 #pragma region server create
 
 //serverCreate[listenSocket, clientsCapacity, bufferSize, selectTimeout]: serverPtr
-DLLEXPORT serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     mutexLock(globalMutex);
     SOCKET listenSocket =    (SOCKET)MArgument_getInteger(Args[0]); // positive integer
     size_t clientsCapacity = (size_t)MArgument_getInteger(Args[1]); // 1024 by default
@@ -1352,7 +1353,7 @@ void serverSelect(Server server) {
 
 #pragma region server raise event
 
-void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
+void serverRaiseEvent(Server server, char *eventName, SOCKET client) {
     #ifdef _DEBUG
     printf("%s\n%s[serverRaiseEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
         getCurrentTime(), 
@@ -1379,9 +1380,9 @@ void serverRaiseEvent(Server server, const char *eventName, SOCKET client) {
 
 #pragma region server raise data event
 
-void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, BYTE *buffer, int len) {
+void serverRaiseDataEvent(Server server, char *eventName, SOCKET client, BYTE *buffer, const mint len) {
     #ifdef _DEBUG
-    printf("%s\n%s[serverRaiseDataEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %d\n\n", 
+    printf("%s\n%s[serverRaiseDataEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %ld\n\n", 
         getCurrentTime(), 
         BLUE, RESET, 
         server->listenSocket, client, len
@@ -1400,7 +1401,7 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
     server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
 
     #ifdef _DEBUG
-    printf("%s\n%s[serverRaiseDataEvent->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %d\n\n", 
+    printf("%s\n%s[serverRaiseDataEvent->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %ld\n\n", 
         getCurrentTime(), 
         GREEN, RESET, 
         server->listenSocket, client, len
@@ -1413,11 +1414,13 @@ void serverRaiseDataEvent(Server server, const char *eventName, SOCKET client, B
 #pragma region server accept
 
 void serverAccept(Server server){
+    SOCKET listenSocket = server->listenSocket;
+
     #ifdef _DEBUG
     printf("%s\n%s[serverAccept->CALL]%s\n\taccept(listenSocket = %I64d)\n\n", 
         getCurrentTime(),
         BLUE, RESET, 
-        server->listenSocket
+        listenSocket
     );
     #endif
 
@@ -1429,8 +1432,7 @@ void serverAccept(Server server){
             printf("%s\n%s[serverAccept->SUCCESS]%s\n\taccept(listenSocket = %I64d) new client id = %I64d\n\n", 
                 getCurrentTime(),
                 GREEN, RESET, 
-                server->listenSocket, 
-                client
+                listenSocket, client
             );
             #endif
 
@@ -1441,10 +1443,10 @@ void serverAccept(Server server){
         mutexUnlock(globalMutex);
     } else {
         #ifdef _DEBUG
-        printf("%s\n%s[serverAccept->SKIP]%s\n\taccept(listenSocket = %I64d) no new clients for socket id = %d\n\n", 
+        printf("%s\n%s[serverAccept->SKIP]%s\n\taccept(listenSocket = %I64d) no new clients\n\n", 
             getCurrentTime(),
             YELLOW, RESET, 
-            server->listenSocket
+            listenSocket
         );
         #endif
     }
@@ -1510,7 +1512,7 @@ void serverRecv(Server server) {
         }
 
         #ifdef _DEBUG
-        printf("%s\n%s[serverRecv->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\treceived data len = %zd\n\n", 
+        printf("%s\n%s[serverRecv->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclients length = %zd\n\treceived data len = %d\n\n", 
             getCurrentTime(),
             GREEN, RESET, 
             server->listenSocket, server->clientsLength, result
@@ -1595,7 +1597,7 @@ static void serverListenerTask(mint taskId, void* vtarg)
     Server server = (Server)vtarg;
     
     #ifdef _DEBUG
-    printf("%s\n%s[serverListenerTask->CALL]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
+    printf("%s\n%s[serverListenerTask->CALL]%s\n\tlisten socket id = %I64d\n\ttask id = %ld\n\n", 
         getCurrentTime(),
         BLUE, RESET, 
         server->listenSocket, taskId
@@ -1612,7 +1614,7 @@ static void serverListenerTask(mint taskId, void* vtarg)
     serverDestroy(server);
 
     #ifdef _DEBUG
-    printf("%s\n%s[serverListenerTask->END]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
+    printf("%s\n%s[serverListenerTask->END]%s\n\tlisten socket id = %I64d\n\ttask id = %ld\n\n", 
         getCurrentTime(),
         YELLOW, RESET, 
         server->listenSocket, taskId
@@ -1637,7 +1639,7 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     server->taskId = taskId;
 
     #ifdef _DEBUG
-    printf("%s\n%s[serverListen->SUCCESS]%s\n\tlisten task id = %I64d\n\n", 
+    printf("%s\n%s[serverListen->SUCCESS]%s\n\tlisten task id = %ld\n\n", 
         getCurrentTime(),
         GREEN, RESET, 
         taskId

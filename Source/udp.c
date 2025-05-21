@@ -124,10 +124,10 @@ static void socketReadCheckThread(mint taskId, void* args)
             if (n < 0) {
                 perror("Error reading from socket");
                 free(buffer);
-                return LIBRARY_FUNCTION_ERROR;
+                return;
             } else if (n == 0) {
                 free(buffer);
-                return LIBRARY_FUNCTION_ERROR;
+                return;
             }
 
             dims[0] = n;
@@ -151,7 +151,6 @@ static void socketReadCheckThread(mint taskId, void* args)
     }
 
     free(threadArgs);  // Clean up allocated memory
-    return 0;
 }
 
 DLLEXPORT int startAsyncSocketReadCheck(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
