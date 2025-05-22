@@ -4,7 +4,7 @@
 
 #define SECOND 1000000
 #define MININTERVAL 1000
-#define _DEBUG 1
+//#define _DEBUG 1
 #define RESET "\033[0m"
 #define RED "\033[91m"
 #define GREEN "\033[92m"

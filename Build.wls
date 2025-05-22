@@ -30,7 +30,7 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 
     CreateLibrary @@ {$libSrc, lib, 
         "TargetDirectory" -> $libDir, 
-        "Debug" -> True, 
+        "Debug" -> False, 
         If[prot === Automatic, Nothing, "TransferProtocolLibrary" -> "WSTP"],
         "ShellCommandFunction" -> None, 
         "ShellOutputFunction" -> None, 
