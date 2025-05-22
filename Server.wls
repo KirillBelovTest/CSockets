@@ -29,7 +29,7 @@ handler["DefaultHandler"] = Function[packet,
 ];
 
 
-listener = SocketListen[socket, handler, "SelectTimeout" -> 10]; 
+listener = SocketListen[socket, handler, "SelectTimeout" -> 2.5]; 
 
 
 While[True, Pause[1]];
