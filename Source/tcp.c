@@ -22,6 +22,8 @@
     #define GETSOCKETERRNO() (WSAGetLastError())
     #pragma comment (lib, "Ws2_32.lib")
     typedef HANDLE Mutex;
+    #define SLEEP Sleep
+    #define ms 1
 #else
     #include <sys/types.h>
     #include <sys/socket.h>
@@ -49,6 +51,8 @@
     #define BYTE uint8_t
     #define BOOL int
     typedef pthread_mutex_t Mutex;
+    #define SLEEP usleep
+    #define ms 1000
 #endif
 
 #include <stdio.h>
@@ -1111,10 +1115,12 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
             getCurrentTime(), GREEN, RESET, socketId, result);
         #endif
 
+        libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
         mutexUnlock(globalMutex);
         MArgument_setInteger(Res, result);
         return LIBRARY_NO_ERROR;
-    } 
+    }
+    libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
     mutexUnlock(globalMutex);
     
     int err = GETSOCKETERRNO();
@@ -1147,6 +1153,8 @@ struct Server_st {
     BYTE *buffer;
     mint taskId;
     WolframLibraryData libData;
+    int sleeping;
+    int sleepTime;
 };
 
 #pragma endregion
@@ -1160,6 +1168,9 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
     size_t clientsCapacity = (size_t)MArgument_getInteger(Args[1]); // 1024 by default
     size_t bufferSize =      (size_t)MArgument_getInteger(Args[2]); // 64 kB by default
     long timeout =           (long)MArgument_getInteger(Args[3]);   // 1 s by default
+
+    int sleepTime = 10;
+    int sleeping = 1;
 
     #ifdef _DEBUG
     printf("%s\n%s[serverCreate->CALL]%s\n\tlistenSocket = %I64d\n\tclientsCapacity = %zd\n\tbufferSize = %zd\n\ttimeout = %ld\n\n", 
@@ -1280,6 +1291,16 @@ void serverDestroy(Server server){
 
     server = NULL;
     mutexUnlock(globalMutex);
+}
+
+#pragma endregion
+
+#pragma region server sleep
+
+void serverSleep(Server server) {
+    if (server->sleeping) {
+        SLEEP(ms * server->sleepTime);
+    }
 }
 
 #pragma endregion
@@ -1429,8 +1450,9 @@ void serverAccept(Server server){
     );
     #endif
 
-    if (server->clientsReadSetLength > 0 && FD_ISSET(server->listenSocket, &server->clientsReadSet)) {
+    if (FD_ISSET(server->listenSocket, &server->clientsReadSet)) {
         mutexLock(globalMutex);
+        server->clientsReadSetLength--;
         SOCKET client = accept(server->listenSocket, NULL, NULL);
         if (client != INVALID_SOCKET) {
             #ifdef _DEBUG
@@ -1470,8 +1492,7 @@ void serverRecv(Server server) {
     );
     #endif
     int result;
-    if ((server->clientsReadSetLength > 1 && FD_ISSET(server->listenSocket, &server->clientsReadSet)) || 
-        server->clientsReadSetLength > 0) {
+    if (server->clientsReadSetLength > 0) {
         size_t count = server->clientsLength;
         fd_set *readfds = &server->clientsReadSet;
         SOCKET client;
