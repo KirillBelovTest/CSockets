@@ -1134,6 +1134,40 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_FUNCTION_ERROR;
 }
 
+//socketSendString[socketId, data, dataLength]: sentLength
+DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
+    char *dataString = MArgument_getUTF8String(Args[1]); 
+    int dataLength = MArgument_getInteger(Args[2]); // positive integer
+    int result;
+
+    mutexLock(globalMutex);
+    result = send(socketId, (char*)dataString, dataLength, 0);
+    if (result > 0) {
+        #ifdef _DEBUG
+        printf("%s\n%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
+            getCurrentTime(), GREEN, RESET, socketId, result);
+        #endif
+
+        libData->UTF8String_disown(dataString);
+        mutexUnlock(globalMutex);
+        MArgument_setInteger(Res, result);
+        return LIBRARY_NO_ERROR;
+    }
+    libData->UTF8String_disown(dataString);
+    mutexUnlock(globalMutex);
+    
+    int err = GETSOCKETERRNO();
+
+    #ifdef _DEBUG
+    printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
+        RED, RESET, socketId, err);
+    #endif
+
+    sendErrorMessage(libData, err);
+    return LIBRARY_FUNCTION_ERROR;
+}
+
 #pragma endregion
 
 #pragma region server data

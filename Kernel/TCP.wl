@@ -128,13 +128,9 @@ With[{
 
 
 CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String, len_: 1024 * 1024] :=
-With[{
-    byteArray = StringToByteArray[data]
-}, 
-    Do[
-        socketSend[socketId, #, Length[#]]& @ byteArray[[i ;; UpTo[i + len - 1]]], 
-        {i, 1, Length[byteArray], len}
-    ];
+Do[
+    socketSendString[socketId, #, StringLength[#]]& @ StringTake[data, {i ;; UpTo[i + len - 1]}], 
+    {i, 1, StringLength[data], len}
 ];
 
 
@@ -286,6 +282,11 @@ LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, "ByteArray"];
 (*socketSend[socketId, data, length]: length*)
 socketSend = 
 LibraryFunctionLoad[$libFile, "socketSend", {Integer, {"ByteArray", "Shared"}, Integer}, Integer]; 
+
+
+(*socketSend[socketId, data, length]: length*)
+socketSendString = 
+LibraryFunctionLoad[$libFile, "socketSendString", {Integer, String, Integer}, Integer]; 
 
 
 (*serverCreate[listenSocket, clientsCapacity, bufferSize, selectTimeout]: serverPtr*)
