@@ -401,7 +401,6 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 //socketOpen[host, port, nonBlocking, noDelay, sndBufferSize, rcvBufferSize]: socketId
 DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mutexLock(globalMutex);
     char* host = MArgument_getUTF8String(Args[0]); // localhost by default
     char* port = MArgument_getUTF8String(Args[1]); // positive integer as string
     int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 0 == blocking mode
@@ -442,7 +441,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -460,7 +458,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         freeaddrinfo(address);
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -479,7 +476,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -507,7 +503,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
 
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -523,7 +518,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
 
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -539,7 +533,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
         
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -555,7 +548,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
         
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -571,7 +563,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
         
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -587,7 +578,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
         
         CLOSESOCKET(listenSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -599,7 +589,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
     );
     #endif
 
-    mutexUnlock(globalMutex);
     MArgument_setInteger(Res, listenSocket);
     return LIBRARY_NO_ERROR;
 }
@@ -610,7 +599,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 //socketClose[socketId]: successState
 DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mutexLock(globalMutex);
     SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
 
     #ifdef _DEBUG
@@ -624,7 +612,9 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
     mint result = true;
 
     if (socketId > 0) {
+        mutexLock(globalMutex);
         result = CLOSESOCKET(socketId);
+        mutexUnlock(globalMutex);
     }
 
     if (!result) {
@@ -636,11 +626,9 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
         );
         #endif
 
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
-    mutexUnlock(globalMutex);
     MArgument_setInteger(Res, result);
     return LIBRARY_NO_ERROR;
 }
@@ -651,7 +639,6 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
 
 //socketAddress[host, port]: addressPtr
 DLLEXPORT int socketAddress(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mutexLock(globalMutex);
     char *host = MArgument_getUTF8String(Args[0]); // localhost by default
     char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
     
@@ -684,13 +671,11 @@ DLLEXPORT int socketAddress(WolframLibraryData libData, mint Argc, MArgument *Ar
         
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
     libData->UTF8String_disown(host);
     libData->UTF8String_disown(port);
-    mutexUnlock(globalMutex);
     MArgument_setInteger(Res, (uint64_t)(uintptr_t)address);
     return LIBRARY_NO_ERROR;
 }
@@ -701,7 +686,6 @@ DLLEXPORT int socketAddress(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 //socketConnect[host, port, nonBlocking, noDelay, keepAlive, sndBufSize, rcvBufSize]: socketId
 DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mutexLock(globalMutex);
     char *host = MArgument_getUTF8String(Args[0]); // localhost by default
     char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
     int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 0 == blocking mode
@@ -740,7 +724,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -757,7 +740,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         libData->UTF8String_disown(host);
         libData->UTF8String_disown(port);
         freeaddrinfo(address);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -783,7 +765,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         libData->UTF8String_disown(port);
         freeaddrinfo(address);
         CLOSESOCKET(connectSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -796,7 +777,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         libData->UTF8String_disown(port);
         freeaddrinfo(address);
         CLOSESOCKET(connectSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -812,7 +792,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, TCP_NODELAY) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
         #endif
         CLOSESOCKET(connectSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -823,7 +802,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_KEEPALIVE) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
         #endif
         CLOSESOCKET(connectSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -834,7 +812,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_RCVBUF) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
         #endif
         CLOSESOCKET(connectSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -845,7 +822,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_SNDBUF) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
         #endif
         CLOSESOCKET(connectSocket);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -853,7 +829,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     printf("%s[socketConnect->SUCCESS]%s\n\tsocket id = %I64d\n\n", GREEN, RESET, connectSocket);
     #endif
 
-    mutexUnlock(globalMutex);
     MArgument_setInteger(Res, connectSocket);
     return LIBRARY_NO_ERROR;
 }
@@ -947,7 +922,6 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 //socketCheck[sockets, length]: validSockets
 DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mutexLock(globalMutex);
     MTensor socketList = MArgument_getMTensor(Args[0]); // list of sockets
     size_t length = (size_t)MArgument_getInteger(Args[1]); // number of sockets
 
@@ -1014,7 +988,6 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
     printf(")\n\n"); 
     #endif
     
-    mutexUnlock(globalMutex);
     MArgument_setMTensor(Res, validSocketsList);
     return LIBRARY_NO_ERROR;
 }
@@ -1028,6 +1001,7 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
     SOCKET listenSocket = (SOCKET)MArgument_getInteger(Args[0]);
     mutexLock(globalMutex);
     SOCKET client = accept(listenSocket, NULL, NULL);
+    mutexUnlock(globalMutex);
     if (client == INVALID_SOCKET){
 
         int err = GETSOCKETERRNO();
@@ -1037,10 +1011,8 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
         #endif
 
         acceptErrorMessage(libData, err);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
-    mutexUnlock(globalMutex);
 
     #ifdef _DEBUG
     printf("%s[socketAccept->SUCCESS]%s\n\taccept(listenSocket = %I64d) new client id = %I64d\n\n", 
@@ -1063,6 +1035,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
     BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
     mutexLock(globalMutex);
     int result = recv(client, buffer, bufferSize, 0);
+    mutexUnlock(globalMutex);
     if (result > 0){
         #ifdef _DEBUG
         printf("%s[serverRecv->SUCCESS]%s\n\trecv(socket = %I64d) received = %d bytes\n\n", 
@@ -1076,11 +1049,9 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
         memcpy(array, buffer, result);
 
         free(buffer);
-        mutexUnlock(globalMutex);
         MArgument_setMNumericArray(Res, byteArray);
         return LIBRARY_NO_ERROR;
     }
-    mutexUnlock(globalMutex);
     
     free(buffer);
     int err = GETSOCKETERRNO();
@@ -1109,6 +1080,7 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     mutexLock(globalMutex);
     result = send(socketId, (char*)data, dataLength, 0);
+    mutexUnlock(globalMutex);
     if (result > 0) {
         #ifdef _DEBUG
         printf("%s\n%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
@@ -1116,12 +1088,10 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
         #endif
 
         libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
-        mutexUnlock(globalMutex);
         MArgument_setInteger(Res, result);
         return LIBRARY_NO_ERROR;
     }
     libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
-    mutexUnlock(globalMutex);
     
     int err = GETSOCKETERRNO();
 
@@ -1143,6 +1113,7 @@ DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument 
 
     mutexLock(globalMutex);
     result = send(socketId, (char*)dataString, dataLength, 0);
+    mutexUnlock(globalMutex);
     if (result > 0) {
         #ifdef _DEBUG
         printf("%s\n%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
@@ -1150,12 +1121,10 @@ DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument 
         #endif
 
         libData->UTF8String_disown(dataString);
-        mutexUnlock(globalMutex);
         MArgument_setInteger(Res, result);
         return LIBRARY_NO_ERROR;
     }
     libData->UTF8String_disown(dataString);
-    mutexUnlock(globalMutex);
     
     int err = GETSOCKETERRNO();
 
@@ -1197,7 +1166,6 @@ struct Server_st {
 
 //serverCreate[listenSocket, clientsCapacity, bufferSize, selectTimeout]: serverPtr
 DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    mutexLock(globalMutex);
     SOCKET listenSocket =    (SOCKET)MArgument_getInteger(Args[0]); // positive integer
     size_t clientsCapacity = (size_t)MArgument_getInteger(Args[1]); // 1024 by default
     size_t bufferSize =      (size_t)MArgument_getInteger(Args[2]); // 64 kB by default
@@ -1224,7 +1192,6 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
         );
         #endif
 
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -1253,7 +1220,6 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
         #endif
 
         free(ptr);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -1269,7 +1235,6 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
 
         free(server->clients);
         free(ptr);
-        mutexUnlock(globalMutex);
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -1282,7 +1247,6 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
     #endif
 
     uint64_t serverPtr = (uint64_t)(uintptr_t)ptr;
-    mutexUnlock(globalMutex);
     MArgument_setInteger(Res, serverPtr);
     return LIBRARY_NO_ERROR;
 }
@@ -1292,8 +1256,6 @@ DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
 #pragma region server destroy
 
 void serverDestroy(Server server){
-    mutexLock(globalMutex);
-    
     #ifdef _DEBUG
     printf("%s\n%s[serverDestroy->CALL]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
         getCurrentTime(), 
@@ -1302,6 +1264,7 @@ void serverDestroy(Server server){
     );
     #endif
 
+    mutexLock(globalMutex);
     CLOSESOCKET(server->listenSocket); 
 
     size_t clientsLength = server->clientsLength;
@@ -1310,6 +1273,7 @@ void serverDestroy(Server server){
             CLOSESOCKET(server->clients[i]);
         }
     }
+    mutexUnlock(globalMutex);
     
     free(server->clients);
     free(server->buffer);
@@ -1324,7 +1288,6 @@ void serverDestroy(Server server){
     #endif
 
     server = NULL;
-    mutexUnlock(globalMutex);
 }
 
 #pragma endregion
@@ -1485,9 +1448,10 @@ void serverAccept(Server server){
     #endif
 
     if (FD_ISSET(server->listenSocket, &server->clientsReadSet)) {
-        mutexLock(globalMutex);
         server->clientsReadSetLength--;
+        mutexLock(globalMutex);
         SOCKET client = accept(server->listenSocket, NULL, NULL);
+        mutexUnlock(globalMutex);
         if (client != INVALID_SOCKET) {
             #ifdef _DEBUG
             printf("%s\n%s[serverAccept->SUCCESS]%s\n\taccept(listenSocket = %I64d) new client id = %I64d\n\n", 
@@ -1499,9 +1463,8 @@ void serverAccept(Server server){
 
             server->clients[server->clientsLength] = client;
             server->clientsLength++;
-            serverRaiseEvent(server, "Accept", client);
+            serverRaiseEvent(server, "Accepted", client);
         }
-        mutexUnlock(globalMutex);
     } else {
         #ifdef _DEBUG
         printf("%s\n%s[serverAccept->SKIP]%s\n\taccept(listenSocket = %I64d) no new clients\n\n", 
@@ -1536,13 +1499,14 @@ void serverRecv(Server server) {
         for (size_t i = 0; i < count; i++) {
             client = server->clients[i];
             if (client != INVALID_SOCKET && FD_ISSET(client, readfds)) {
-                mutexLock(globalMutex);
                 j++;
+                mutexLock(globalMutex);
                 result = recv(client, server->buffer, server->bufferSize, 0);
+                mutexUnlock(globalMutex);
                 int err = GETSOCKETERRNO();
                 mint arrLen = (mint)result;
                 if (result > 0) {
-                    serverRaiseDataEvent(server, "Recv", client, server->buffer, result);
+                    serverRaiseDataEvent(server, "Received", client, server->buffer, result);
                 } else if (result == 0 || (result < 0 && (err == 10038 || err == 10053))) {
                     #ifdef _DEBUG
                     printf("%s\n%s[serverRecv->ERROR]%s\n\tclient = %I64d\n\terror = %d\n\n", 
@@ -1553,7 +1517,7 @@ void serverRecv(Server server) {
                     #endif
 
                     server->clients[i] = INVALID_SOCKET;
-                    serverRaiseEvent(server, "Close", client);
+                    serverRaiseEvent(server, "Closed", client);
                 } else {
                     #ifdef _DEBUG
                     printf("%s\n%s[serverRecv->ERROR]%s\n\tclient = %I64d\n\tunexpected error = %d\n\n", 
@@ -1563,9 +1527,8 @@ void serverRecv(Server server) {
                     );
                     #endif
 
-                    serverRaiseEvent(server, "Close", client);
+                    serverRaiseEvent(server, "Closed", client);
                 }
-                mutexUnlock(globalMutex);
             }
 
             if (j > readyCount) break;
