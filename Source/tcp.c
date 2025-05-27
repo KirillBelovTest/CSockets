@@ -1112,7 +1112,7 @@ DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument 
     int result;
 
     mutexLock(globalMutex);
-    result = send(socketId, (char*)dataString, dataLength, 0);
+    result = send(socketId, dataString, dataLength, 0);
     mutexUnlock(globalMutex);
     if (result > 0) {
         #ifdef _DEBUG

@@ -181,9 +181,9 @@ With[{
 ];
 
 
-toEvent[encoding_][task_, "Recv", {serv_, sock_, data_}] := 
+toEvent[encoding_][task_, event_, {serv_, sock_, data_}] := 
 With[{byteArray = ByteArray[data], time = Now}, <|
-    "Event" :> "Recv", 
+    "Event" :> event, 
     "TimeStamp" :> time, 
     "SourceSocket" :> CSocketObject[sock],
     "Socket" :> CSocketObject[serv],
