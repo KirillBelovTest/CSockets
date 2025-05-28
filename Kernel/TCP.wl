@@ -129,7 +129,7 @@ With[{
 
 CSocketObject /: WriteString[CSocketObject[socketId_Integer], data_String, len_: 1024 * 1024] :=
 Do[
-    socketSendString[socketId, #, StringLength[#]]& @ StringTake[data, {i ;; UpTo[i + len - 1]}], 
+    socketSendString[socketId, #, StringLength[#]]& @ StringTake[data, {i, UpTo[i + len - 1]}], 
     {i, 1, StringLength[data], len}
 ];
 
@@ -141,13 +141,13 @@ Do[
 ];
 
 
-CSocketObject /: SocketReadyQ[CSocketObject[socketId_Integer], timeout_: 0] :=
-Length[socketSelect[{socketId}, 1, timeout * 1000000]] > 0;
+CSocketObject /: SocketReadyQ[socket_CSocketObject, timeout: _?NumericQ: 0] :=
+CSocketSelect[{socket}, timeout] === {socket};
 
 
 CSocketObject /: SocketListen[CSocketObject[socketId_Integer], handler_, OptionsPattern[{
     "ClientsCapacity" -> 1024,
-    "BufferSize" -> 8192,
+    "BufferSize" -> 65536,
     "SelectTimeout" -> 1, 
     "Encoding" -> "UTF-8"
 }]] := 

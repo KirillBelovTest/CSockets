@@ -1527,6 +1527,7 @@ void serverRecv(Server server) {
                     );
                     #endif
 
+                    server->clients[i] = INVALID_SOCKET;
                     serverRaiseEvent(server, "Closed", client);
                 }
             }

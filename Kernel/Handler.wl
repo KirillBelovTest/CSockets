@@ -7,10 +7,6 @@ CSocketHandler::usage =
 "CSocketHandler[] mutable handler object."; 
 
 
-CSocketCreateServer::usage = 
-"CSocketCreateServer[port, func, opts] creates preconfigured CSocketServer."; 
-
-
 Begin["`Private`"]; 
 
 
@@ -48,6 +44,7 @@ With[{store = Language`NewExpressionStore["CSocketHandler"]},
 Unprotect[Set]; 
 
 
+(*TODO: replace to MutationHandler*)
 Set[(handler_?(Head[#] === CSocketHandler&))[keys__], value_] := 
 With[{$handler$ = handler}, $handler$[keys] = value]; 
 
