@@ -171,7 +171,7 @@ With[{
         CSocketListener[<|
             "Task" -> task, 
             "Server" -> serverPtr, 
-            "Socket" -> socketId, 
+            "Socket" -> CSocketObject[socketId], 
             "Handler" -> handler,
             "ClientsCapacity" -> OptionValue["ClientsCapacity"], 
             "BufferSize" -> OptionValue["BufferSize"], 
@@ -179,6 +179,12 @@ With[{
         |>]
     ]
 ];
+
+
+CSocketListener /: Close[CSocketListener[assoc_?AssociationQ]] := (
+    Close[assoc["Socket"]];
+    RemoveAsynchronousTask[assoc["Task"]];
+);
 
 
 toEvent[encoding_][task_, event_, {serv_, sock_, data_}] := 

@@ -83,7 +83,7 @@ Module[{extendedPacket, result, extraPacket, extraPacketDataLength},
 
             result = handler["Serializer"] @ invokeHandler[handler, extendedPacket]; (*ByteArray[] | _String | Null*)
 
-            sendResponse[handler, packet, result]; 
+            sendResponse[handler, packet, result];
 
             If[extendedPacket["StoredLength"] > extendedPacket["ExpectedLength"], 
                 extraPacket = packet; 
