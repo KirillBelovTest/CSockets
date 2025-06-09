@@ -918,6 +918,40 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma endregion
 
+#pragma region socket select async
+
+
+
+//socketListen[serverPtr_Integer]: taskId_Integer
+DLLEXPORT int socketSelectAsync(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    Server server = (Server)MArgument_getInteger(Args[0]);
+    mint taskId;
+
+    #ifdef _DEBUG
+    printf("%s\n%s[serverListen->CALL]%s\n\tlisten socket id = %I64d\n\n", 
+        getCurrentTime(),
+        BLUE, RESET, 
+        server->listenSocket
+    );
+    #endif
+
+    taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(serverListenerTask, server);
+    server->taskId = taskId;
+
+    #ifdef _DEBUG
+    printf("%s\n%s[serverListen->SUCCESS]%s\n\tlisten task id = %ld\n\n", 
+        getCurrentTime(),
+        GREEN, RESET, 
+        taskId
+    );
+    #endif
+
+    MArgument_setInteger(Res, taskId);
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
 #pragma region socket check
 
 //socketCheck[sockets, length]: validSockets
