@@ -682,6 +682,28 @@ DLLEXPORT int socketAddress(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 #pragma endregion
 
+#pragma region socket create
+
+DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    struct addrinfo *address = (struct addrinfo *)(uintptr_t)MArgument_getInteger(Args[0]);
+
+    SOCKET createdSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+    if (createdSocket == INVALID_SOCKET){
+        #ifdef _DEBUG
+        printf("%s\n%s[socketConnect->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            "", 0, GETSOCKETERRNO()
+        );
+        #endif
+
+        freeaddrinfo(address);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+}
+
+#pragma endregion
+
 #pragma region socket connect
 
 //socketConnect[host, port, nonBlocking, noDelay, keepAlive, sndBufSize, rcvBufSize]: socketId
@@ -919,8 +941,6 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 #pragma endregion
 
 #pragma region socket select async
-
-
 
 //socketListen[serverPtr_Integer]: taskId_Integer
 DLLEXPORT int socketSelectAsync(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
