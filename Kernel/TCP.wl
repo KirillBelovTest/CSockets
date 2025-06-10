@@ -234,8 +234,14 @@ $libFile = FileNameJoin[{
 
 
 If[!FileExistsQ[$libFile], 
-    Get[FileNameJoin[{$directory, "Scripts", "Build.wls"}]]
+    Get[FileNameJoin[{$directory, "Build.wls"}]]
 ]; 
+
+(*socketAddressCreate["host", "port", 
+    family, socktype, protocol
+]*)
+socketAddressCreate = 
+LibraryFunctionLoad[$libFile, "socketAddressCreate", {String, String, Integer, Integer, Integer}, Integer];
 
 
 (*socketOpen["host", "port", 

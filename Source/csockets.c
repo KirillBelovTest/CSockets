@@ -347,7 +347,7 @@ void sendErrorMessage(WolframLibraryData libData, int err) {
 
 DLLEXPORT mint WolframLibrary_getVersion() {
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_getVersion[]%s ᐅ %d\n\n", 
+    printf("%s\n%sWolframLibrary_getVersion[]%s -> %d\n\n", 
         getCurrentTime(),
         GREEN, RESET, 
         WolframLibraryVersion
@@ -369,7 +369,7 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
     globalMutex = mutexCreate();
 
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_initialize[]%s ᐅ True\n\n", 
+    printf("%s\n%sWolframLibrary_initialize[]%s -> True\n\n", 
         getCurrentTime(),
         GREEN, RESET
     );
@@ -386,7 +386,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #endif
 
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_uninitialize[]%s ᐅ True\n\n",
+    printf("%s\n%sWolframLibrary_uninitialize[]%s -> True\n\n",
         getCurrentTime(),
         GREEN, RESET
     );
@@ -403,12 +403,16 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     char *host = MArgument_getUTF8String(Args[0]); // localhost by default
     char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
-    
+
+    int ai_family = (int)MArgument_getInteger(Args[2]); // AF_UNSPEC == 0 | AF_INET == 2 | AF_INET6 == 23/10 | ..
+    int ai_socktype = (int)MArgument_getInteger(Args[3]); // SOCK_STREAM == 1 | SOCK_DGRAM == 2 | SOCK_RAW == 3 | ..
+    int ai_protocol = (int)MArgument_getInteger(Args[4]); // 0 | IPPROTO_TCP == 6 | IPPROTO_UDP == 17 | IPPROTO_SCTP == 132 | IPPROTO_ICMP == 1 | ..
+
     #ifdef _DEBUG
-    printf("%s\n%ssocketAddressCreate[%s%s:%s%s]%s :> ", 
+    printf("%s\n%ssocketAddressCreate[%s%s:%s%s, family=%d, socktype=%d, protocol=%d]%s -> ", 
         getCurrentTime(), 
         BLUE, RESET, 
-        host, port, 
+        host, port, ai_family, ai_socktype, ai_protocol, 
         BLUE, RESET
     );
     #endif
@@ -418,9 +422,9 @@ DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgume
     struct addrinfo hints;
 
     ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_family = ai_family;
+    hints.ai_socktype = ai_socktype;
+    hints.ai_protocol = ai_protocol;
 
     result = getaddrinfo(host, port, &hints, &address);
     if (result != 0){
@@ -441,8 +445,8 @@ DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgume
     uintptr_t addressPtr = (uintptr_t)address;
 
     #ifdef _DEBUG
-    printf("%s%p%s\n\n", 
-        GREEN, addressPtr, RESET
+    printf("%s<%p>%s\n\n", 
+        GREEN, (void*)addressPtr, RESET
     );
     #endif
 
@@ -456,7 +460,7 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
     struct addrinfo *address = (struct addrinfo*)addressPtr;
 
     #ifdef _DEBUG
-    printf("%s\n%ssocketAddressRemove[%s%p%s]%s :> ", 
+    printf("%s\n%ssocketAddressRemove[%s<%p>%s]%s -> ", 
         getCurrentTime(), 
         BLUE, RESET, 
         (void*)addressPtr, 
