@@ -679,7 +679,19 @@ DLLEXPORT int socketSetOpt(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma endregion
 
-DLLEXPORT int socketIoctl(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
+DLLEXPORT int socketBlockngMode(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
+    SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket
+    int nonBlocking = (int)MArgument_getInteger(Args[1]); // 0 | 1 default 0 == blocking mode
+    
+    #ifdef _DEBUG
+    printf("%s\n%ssocketBlockngMode[%s%I64d, %d%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, nonBlocking, 
+        BLUE, RESET
+    );
+    #endif
+
     /*set blocking mode*/
     #ifdef _WIN32
     int iResult = ioctlsocket(socketId, FIONBIO, &nonBlocking);
@@ -691,16 +703,22 @@ DLLEXPORT int socketIoctl(WolframLibraryData libData, mint Argc, MArgument *Args
     #endif
     if (iResult != NO_ERROR) {
         #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
+        printf("%sERROR = %d%s\n\n", 
+            RED, GETSOCKETERRNO(), RESET
         );
         #endif
 
-        CLOSESOCKET(listenSocket);
         return LIBRARY_FUNCTION_ERROR;
     }
+
+    #ifdef _DEBUG
+        printf("%sSuccess%s\n\n", 
+            GREEN, RESET
+        );
+        #endif
+
+    MArgument_setInteger(Res, 0); // success
+    return LIBRARY_NO_ERROR;
 }
 
 #pragma region socket open

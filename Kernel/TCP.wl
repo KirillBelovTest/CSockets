@@ -60,6 +60,10 @@ CSocketBind::usage =
 "CSocketBind[socket, address] binds a socket to a specific address.";
 
 
+CSocketBlockingMode::usage =
+"CSocketBlockingMode[socket, mode] sets the blocking mode of a socket.";
+
+
 Begin["`Private`"];
 
 
