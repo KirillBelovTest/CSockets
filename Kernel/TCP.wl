@@ -15,8 +15,8 @@ CSocketOpen::usage =
 CSocketOpen[host, port] returns a new server socket opened on specific host.";
 
 
-CSocketClose::usage =
-"CSocketClose[socket] closes the socket.";
+CSocketCreate::usage = 
+"CSocketCreate[address] create new socket."; 
 
 
 CSocketConnect::usage = 
@@ -42,6 +42,22 @@ CSocketSend::usage =
 
 CSocketListener::usage =
 "CSocketListener[assoc] returns a new listener object.";
+
+
+CSocketAddressCreate::usage =
+"CSocketAddressCreate[host, port] creates a socket address structure.";
+
+
+CSocketAddressObject::usage =
+"CSocketAddressObject[addressPtr] represents a socket address structure.";
+
+
+CSocketSetOpt::usage =
+"CSocketSetOpt[socket, level, optname, optvalue] sets socket options.";
+
+
+CSocketBind::usage =
+"CSocketBind[socket, address] binds a socket to a specific address.";
 
 
 Begin["`Private`"];
@@ -72,15 +88,11 @@ With[{
 ];
 
 
-CSocketClose[CSocketObject[socketId_Integer]] := 
+CSocketObject /: Close[CSocketObject[socketId_Integer]] := 
 With[{result = socketClose[socketId]}, 
     (*Returns success or not*)
     result === 0
 ];
-
-
-CSocketObject /: Close[socket_CSocketObject] := 
-CSocketClose[socket];
 
 
 CSocketSelect[sockets: {__CSocketObject}, timeout: _?NumericQ: 1] := 
@@ -237,11 +249,133 @@ If[!FileExistsQ[$libFile],
     Get[FileNameJoin[{$directory, "Build.wls"}]]
 ]; 
 
-(*socketAddressCreate["host", "port", 
-    family, socktype, protocol
-]*)
+
+Options[CSocketAddressCreate] = {
+    "Family" -> "AF_INET", (* AF_INET == 2 *)
+    "SockType" -> "SOCK_STREAM", (* SOCK_STREAM *)
+    "Protocol" -> Automatic (* IPPROTO_TCP *)
+};
+
+
+SyntaxInformation[CSocketAddressCreate] = {
+    "ArgumentsPattern" -> {_, _, OptionsPattern[]},
+    "OptionNames" -> {
+        "\"Family\"",
+        "\"SockType\"",
+        "\"Protocol\""
+    }
+};
+
+
+CSocketAddressCreate[host: _String: "localhost", port_Integer?Positive, OptionsPattern[]] :=
+Module[{family, socktype, protocol, addressPtr},
+    family = Which[
+        # === "AF_UNSPEC", 0, (* AF_UNSPEC *)
+        # === "AF_INET", 2, (* AF_INET *)
+        # === "AF_INET6" && $OperatingSystem === "Windows", 23, (* AF_INET6 win *)
+        # === "AF_INET6", 10, (* AF_INET6 unix *)
+        IntegerQ[#], #, 
+        True, 0
+    ]& @ OptionValue["Family"];
+    
+    socktype = Which[
+        # === "SOCK_STREAM", 1, (* SOCK_STREAM *)
+        # === "SOCK_DGRAM", 2, (* SOCK_DGRAM *)
+        # === "SOCK_RAW", 3, (* SOCK_RAW *)
+        IntegerQ[#], #, 
+        True, 1 (* default SOCK_STREAM *)
+    ]& @ OptionValue["SockType"];
+    
+    protocol = Which[
+        # === "IPPROTO_TCP", 6, (* IPPROTO_TCP *)
+        # === "IPPROTO_UDP", 17, (* IPPROTO_UDP *)
+        # === "IPPROTO_ICMP", 1, (* IPPROTO_ICMP *)
+        IntegerQ[#], #, 
+        True, 0 (* default Automatic basid on socktype *)
+    ]& @ OptionValue["Protocol"];
+    
+    addressPtr = socketAddressCreate[host, ToString[port], family, socktype, protocol];
+    
+    CSocketAddressObject[addressPtr]
+];
+
+
+CSocketAddressObject /: DeleteObject[CSocketAddressObject[addressPtr_Integer]] :=
+Module[{result},
+    result = socketAddressRemove[addressPtr];
+    
+    (*Returns success or not*)
+    result === 0
+];
+
+
+CSocketCreate[CSocketAddressObject[addressPtr_Integer]] :=
+With[{socketId = socketCreate[addressPtr]},
+    (*Returns socket object*)
+    CSocketObject[socketId]
+];
+
+
+CSocketAddressObject /: MakeBoxes[address: CSocketAddressObject[addressPtr_Integer], form: StandardForm | OutputForm] := 
+BoxForm`ArrangeSummaryBox[
+    CSocketAddressObject, 
+    address, 
+    None, 
+    {{ToUpperCase[IntegerString[addressPtr, 16, 16]]}}, 
+    {}, 
+    form, 
+    "Interpretable" -> Automatic
+];
+
+
+CSocketObject /: MakeBoxes[socket: CSocketObject[socketId_Integer], form: StandardForm | OutputForm] := 
+BoxForm`ArrangeSummaryBox[
+    CSocketObject, 
+    socket, 
+    None, 
+    {{socketId}}, 
+    {}, 
+    form, 
+    "Interpretable" -> Automatic
+];
+
+
+(*socketAddressCreate["host", "port", family, socktype, protocol] -> addressPtr*)
 socketAddressCreate = 
 LibraryFunctionLoad[$libFile, "socketAddressCreate", {String, String, Integer, Integer, Integer}, Integer];
+
+
+(*socketAddressRemove[addressPtr] -> successState*)
+socketAddressRemove = 
+LibraryFunctionLoad[$libFile, "socketAddressRemove", {Integer}, Integer];
+
+
+(*socketCreate[addressPtr] -> socketId*)
+socketCreate = 
+LibraryFunctionLoad[$libFile, "socketCreate", {Integer}, Integer];
+
+
+CSocketBind[CSocketObject[socketId_Integer], CSocketAddressObject[addressPtr_Integer]] := 
+With[{result = socketBind[socketId, addressPtr]}, 
+    result === 0
+]; 
+
+
+(*socketBind[socketId, addressPtr] -> successState*)
+socketBind = 
+LibraryFunctionLoad[$libFile, "socketBind", {Integer, Integer}, Integer];
+
+
+CSocketSetOpt[CSocketObject[socketId_Integer], level_Integer, optname_Integer, optvalue_Integer] :=
+With[{result = socketSetOpt[socketId, level, optname, optvalue]}, 
+    (*Returns success or not*)
+    result === 0
+];
+
+
+(*socketSetOpt[socketId, level, optname, optvalue]*)
+socketSetOpt =
+LibraryFunctionLoad[$libFile, "socketSetOpt", {Integer, Integer, Integer, Integer}, Integer];
 
 
 (*socketOpen["host", "port", 

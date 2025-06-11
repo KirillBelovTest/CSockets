@@ -347,10 +347,10 @@ void sendErrorMessage(WolframLibraryData libData, int err) {
 
 DLLEXPORT mint WolframLibrary_getVersion() {
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_getVersion[]%s -> %d\n\n", 
+    printf("%s\n%sWolframLibrary_getVersion[]%s -> %s%d%s\n\n", 
         getCurrentTime(),
         GREEN, RESET, 
-        WolframLibraryVersion
+        GREEN, WolframLibraryVersion, RESET
     );
     #endif
 
@@ -369,9 +369,9 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
     globalMutex = mutexCreate();
 
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_initialize[]%s -> True\n\n", 
+    printf("%s\n%sWolframLibrary_initialize[]%s -> %sTrue%s\n\n", 
         getCurrentTime(),
-        GREEN, RESET
+        GREEN, RESET, GREEN, RESET
     );
     #endif
 
@@ -386,9 +386,9 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #endif
 
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_uninitialize[]%s -> True\n\n",
+    printf("%s\n%sWolframLibrary_uninitialize[]%s -> %sTrue%s\n\n",
         getCurrentTime(),
-        GREEN, RESET
+        GREEN, RESET, GREEN, RESET
     );
     #endif
 
@@ -399,7 +399,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
 
 #pragma region socket address
 
-//socketAddressCreate[host, port]: addressPtr
+//socketAddressCreate[host, port, Family -> "AF_INET", SockType -> "SOCK_STREAM", Protocol -> "IPPROTO_TCP"]: addressPtr
 DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     char *host = MArgument_getUTF8String(Args[0]); // localhost by default
     char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
@@ -409,7 +409,7 @@ DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgume
     int ai_protocol = (int)MArgument_getInteger(Args[4]); // 0 | IPPROTO_TCP == 6 | IPPROTO_UDP == 17 | IPPROTO_SCTP == 132 | IPPROTO_ICMP == 1 | ..
 
     #ifdef _DEBUG
-    printf("%s\n%ssocketAddressCreate[%s%s:%s%s, family=%d, socktype=%d, protocol=%d]%s -> ", 
+    printf("%s\n%ssocketAddressCreate[%s%s:%s, family = %d, socktype = %d, protocol = %d%s]%s -> ", 
         getCurrentTime(), 
         BLUE, RESET, 
         host, port, ai_family, ai_socktype, ai_protocol, 
@@ -475,7 +475,7 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
         );
         #endif
 
-        MArgument_setInteger(Res, 0); // failure
+        MArgument_setInteger(Res, 1); // failure
         return LIBRARY_FUNCTION_ERROR;
     }
 
@@ -486,11 +486,222 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
     #endif
 
     freeaddrinfo(address);
-    MArgument_setInteger(Res, 1); // success
+    MArgument_setInteger(Res, 0); // success
     return LIBRARY_NO_ERROR;
 }
 
 #pragma endregion
+
+#pragma region socket create
+
+DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    uintptr_t addressPtr = (uintptr_t)MArgument_getInteger(Args[0]); // address pointer as integer
+    struct addrinfo *address = (struct addrinfo *)addressPtr; // address pointer
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketCreate[%s<%p>%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        (void *)address, 
+        BLUE, RESET
+    );
+    #endif
+
+    SOCKET createdSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+    if (createdSocket == INVALID_SOCKET){
+        #ifdef _DEBUG
+        printf("%sERROR = %d%s\n\n", 
+            getCurrentTime(), 
+            RED, GETSOCKETERRNO(), RESET
+        );
+        #endif
+
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%ssocketId = %I64d%s\n\n", 
+        GREEN, createdSocket, RESET
+    );
+    #endif
+
+
+    MArgument_setInteger(Res, createdSocket); // return socket id
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+#pragma region socket close
+
+//socketClose[socketId]: successState
+DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketClose[%s%I64d%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, 
+        BLUE, RESET
+    );
+    #endif
+
+    mint result = true;
+
+    if (socketId > 0) {
+        mutexLock(globalMutex);
+        result = CLOSESOCKET(socketId);
+        mutexUnlock(globalMutex);
+    }
+
+    if (!result) {
+        #ifdef _DEBUG
+        printf("%sERROR%s\n\n", 
+            RED, RESET
+        );
+        #endif
+
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%sTrue%s\n\n", 
+        GREEN, RESET
+    );
+    #endif
+
+    MArgument_setInteger(Res, result);
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+#pragma region socket bind
+
+DLLEXPORT int socketBind(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket for binding
+    uintptr_t addressPtr = (uintptr_t)MArgument_getInteger(Args[1]); // address pointer as integer
+    struct addrinfo *address = (struct addrinfo*)addressPtr;
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketBind[%s%I64d, <%p>%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, (void*)address, 
+        BLUE, RESET
+    );
+    #endif
+
+    if (address == NULL) {
+        #ifdef _DEBUG
+        printf("%sERROR%s\n\n", 
+            RED, RESET
+        );
+        #endif
+
+        MArgument_setInteger(Res, 1); // failure
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    if (socketId == INVALID_SOCKET) {
+        #ifdef _DEBUG
+        printf("%sERROR%s\n\n", 
+            RED, RESET
+        );
+        #endif
+
+        MArgument_setInteger(Res, 2); // failure
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    int iResult = bind(socketId, address->ai_addr, (int)address->ai_addrlen);
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%sERROR = %d\n\n", 
+            RED, GETSOCKETERRNO(), RESET
+        );
+        #endif
+        
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%sTrue%s\n\n", 
+        GREEN, RESET
+    );
+    #endif
+
+    MArgument_setInteger(Res, 0); // success
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+#pragma region socket set opt
+
+DLLEXPORT int socketSetOpt(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket
+    int level = (int)MArgument_getInteger(Args[1]);
+    int optname = (int)MArgument_getInteger(Args[2]);
+    int optval = (int)MArgument_getInteger(Args[3]);
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketSetOpt[%s%I64d, %I64d, %I64d%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, level, optname, optval, 
+        BLUE, RESET
+    );
+    #endif
+
+    /*reducing [a b] [c d] [e] -> [a b c d e]*/
+    int iResult = setsockopt(socketId, level, optname, (const char*)&optval, sizeof(optval));
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%sERROR = %d%s\n\n", 
+            RED, GETSOCKETERRNO(), RESET
+        );
+        #endif
+
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%sSuccess%s\n\n", 
+        GREEN, RESET
+    );
+    #endif
+
+    MArgument_setInteger(Res, 0); // success
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+DLLEXPORT int socketIoctl(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
+    /*set blocking mode*/
+    #ifdef _WIN32
+    int iResult = ioctlsocket(socketId, FIONBIO, &nonBlocking);
+    #else
+    int flags = fcntl(listenSocket, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    flags |= O_ASYNC;
+    iResult = fcntl(listenSocket, F_SETFL, flags, &nonBlocking);
+    #endif
+    if (iResult != NO_ERROR) {
+        #ifdef _DEBUG
+        printf("%s\n%s[socketOpen->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
+            getCurrentTime(), 
+            RED, RESET, 
+            listenSocket, GETSOCKETERRNO()
+        );
+        #endif
+
+        CLOSESOCKET(listenSocket);
+        return LIBRARY_FUNCTION_ERROR;
+    }
+}
 
 #pragma region socket open
 
@@ -686,68 +897,6 @@ DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     MArgument_setInteger(Res, listenSocket);
     return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socket close
-
-//socketClose[socketId]: successState
-DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
-
-    #ifdef _DEBUG
-    printf("%s\n%s[socketClose->CALL]%s\n\tsocketId = %I64d\n\n", 
-        getCurrentTime(), 
-        BLUE, RESET, 
-        socketId
-    );
-    #endif
-
-    mint result = true;
-
-    if (socketId > 0) {
-        mutexLock(globalMutex);
-        result = CLOSESOCKET(socketId);
-        mutexUnlock(globalMutex);
-    }
-
-    if (!result) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketClose->ERROR]%s\n\tsocketId = %I64d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            socketId
-        );
-        #endif
-
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    MArgument_setInteger(Res, result);
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socket create
-
-DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    struct addrinfo *address = (struct addrinfo *)(uintptr_t)MArgument_getInteger(Args[0]);
-
-    SOCKET createdSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-    if (createdSocket == INVALID_SOCKET){
-        #ifdef _DEBUG
-        printf("%s\n%s[socketConnect->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            "", 0, GETSOCKETERRNO()
-        );
-        #endif
-
-        freeaddrinfo(address);
-        return LIBRARY_FUNCTION_ERROR;
-    }
 }
 
 #pragma endregion
