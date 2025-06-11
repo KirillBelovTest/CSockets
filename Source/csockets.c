@@ -349,7 +349,7 @@ DLLEXPORT mint WolframLibrary_getVersion() {
     #ifdef _DEBUG
     printf("%s\n%sWolframLibrary_getVersion[]%s -> %s%d%s\n\n", 
         getCurrentTime(),
-        GREEN, RESET, 
+        BLUE, RESET, 
         GREEN, WolframLibraryVersion, RESET
     );
     #endif
@@ -369,9 +369,9 @@ DLLEXPORT int WolframLibrary_initialize(WolframLibraryData libData) {
     globalMutex = mutexCreate();
 
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_initialize[]%s -> %sTrue%s\n\n", 
+    printf("%s\n%sWolframLibrary_initialize[]%s -> %sSuccess%s\n\n", 
         getCurrentTime(),
-        GREEN, RESET, GREEN, RESET
+        BLUE, RESET, GREEN, RESET
     );
     #endif
 
@@ -386,9 +386,9 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData) {
     #endif
 
     #ifdef _DEBUG
-    printf("%s\n%sWolframLibrary_uninitialize[]%s -> %sTrue%s\n\n",
+    printf("%s\n%sWolframLibrary_uninitialize[]%s -> %sSuccess%s\n\n",
         getCurrentTime(),
-        GREEN, RESET, GREEN, RESET
+        BLUE, RESET, GREEN, RESET
     );
     #endif
 
@@ -470,7 +470,7 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
 
     if (address == NULL) {
         #ifdef _DEBUG
-        printf("%sFalse%s\n\n", 
+        printf("%sERROR%s\n\n", 
             RED, RESET
         );
         #endif
@@ -480,7 +480,7 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
     }
 
     #ifdef _DEBUG
-    printf("%sTrue%s\n\n", 
+    printf("%sSuccess%s\n\n", 
         GREEN, RESET
     );
     #endif
@@ -555,10 +555,10 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
         mutexUnlock(globalMutex);
     }
 
-    if (!result) {
+    if (result == SOCKET_ERROR) {
         #ifdef _DEBUG
-        printf("%sERROR%s\n\n", 
-            RED, RESET
+        printf("%sERROR = %d%s\n\n", 
+            RED, GETSOCKETERRNO(), RESET
         );
         #endif
 
@@ -566,7 +566,7 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
     }
 
     #ifdef _DEBUG
-    printf("%sTrue%s\n\n", 
+    printf("%sSuccess%s\n\n", 
         GREEN, RESET
     );
     #endif
@@ -595,7 +595,7 @@ DLLEXPORT int socketBind(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     if (address == NULL) {
         #ifdef _DEBUG
-        printf("%sERROR%s\n\n", 
+        printf("%sERROR invalid address%s\n\n", 
             RED, RESET
         );
         #endif
@@ -606,7 +606,7 @@ DLLEXPORT int socketBind(WolframLibraryData libData, mint Argc, MArgument *Args,
 
     if (socketId == INVALID_SOCKET) {
         #ifdef _DEBUG
-        printf("%sERROR%s\n\n", 
+        printf("%sERROR invalid socket%s\n\n", 
             RED, RESET
         );
         #endif
@@ -627,7 +627,7 @@ DLLEXPORT int socketBind(WolframLibraryData libData, mint Argc, MArgument *Args,
     }
 
     #ifdef _DEBUG
-    printf("%sTrue%s\n\n", 
+    printf("%sSuccess%s\n\n", 
         GREEN, RESET
     );
     #endif

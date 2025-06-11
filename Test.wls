@@ -2,26 +2,27 @@
 (* ::Package:: *)
 
 $directory = If[$FrontEnd === Null, 
-	Directory[], 
-	NotebookDirectory[]
+    Directory[], 
+    NotebookDirectory[]
 ];
 
 
-$lib = FileNameJoin[{
-	$directory, 
-	"LibraryResources\\Windows-x86-64-v8\\csockets.dll"
-}];
+PacletDirectoryLoad[$directory];
 
 
-addrCreate = LibraryFunctionLoad[$lib, 
-	"socketAddressCreate", {String, String}, Integer]; 
+Get["KirillBelov`CSockets`TCP`"];
 
 
-addrRemove = LibraryFunctionLoad[$lib, 
-	"socketAddressRemove", {Integer}, Integer]; 
+addr = CSocketAddressCreate["localhost", 8080];
 
 
-addr = addrCreate["localhost", "8080"]; 
+sock = CSocketCreate[addr];
 
 
-addrRemove[addr];
+CSocketBind[sock, addr];
+
+
+DeleteObject[addr];
+
+
+Close[sock];
