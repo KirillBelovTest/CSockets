@@ -1,5 +1,19 @@
 (* ::Package:: *)
 
+(* TCP Server
+    address = socketAddressCreate[host, port]
+    socket = socketCreate[address]
+    socketBind[socket, address]
+    socketBlockingMode[socket, 1|0]
+    DeleteObject[address]
+    socketSetOpt[socket, "IPPROTO_TCP", "TCP_NODELAY", 1|0]
+    socketSetOpt[socket, "SOL_SOCKET", "SO_KEEPALIVE", 1|0]
+    socketSetOpt[socket, "SOL_SOCKET", "SO_RCVBUF", bufferSize]
+    socketSetOpt[socket, "SOL_SOCKET", "SO_SNDBUF", bufferSize]
+    socketListen[socket]
+*)
+
+
 BeginPackage["KirillBelov`CSockets`TCP`", {
     "CCompilerDriver`", 
     "LibraryLink`"
@@ -89,6 +103,17 @@ With[{
     ]
 }, 
     CSocketObject[socketId]
+];
+
+
+CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
+
+With[{addr = socketAddressCreate[host, port]}, 
+    With[{socketId = socketCreate[addr]}, 
+        socketBind[socketId, addr];
+        socketBlockingMode[socketId, If[OptionValue["NonBlocking"], 1, 0]];
+        CSocketObject[socketId]
+    ]
 ];
 
 
@@ -447,6 +472,60 @@ LibraryFunctionLoad[$libFile, "serverCreate", {Integer, Integer, Integer, Intege
 (*serverListen[serverPtr]: taskId*)
 serverListen = 
 LibraryFunctionLoad[$libFile, "serverListen", {Integer}, Integer]; 
+
+
+(* Cross-platform socket constants association *)
+(* Format: "CONST_NAME" -> value  (16^^ for hex, decimal for raw numbers) *)
+(* Verified against POSIX/Windows headers *)
+
+$socketConstants = <|
+    (* Protocol levels *)
+    "IPPROTO_IP"   -> 0,               (* IPv4 protocol - standard value *)
+    "IPPROTO_TCP"  -> 6,               (* TCP protocol - common value *)
+    "IPPROTO_UDP"  -> 17,              (* UDP protocol - standard value *)
+    "IPPROTO_IPV6" -> 16^^0029,        (* IPv6 protocol - POSIX hex value *)
+    "SOL_SOCKET"   -> 16^^FFFF,        (* Socket-level options - standard hex *)
+
+    (* Socket options (SOL_SOCKET level) *)
+    "SO_KEEPALIVE" -> 16^^0008,        (* Enable keep-alive packets *)
+    "SO_RCVBUF"    -> 16^^1002,        (* Receive buffer size *)
+    "SO_SNDBUF"    -> 16^^1001,        (* Send buffer size *)
+    "SO_REUSEADDR" -> 16^^0002,        (* Allow address reuse - POSIX hex *)
+    "SO_EXCLUSIVEADDRUSE" -> -5,       (* Windows-specific address protection *)
+    "SO_LINGER"    -> 16^^0080,        (* Linger on close *)
+    "SO_BROADCAST" -> 16^^0020,        (* Permit broadcast *)
+    "SO_ERROR"     -> 16^^1007,        (* Get error status *)
+
+    (* TCP-specific options *)
+    "TCP_NODELAY"  -> 16^^0001,        (* Disable Nagle algorithm *)
+    "TCP_KEEPIDLE" -> 16^^0004,        (* Start keepalives after idle period *)
+    "TCP_KEEPINTVL"-> 16^^0005,        (* Interval between keepalives *)
+    "TCP_KEEPCNT"  -> 16^^0006,        (* Number of keepalives before drop *)
+
+    (* IP-level options *)
+    "IP_TTL"       -> 16^^0004,        (* Time-To-Live for packets *)
+    "IP_TOS"       -> 16^^0001,        (* Type Of Service *)
+    "IP_MTU_DISCOVER" -> 16^^000A,     (* Path MTU discovery *)
+
+    (* IPv6-specific options *)
+    "IPV6_V6ONLY"  -> 16^^001A,        (* Restrict to IPv6 only *)
+
+    (* Address families *)
+    "AF_INET"      -> 16^^0002,        (* IPv4 address family *)
+    "AF_INET6"     -> 16^^000A,        (* IPv6 address family *)
+    "SOCK_STREAM"  -> 16^^0001,        (* Stream socket (TCP) *)
+    "SOCK_DGRAM"   -> 16^^0002         (* Datagram socket (UDP) *)
+|>;
+
+
+(* Platform-specific overrides *)
+(* Uncomment if targeting specific OS: *)
+If[$OperatingSystem === "Windows",
+    (* Windows uses different values for some constants *)
+    $socketConstants["IPPROTO_IPV6"] = 41;
+    $socketConstants["SO_REUSEADDR"] = 4;
+    $socketConstants["IPV6_V6ONLY"] = 27;
+];
 
 
 End[]; 

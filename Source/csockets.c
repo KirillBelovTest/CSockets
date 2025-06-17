@@ -679,7 +679,7 @@ DLLEXPORT int socketSetOpt(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma endregion
 
-DLLEXPORT int socketBlockngMode(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
+DLLEXPORT int socketBlockingMode(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res) {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket
     int nonBlocking = (int)MArgument_getInteger(Args[1]); // 0 | 1 default 0 == blocking mode
     
@@ -720,6 +720,76 @@ DLLEXPORT int socketBlockngMode(WolframLibraryData libData, mint Argc, MArgument
     MArgument_setInteger(Res, 0); // success
     return LIBRARY_NO_ERROR;
 }
+
+#pragma region socket listen
+
+DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketListen[%s%I64d%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, 
+        BLUE, RESET
+    );
+    #endif
+
+    /*wait clients*/
+    int iResult = listen(socketId, SOMAXCONN);
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%sERROR = %d%s\n\n", RED, GETSOCKETERRNO(), RESET);
+        #endif
+
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%sSuccess%s\n\n", 
+        GREEN, RESET
+    );
+    #endif
+
+    MArgument_setInteger(Res, 0);
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
+
+#pragma region socket connect
+
+DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
+    uintptr_t addressPtr = (uintptr_t)MArgument_getInteger(Args[1]); // address pointer as integer
+    struct addrinfo *address = (struct addrinfo*)addressPtr;
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketConnect[%s%I64d, %p%s]%s -> ", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, (void *)address, 
+        BLUE, RESET
+    );
+    #endif
+
+    int iResult = connect(socketId, address->ai_addr, (int)address->ai_addrlen);
+    if (iResult == SOCKET_ERROR) {
+        #ifdef _DEBUG
+        printf("%sERROR = %d%s\n\n", RED, GETSOCKETERRNO(), RESET);
+        #endif
+        return LIBRARY_FUNCTION_ERROR;
+    }
+
+    #ifdef _DEBUG
+    printf("%sSuccess%s\n\n", GREEN, RESET);
+    #endif
+
+    MArgument_setInteger(Res, 0);
+    return LIBRARY_NO_ERROR;
+}
+
+#pragma endregion
 
 #pragma region socket open
 
