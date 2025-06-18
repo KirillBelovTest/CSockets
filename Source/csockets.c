@@ -791,357 +791,6 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
 
 #pragma endregion
 
-#pragma region socket open
-
-//socketOpen[host, port, nonBlocking, noDelay, sndBufferSize, rcvBufferSize]: socketId
-DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    char* host = MArgument_getUTF8String(Args[0]); // localhost by default
-    char* port = MArgument_getUTF8String(Args[1]); // positive integer as string
-    int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 0 == blocking mode
-    int keepAlive = (int)MArgument_getInteger(Args[3]); // 0 | 1 default 1 == enable keep-alive
-    int noDelay = (int)MArgument_getInteger(Args[4]); // 0 | 1 default 1 == disable Nagle's algorithm
-    size_t sndBufSize = (size_t)MArgument_getInteger(Args[5]); // 256 kB by default
-    size_t rcvBufSize = (size_t)MArgument_getInteger(Args[6]); // 256 kB by default
-
-    #ifdef _DEBUG
-    printf("%s\n%s[socketOpen->CALL]%s\n\tfor address %s:%s\n\n", 
-        getCurrentTime(), 
-        BLUE, RESET, 
-        host, port
-    );
-    #endif
-
-    int iResult;
-    SOCKET listenSocket = INVALID_SOCKET;
-    struct addrinfo hints;
-    struct addrinfo *address = NULL;
-
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-
-    /*resolve hints -> address */
-    iResult = getaddrinfo(host, port, &hints, &address);
-    if (iResult != 0) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            host, port, GETSOCKETERRNO()
-        );
-        #endif
-        
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*create socket*/
-    listenSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-    if (!ISVALIDSOCKET(listenSocket)) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            host, port, GETSOCKETERRNO()
-        );
-        #endif
-        
-        freeaddrinfo(address);
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*host:port <=> socket*/
-    iResult = bind(listenSocket, address->ai_addr, (int)address->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tbind(%I64d) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-        
-        freeaddrinfo(address);
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*address no longer needed*/
-    freeaddrinfo(address);
-    libData->UTF8String_disown(host);
-    libData->UTF8String_disown(port);
-
-    /*set blocking mode*/
-    #ifdef _WIN32
-    iResult = ioctlsocket(listenSocket, FIONBIO, &nonBlocking);
-    #else
-    int flags = fcntl(listenSocket, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    flags |= O_ASYNC;
-    iResult = fcntl(listenSocket, F_SETFL, flags, &nonBlocking);
-    #endif
-    if (iResult != NO_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*reducing [a b] [c d] [e] -> [a b c d e]*/
-    iResult = setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, TCP_NODELAY) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*ping <-> pong*/
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, SO_KEEPALIVE) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-        
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*size of [..]<=*/
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, SO_RCVBUF) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-        
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*size of [..]=>*/
-    iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, SO_SNDBUF) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-        
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*wait clients*/
-    iResult = listen(listenSocket, SOMAXCONN);
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketOpen->ERROR]%s\n\tblisten(%I64d) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            listenSocket, GETSOCKETERRNO()
-        );
-        #endif
-        
-        CLOSESOCKET(listenSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    #ifdef _DEBUG
-    printf("%s\n%s[socketOpen->SUCCESS]%s\n\tsocket id = %I64d\n\n", 
-        getCurrentTime(),
-        GREEN, RESET, 
-        listenSocket
-    );
-    #endif
-
-    MArgument_setInteger(Res, listenSocket);
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
-#pragma region socket connect
-
-//socketConnect[host, port, nonBlocking, noDelay, keepAlive, sndBufSize, rcvBufSize]: socketId
-DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    char *host = MArgument_getUTF8String(Args[0]); // localhost by default
-    char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
-    int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 0 == blocking mode
-    int noDelay = (int)MArgument_getInteger(Args[3]); // 0 | 1 default 1 == disable Nagle's algorithm
-    int keepAlive = (int)MArgument_getInteger(Args[4]); // 0 | 1 default 1 == enable keep-alive
-    int sndBufSize = (int)MArgument_getInteger(Args[5]); // 256 kB by default
-    int rcvBufSize = (int)MArgument_getInteger(Args[6]); // 256 kB by default
-
-    #ifdef _DEBUG
-    printf("%s\n%s[socketConnect->CALL]%s\n\tfor address %s:%s\n\n", 
-        getCurrentTime(), 
-        BLUE, RESET, 
-        host, port
-    );
-    #endif
-
-    int iResult;
-    SOCKET connectSocket = INVALID_SOCKET;
-    struct addrinfo *address = NULL;
-    struct addrinfo hints;
-
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    iResult = getaddrinfo(host, port, &hints, &address);
-    if (iResult != 0){
-        #ifdef _DEBUG
-        printf("%s\n%s[socketConnect->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            host, port, GETSOCKETERRNO()
-        );
-        #endif
-        
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    connectSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-    if (connectSocket == INVALID_SOCKET){
-        #ifdef _DEBUG
-        printf("%s\n%s[socketConnect->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            host, port, GETSOCKETERRNO()
-        );
-        #endif
-
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        freeaddrinfo(address);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*set blocking mode*/
-    #ifdef _WIN32
-    iResult = ioctlsocket(connectSocket, FIONBIO, &nonBlocking);
-    #else
-    int flags = fcntl(connectSocket, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    flags |= O_ASYNC;
-    iResult = fcntl(connectSocket, F_SETFL, flags, &nonBlocking);
-    #endif
-    if (iResult != NO_ERROR) {
-        #ifdef _DEBUG
-        printf("%s\n%s[socketConnect->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
-            getCurrentTime(), 
-            RED, RESET, 
-            connectSocket, GETSOCKETERRNO()
-        );
-        #endif
-        
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        freeaddrinfo(address);
-        CLOSESOCKET(connectSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    iResult = connect(connectSocket, address->ai_addr, (int)address->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tconnect(%s:%s) returns error = %d\n\n", RED, RESET, host, port, GETSOCKETERRNO());
-        #endif
-        libData->UTF8String_disown(host);
-        libData->UTF8String_disown(port);
-        freeaddrinfo(address);
-        CLOSESOCKET(connectSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*address no longer needed*/
-    freeaddrinfo(address);
-    libData->UTF8String_disown(host);
-    libData->UTF8String_disown(port);
-
-    /*reducing [a b] [c d] [e] -> [a b c d e]*/
-    iResult = setsockopt(connectSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, TCP_NODELAY) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(connectSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*ping <-> pong*/
-    iResult = setsockopt(connectSocket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_KEEPALIVE) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(connectSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*size of [..]<=*/
-    iResult = setsockopt(connectSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_RCVBUF) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(connectSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    /*size of [..]=>*/
-    iResult = setsockopt(connectSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
-    if (iResult == SOCKET_ERROR) {
-        #ifdef _DEBUG
-        printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_SNDBUF) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
-        #endif
-        CLOSESOCKET(connectSocket);
-        return LIBRARY_FUNCTION_ERROR;
-    }
-
-    #ifdef _DEBUG
-    printf("%s[socketConnect->SUCCESS]%s\n\tsocket id = %I64d\n\n", GREEN, RESET, connectSocket);
-    #endif
-
-    MArgument_setInteger(Res, connectSocket);
-    return LIBRARY_NO_ERROR;
-}
-
-#pragma endregion
-
 #pragma region socket select
 
 //socketSelect[socketList, length, timeout]: {socket2, ..}
@@ -1158,8 +807,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     FD_ZERO(&readfds);
 
     #ifdef _DEBUG
-    printf("%s[socketSelect->CALL]%s\n\tselect(len = %zd, timeout = %d) sockets = (",
-        GREEN, RESET, length, timeout); 
+    printf("%s\n%ssocketSelect[%s", getCurrentTime(), BLUE, RESET); 
     #endif
 
     for (size_t i = 0; i < length; i++) {
@@ -1168,12 +816,13 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
         FD_SET(socketId, &readfds);
 
         #ifdef _DEBUG
-        printf("%I64d ", socketId);
+        if (i == 0) printf("%I64d", socketId);
+        else printf(", %I64d", socketId);
         #endif
     }
 
     #ifdef _DEBUG
-    printf(")\n\n");
+    printf("%s]%s -> ", BLUE, RESET);
     #endif
 
     struct timeval tv;
@@ -1188,8 +837,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
         SOCKET *readySockets = (SOCKET*)libData->MTensor_getIntegerData(readySocketsTensor);
         
         #ifdef _DEBUG
-        printf("%s[socketSelect->SUCCESS]%s\n\tselect() returns sockets = (", 
-            GREEN, RESET);
+        printf("%s{", GREEN);
         #endif
 
         int j = 0;
@@ -1200,13 +848,14 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
                 j++;
 
                 #ifdef _DEBUG
-                printf("%I64d ", socketId);
+                if (j == 1) printf("%I64d", socketId);
+                else printf(", %I64d ", socketId);
                 #endif
             }
         }
 
         #ifdef _DEBUG
-        printf(")\n\n");
+        printf("}%s\n\n", RESET);
         #endif
 
         MArgument_setMTensor(Res, readySocketsTensor);
@@ -1214,8 +863,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     } else {
         err = GETSOCKETERRNO();
         #ifdef _DEBUG
-        printf("%s[socketSelect->ERROR]%s\n\tselect() returns error = %d",
-            RED, RESET, err); 
+        printf("%sERROR = %d%s", RED, err, RESET); 
         #endif
 
         selectErrorMessage(libData, err);
@@ -1225,10 +873,466 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
 #pragma endregion
 
+// #pragma region socket open
+
+// //socketOpen[host, port, nonBlocking, noDelay, sndBufferSize, rcvBufferSize]: socketId
+// DLLEXPORT int socketOpen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+//     char* host = MArgument_getUTF8String(Args[0]); // localhost by default
+//     char* port = MArgument_getUTF8String(Args[1]); // positive integer as string
+//     int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 0 == blocking mode
+//     int keepAlive = (int)MArgument_getInteger(Args[3]); // 0 | 1 default 1 == enable keep-alive
+//     int noDelay = (int)MArgument_getInteger(Args[4]); // 0 | 1 default 1 == disable Nagle's algorithm
+//     size_t sndBufSize = (size_t)MArgument_getInteger(Args[5]); // 256 kB by default
+//     size_t rcvBufSize = (size_t)MArgument_getInteger(Args[6]); // 256 kB by default
+
+//     #ifdef _DEBUG
+//     printf("%s\n%s[socketOpen->CALL]%s\n\tfor address %s:%s\n\n", 
+//         getCurrentTime(), 
+//         BLUE, RESET, 
+//         host, port
+//     );
+//     #endif
+
+//     int iResult;
+//     SOCKET listenSocket = INVALID_SOCKET;
+//     struct addrinfo hints;
+//     struct addrinfo *address = NULL;
+
+//     ZeroMemory(&hints, sizeof(hints));
+//     hints.ai_family = AF_INET;
+//     hints.ai_socktype = SOCK_STREAM;
+//     hints.ai_protocol = IPPROTO_TCP;
+//     hints.ai_flags = AI_PASSIVE;
+
+//     /*resolve hints -> address */
+//     iResult = getaddrinfo(host, port, &hints, &address);
+//     if (iResult != 0) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             host, port, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*create socket*/
+//     listenSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+//     if (!ISVALIDSOCKET(listenSocket)) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             host, port, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         freeaddrinfo(address);
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*host:port <=> socket*/
+//     iResult = bind(listenSocket, address->ai_addr, (int)address->ai_addrlen);
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tbind(%I64d) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         freeaddrinfo(address);
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*address no longer needed*/
+//     freeaddrinfo(address);
+//     libData->UTF8String_disown(host);
+//     libData->UTF8String_disown(port);
+
+//     /*set blocking mode*/
+//     #ifdef _WIN32
+//     iResult = ioctlsocket(listenSocket, FIONBIO, &nonBlocking);
+//     #else
+//     int flags = fcntl(listenSocket, F_GETFL, 0);
+//     flags |= O_NONBLOCK;
+//     flags |= O_ASYNC;
+//     iResult = fcntl(listenSocket, F_SETFL, flags, &nonBlocking);
+//     #endif
+//     if (iResult != NO_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*reducing [a b] [c d] [e] -> [a b c d e]*/
+//     iResult = setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, TCP_NODELAY) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*ping <-> pong*/
+//     iResult = setsockopt(listenSocket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, SO_KEEPALIVE) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*size of [..]<=*/
+//     iResult = setsockopt(listenSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, SO_RCVBUF) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*size of [..]=>*/
+//     iResult = setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tsetsockopt(%I64d, SO_SNDBUF) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*wait clients*/
+//     iResult = listen(listenSocket, SOMAXCONN);
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketOpen->ERROR]%s\n\tblisten(%I64d) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             listenSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         CLOSESOCKET(listenSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     #ifdef _DEBUG
+//     printf("%s\n%s[socketOpen->SUCCESS]%s\n\tsocket id = %I64d\n\n", 
+//         getCurrentTime(),
+//         GREEN, RESET, 
+//         listenSocket
+//     );
+//     #endif
+
+//     MArgument_setInteger(Res, listenSocket);
+//     return LIBRARY_NO_ERROR;
+// }
+
+// #pragma endregion
+
+// #pragma region socket connect
+
+// //socketConnect[host, port, nonBlocking, noDelay, keepAlive, sndBufSize, rcvBufSize]: socketId
+// DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+//     char *host = MArgument_getUTF8String(Args[0]); // localhost by default
+//     char *port = MArgument_getUTF8String(Args[1]); // positive integer as string
+//     int nonBlocking = (int)MArgument_getInteger(Args[2]); // 0 | 1 default 0 == blocking mode
+//     int noDelay = (int)MArgument_getInteger(Args[3]); // 0 | 1 default 1 == disable Nagle's algorithm
+//     int keepAlive = (int)MArgument_getInteger(Args[4]); // 0 | 1 default 1 == enable keep-alive
+//     int sndBufSize = (int)MArgument_getInteger(Args[5]); // 256 kB by default
+//     int rcvBufSize = (int)MArgument_getInteger(Args[6]); // 256 kB by default
+
+//     #ifdef _DEBUG
+//     printf("%s\n%s[socketConnect->CALL]%s\n\tfor address %s:%s\n\n", 
+//         getCurrentTime(), 
+//         BLUE, RESET, 
+//         host, port
+//     );
+//     #endif
+
+//     int iResult;
+//     SOCKET connectSocket = INVALID_SOCKET;
+//     struct addrinfo *address = NULL;
+//     struct addrinfo hints;
+
+//     ZeroMemory(&hints, sizeof(hints));
+//     hints.ai_family = AF_INET;
+//     hints.ai_socktype = SOCK_STREAM;
+//     hints.ai_protocol = IPPROTO_TCP;
+
+//     iResult = getaddrinfo(host, port, &hints, &address);
+//     if (iResult != 0){
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketConnect->ERROR]%s\n\tgetaddrinfo(%s:%s) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             host, port, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     connectSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+//     if (connectSocket == INVALID_SOCKET){
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketConnect->ERROR]%s\n\tsocket(%s:%s) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             host, port, GETSOCKETERRNO()
+//         );
+//         #endif
+
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         freeaddrinfo(address);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*set blocking mode*/
+//     #ifdef _WIN32
+//     iResult = ioctlsocket(connectSocket, FIONBIO, &nonBlocking);
+//     #else
+//     int flags = fcntl(connectSocket, F_GETFL, 0);
+//     flags |= O_NONBLOCK;
+//     flags |= O_ASYNC;
+//     iResult = fcntl(connectSocket, F_SETFL, flags, &nonBlocking);
+//     #endif
+//     if (iResult != NO_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s\n%s[socketConnect->ERROR]%s\n\tioctlsocket(%I64d, FIONBIO) returns error = %d\n\n", 
+//             getCurrentTime(), 
+//             RED, RESET, 
+//             connectSocket, GETSOCKETERRNO()
+//         );
+//         #endif
+        
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         freeaddrinfo(address);
+//         CLOSESOCKET(connectSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     iResult = connect(connectSocket, address->ai_addr, (int)address->ai_addrlen);
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s[socketConnect->ERROR]%s\n\tconnect(%s:%s) returns error = %d\n\n", RED, RESET, host, port, GETSOCKETERRNO());
+//         #endif
+//         libData->UTF8String_disown(host);
+//         libData->UTF8String_disown(port);
+//         freeaddrinfo(address);
+//         CLOSESOCKET(connectSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*address no longer needed*/
+//     freeaddrinfo(address);
+//     libData->UTF8String_disown(host);
+//     libData->UTF8String_disown(port);
+
+//     /*reducing [a b] [c d] [e] -> [a b c d e]*/
+//     iResult = setsockopt(connectSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, TCP_NODELAY) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
+//         #endif
+//         CLOSESOCKET(connectSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*ping <-> pong*/
+//     iResult = setsockopt(connectSocket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_KEEPALIVE) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
+//         #endif
+//         CLOSESOCKET(connectSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*size of [..]<=*/
+//     iResult = setsockopt(connectSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBufSize, sizeof(rcvBufSize));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_RCVBUF) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
+//         #endif
+//         CLOSESOCKET(connectSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     /*size of [..]=>*/
+//     iResult = setsockopt(connectSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&sndBufSize, sizeof(sndBufSize));
+//     if (iResult == SOCKET_ERROR) {
+//         #ifdef _DEBUG
+//         printf("%s[socketConnect->ERROR]%s\n\tsetsockopt(%I64d, SO_SNDBUF) returns error = %d\n\n", RED, RESET, connectSocket, GETSOCKETERRNO());
+//         #endif
+//         CLOSESOCKET(connectSocket);
+//         return LIBRARY_FUNCTION_ERROR;
+//     }
+
+//     #ifdef _DEBUG
+//     printf("%s[socketConnect->SUCCESS]%s\n\tsocket id = %I64d\n\n", GREEN, RESET, connectSocket);
+//     #endif
+
+//     MArgument_setInteger(Res, connectSocket);
+//     return LIBRARY_NO_ERROR;
+// }
+
+// #pragma endregion
+
+#pragma region socket select list
+
+#pragma region server data
+
+//server data
+typedef struct SocketList_st *SocketList;
+
+struct SocketList_st {
+    SOCKET interrupt;
+    SOCKET *sockets;
+    size_t length;
+    mint taskId;
+    WolframLibraryData libData;
+};
+
+#pragma endregion
+
+DLLEXPORT int socketSelectListCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SOCKET interrupt = (SOCKET)MArgument_getInteger(Args[0]);
+    SOCKET length = (size_t)MArgument_getInteger(Args[1]);
+
+    SocketList socketList = malloc(sizeof(struct SocketList_st));
+
+    socketList->interrupt = interrupt;
+    socketList->length = length; 
+    socketList->sockets = malloc(length * sizeof(SOCKET));
+    socketList->libData = libData;
+
+    uint64_t socketListPtr = (uint64_t)(uintptr_t)socketList;
+    MArgument_setInteger(Res, (mint)socketListPtr);
+
+    return LIBRARY_NO_ERROR; 
+}
+
+#pragma endregion
+
+#pragma region socket select task
+
+static void socketListSelectTask(mint taskId, void* vtarg)
+{
+    SocketList socketList = (SocketList)vtarg;
+    socketList->taskId = taskId;
+
+    WolframLibraryData libData = socketList->libData;
+    struct fd_set readfds;
+    struct timeval timeout;
+    SOCKET maxFd = socketList->interrupt;
+    SOCKET socketId;
+    SOCKET interrupt = socketList->interrupt;
+    int result;
+    DataStore dataStore;
+    char buffer[1024];
+
+    #ifdef _DEBUG
+    printf("%s", getCurrentTime());
+    #endif
+
+    while (socketList->libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+    {
+        FD_ZERO(&readfds);
+
+        FD_SET(interrupt, &readfds);
+
+        size_t length = (size_t)socketList->length;
+        for (size_t i = 0; i < length; i++){
+            socketId = socketList->sockets[i];
+            FD_SET(socketId, &readfds);
+
+            if (socketId > maxFd) maxFd = socketId;
+        }
+
+        timeout.tv_sec = 60;
+        timeout.tv_usec = 0;
+
+        result = select(maxFd + 1, &readfds, NULL, NULL, &timeout);
+        if (result > 0) {
+            if (FD_ISSET(interrupt, &readfds)) {
+                recv(interrupt, buffer, 1024, 0);
+            } else {
+                dataStore = libData->ioLibraryFunctions->createDataStore();
+
+                for (size_t i = 0; i < length; i++) {
+                    socketId = socketList->sockets[i];
+                    if (FD_ISSET(socketId, &readfds)) {
+                        libData->ioLibraryFunctions->DataStore_addInteger(dataStore, socketId);
+                    }
+                }
+
+                libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "SelectAsync", dataStore);
+            }
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region socket select task create
+
+DLLEXPORT int socketSelectTaskCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+    SocketList socketList = (SocketList)MArgument_getInteger(Args[0]);
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketListSelectTask, socketList);
+}
+
+#pragma endregion
+
 #pragma region socket select async
 
 //socketListen[serverPtr_Integer]: taskId_Integer
-/*DLLEXPORT int socketSelectAsync(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
+DLLEXPORT int socketSelectAsync(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     Server server = (Server)MArgument_getInteger(Args[0]);
     mint taskId;
 
@@ -1253,7 +1357,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     MArgument_setInteger(Res, taskId);
     return LIBRARY_NO_ERROR;
-}*/
+}
 
 #pragma endregion
 
@@ -1337,16 +1441,21 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
 
 //socketAccept[listenSocket]: clientSocket
 DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    SOCKET listenSocket = (SOCKET)MArgument_getInteger(Args[0]);
-    mutexLock(globalMutex);
-    SOCKET client = accept(listenSocket, NULL, NULL);
-    mutexUnlock(globalMutex);
-    if (client == INVALID_SOCKET){
+    SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
 
+    #ifdef _DEBUG
+    printf("%s\n%ssocketAccept[%s%I64d%s]%s -> ", getCurrentTime(), BLUE, RESET, socketId, BLUE, RESET);
+    #endif
+
+    mutexLock(globalMutex);
+    SOCKET client = accept(socketId, NULL, NULL);
+    mutexUnlock(globalMutex);
+
+    if (client == INVALID_SOCKET){
         int err = GETSOCKETERRNO();
+
         #ifdef _DEBUG
-        printf("%s[serverAccept->ERROR]%s\n\taccept(listenSocket = %I64d) returns error = %d\n\n", 
-            RED, RESET, listenSocket, err);
+        printf("%sERROR = %d%s\n\n", RED, err, RESET);
         #endif
 
         acceptErrorMessage(libData, err);
@@ -1354,8 +1463,7 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
     }
 
     #ifdef _DEBUG
-    printf("%s[socketAccept->SUCCESS]%s\n\taccept(listenSocket = %I64d) new client id = %I64d\n\n", 
-        GREEN, RESET, listenSocket, client);
+    printf("%s%I64d%s\n\n", GREEN, client, RESET);
     #endif
 
     MArgument_setInteger(Res, client);
@@ -1370,22 +1478,26 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
 DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET client = (SOCKET)MArgument_getInteger(Args[0]);
     mint bufferSize = (mint)MArgument_getInteger(Args[1]);
-    
+
+    #ifdef _DEBUG
+    printf("%s\n%sserverRecv[%s%I64d, buff = %d%s]%s -> ", getCurrentTime(), BLUE, RESET, client, bufferSize, BLUE, RESET);
+    #endif
+
     BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
     mutexLock(globalMutex);
     int result = recv(client, buffer, bufferSize, 0);
     mutexUnlock(globalMutex);
-    if (result > 0){
-        #ifdef _DEBUG
-        printf("%s[serverRecv->SUCCESS]%s\n\trecv(socket = %I64d) received = %d bytes\n\n", 
-            GREEN, RESET, client, result);
-        #endif
 
+    if (result > 0){
         mint len = (mint)result;
         MNumericArray byteArray;
         libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &len, &byteArray);
         BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
         memcpy(array, buffer, result);
+
+        #ifdef _DEBUG
+        printf("%s%d bytes%s\n\n", GREEN, result, RESET);
+        #endif
 
         free(buffer);
         MArgument_setMNumericArray(Res, byteArray);
@@ -1396,8 +1508,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
     int err = GETSOCKETERRNO();
     
     #ifdef _DEBUG
-    printf("%s[serverRecv->ERROR]%s\n\trecv(socket = %I64d) returns error = %d\n\n", 
-        RED, RESET, client, err);
+    printf("%sERROR = %d%s\n\n", RED, err, RESET);
     #endif
 
     recvErrorMessage(libData, err);
@@ -1408,11 +1519,15 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
 
 #pragma region socket send
 
-//socketSend[socketId, data, dataLength]: sentLength
+//socketSend[socketId, data, dataLength]: sentLength 
 DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
     MNumericArray mArr = MArgument_getMNumericArray(Args[1]); 
     int dataLength = MArgument_getInteger(Args[2]); // positive integer
+
+    #ifdef _DEBUG
+    printf("%s\n%ssocketSend[%s%d, %d bytes%s]%s -> ", getCurrentTime(), BLUE, RESET, socketId, dataLength, BLUE, RESET);
+    #endif
 
     int result;
     BYTE *data = (BYTE*)libData->numericarrayLibraryFunctions->MNumericArray_getData(mArr);
@@ -1422,21 +1537,19 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     mutexUnlock(globalMutex);
     if (result > 0) {
         #ifdef _DEBUG
-        printf("%s\n%s[socketSend->SUCCESS]%s\n\tsend(socket id = %I64d) sent = %d bytes\n\n", 
-            getCurrentTime(), GREEN, RESET, socketId, result);
+        printf("%s%d bytes%s\n\n", GREEN, result, RESET);
         #endif
 
         libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
         MArgument_setInteger(Res, result);
         return LIBRARY_NO_ERROR;
     }
+
     libData->numericarrayLibraryFunctions->MNumericArray_disown(mArr);
-    
     int err = GETSOCKETERRNO();
 
     #ifdef _DEBUG
-    printf("%s[socketSend->ERROR]%s\n\tsend(socket id = %I64d) returns error = %d\n\n", 
-        RED, RESET, socketId, err);
+    printf("%sERROR = %d%s\n\n", RED, err, RESET);
     #endif
 
     sendErrorMessage(libData, err);
@@ -1955,8 +2068,7 @@ void serverCheck(Server server) {
 
 #pragma region server listener task
 
-static void serverListenerTask(mint taskId, void* vtarg)
-{
+static void serverListenerTask(mint taskId, void* vtarg){
     Server server = (Server)vtarg;
     
     #ifdef _DEBUG

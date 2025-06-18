@@ -1,22 +1,22 @@
 #!/usr/bin/env wolframscript
 
-Get["CCompilerDriver`"]; 
-Get["LibraryLink`"]; 
+Get["CCompilerDriver`"];
+Get["LibraryLink`"];
 
 
 $libraryLinkVersion = 
-LibraryVersionInformation[FindLibrary["demo"]]["WolframLibraryVersion"]; 
+LibraryVersionInformation[FindLibrary["demo"]]["WolframLibraryVersion"];
 
 
-build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $linkerOptions}, 
-    $directory = DirectoryName[If[$InputFileName == "", 
-        NotebookFileName[], 
+build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $linkerOptions},
+    $directory = DirectoryName[If[$InputFileName == "",
+        NotebookFileName[],
         $InputFileName
-    ], 1]; 
+    ], 1];
 
     $libSrc = File[FileNameJoin[{
-        $directory, 
-        "Source", 
+        $directory,
+        "Source",
         lib <> ".c"
     }]]; 
 
@@ -28,18 +28,15 @@ build[lib_String, prot_: Automatic] := Block[{$directory, $libSrc, $libDir, $lin
 
     If[!FileExistsQ[$libDir], CreateDirectory[]];
 
-    CreateLibrary @@ {$libSrc, lib, 
-        "TargetDirectory" -> $libDir, 
-        "Debug" -> True, 
+    CreateLibrary @@ {$libSrc, lib,
+        "TargetDirectory" -> $libDir,
+        "Debug" -> True,
         If[prot === Automatic, Nothing, "TransferProtocolLibrary" -> "WSTP"],
-        "ShellCommandFunction" -> Print, 
-        "ShellOutputFunction" -> Print, 
+        "ShellCommandFunction" -> Print,
+        "ShellOutputFunction" -> Print,
         "SystemCompileOptions" -> "/Ox /GL"
     }
-]; 
-
-
-build["udp"];
+];
 
 
 build["csockets"];
