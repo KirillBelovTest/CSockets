@@ -1325,6 +1325,7 @@ static void socketListSelectTask(mint taskId, void* vtarg)
 DLLEXPORT int socketSelectTaskCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
     SocketList socketList = (SocketList)MArgument_getInteger(Args[0]);
     mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketListSelectTask, socketList);
+    
 }
 
 #pragma endregion
@@ -1333,7 +1334,7 @@ DLLEXPORT int socketSelectTaskCreate(WolframLibraryData libData, mint Argc, MArg
 
 //socketListen[serverPtr_Integer]: taskId_Integer
 DLLEXPORT int socketSelectAsync(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res){
-    Server server = (Server)MArgument_getInteger(Args[0]);
+    SocketList server = (SocketList)MArgument_getInteger(Args[0]);
     mint taskId;
 
     #ifdef _DEBUG
@@ -2114,7 +2115,7 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     server->taskId = taskId;
 
     #ifdef _DEBUG
-    printf("%s\n%s[serverListen->SUCCESS]%s\n\tlisten task id = %ld\n\n", 
+    printf("%s\n%s[serverListen->SUCCESS]%s\n\tlisten task id = %I64d\n\n", 
         getCurrentTime(),
         GREEN, RESET, 
         taskId
