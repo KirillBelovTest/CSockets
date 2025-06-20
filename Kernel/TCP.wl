@@ -495,6 +495,7 @@ $socketConstants = <|
     "SO_LINGER"    -> 16^^0080,        (* Linger on close *)
     "SO_BROADCAST" -> 16^^0020,        (* Permit broadcast *)
     "SO_ERROR"     -> 16^^1007,        (* Get error status *)
+    "SOMAXCONN"    -> 16^^7FFFFFFF,    (* Max available sockets for listen *)
 
     (* TCP-specific options *)
     "TCP_NODELAY"  -> 16^^0001,        (* Disable Nagle algorithm *)

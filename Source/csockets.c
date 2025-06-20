@@ -768,6 +768,7 @@ DLLEXPORT int socketBlockingMode(WolframLibraryData libData, mint Argc, MArgumen
 DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
+    int backlog = (int)MArgument_getInteger(Args[1]);
 
     #ifdef _DEBUG
     printf("%s\n%ssocketListen[%s%I64d%s]%s -> ", 
@@ -779,7 +780,7 @@ DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     #endif
 
     /*wait clients*/
-    int iResult = listen(socketId, SOMAXCONN);
+    int iResult = listen(socketId, backlog);
     if (iResult == SOCKET_ERROR) {
         #ifdef _DEBUG
         printf("%sERROR = %d%s\n\n", RED, GETSOCKETERRNO(), RESET);
