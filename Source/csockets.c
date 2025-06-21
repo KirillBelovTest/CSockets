@@ -941,7 +941,7 @@ DLLEXPORT int socketListSet(WolframLibraryData libData, mint Argc, MArgument *Ar
     socketList->length = length;
 
     #ifdef _DEBUG
-    printf("");
+    printf("%s%ssocketListSet[]%s -> %sSuccess%s\n\n", getCurrentTime(), BLUE, RESET, GREEN, RESET);
     #endif
 
     MArgument_setInteger(Res, 0); // success
@@ -1007,8 +1007,9 @@ static void socketSelectAsyncTask(mint taskId, void* vtarg)
 DLLEXPORT int socketSelectTaskCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SocketList socketList = (SocketList)MArgument_getInteger(Args[0]);
-    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketSelectAsyncTask, socketList);
-    
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketSelectAsyncTask, (void *)socketList);
+    MArgument_setInteger(Res, taskId);
+    return LIBRARY_NO_ERROR;
 }
 
 DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
