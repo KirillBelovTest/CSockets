@@ -1115,16 +1115,33 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
     return LIBRARY_NO_ERROR;
 }
 
+DLLEXPORT int socketBufferCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+    mint bufferSize = (mint)MArgument_getInteger(Args[0]);
+    BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
+    uintptr_t bufferPtr = (uintptr_t)buffer;
+    MArgument_setInteger(Res, bufferPtr);
+    return LIBRARY_NO_ERROR;
+}
+
+DLLEXPORT int socketBufferDelete(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+    BYTE * buffer = (BYTE *)MArgument_getInteger(Args[0]);
+    free(buffer);
+    MArgument_setInteger(Res, 0);
+    return LIBRARY_NO_ERROR;
+}
+
 DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET client = (SOCKET)MArgument_getInteger(Args[0]);
-    mint bufferSize = (mint)MArgument_getInteger(Args[1]);
+    BYTE *buffer = (BYTE *)MArgument_getInteger(Args[1]);
+    mint bufferSize = (mint)MArgument_getInteger(Args[2]);
 
     #ifdef _DEBUG
     printf("%s\n%sserverRecv[%s%I64d, buff = %d%s]%s -> ", getCurrentTime(), BLUE, RESET, client, bufferSize, BLUE, RESET);
     #endif
 
-    BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
     mutexLock(globalMutex);
     int result = recv(client, buffer, bufferSize, 0);
     mutexUnlock(globalMutex);
