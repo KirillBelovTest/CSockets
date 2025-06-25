@@ -379,13 +379,23 @@ socketAddressRemove =
 LibraryFunctionLoad[$libFile, "socketAddressRemove", {Integer}, Integer];
 
 
-(*socketCreate[addressPtr] -> socketId*)
+(*socketBufferCreate[bufferSize] -> bufferPtr*)
+socketBufferCreate = 
+LibraryFunctionLoad[$libFile, "socketBufferCreate", {Integer}, Integer];
+
+
+(*socketBufferRemove[bufferPtr] -> successStatus*)
+socketBufferRemove = 
+LibraryFunctionLoad[$libFile, "socketBufferRemove", {Integer}, Integer];
+
+
+(*socketCreate[family, type, protocol] -> socketId*)
 socketCreate = 
-LibraryFunctionLoad[$libFile, "socketCreate", {Integer}, Integer];
+LibraryFunctionLoad[$libFile, "socketCreate", {Integer, Integer, Integer}, Integer];
 
 
 (*socketClose[socketId] -> successStatus*)
-socketCreate = 
+socketClose = 
 LibraryFunctionLoad[$libFile, "socketClose", {Integer}, Integer]; 
 
 
@@ -409,9 +419,9 @@ socketBlockingMode =
 LibraryFunctionLoad[$libFile, "socketBlockingMode", {Integer, Integer}, Integer];
 
 
-(*socketConnect[socketId] -> successStatus*)
+(*socketConnect[socketId, addressPtr] -> successStatus*)
 socketConnect =
-LibraryFunctionLoad[$libFile, "socketConnect", {Integer}, Integer];
+LibraryFunctionLoad[$libFile, "socketConnect", {Integer, Integer}, Integer];
 
 
 (*socketListen[socketId] -> successStatus*)
@@ -440,38 +450,38 @@ LibraryFunctionLoad[$libFile, "socketSelectTaskCreate", {Integer}, Integer];
 
 
 (*socketCheck[sockets, length]: aliveSockets*)
-socketCheck = 
+socketCheck =
 LibraryFunctionLoad[$libFile, "socketCheck", {{Integer, 1}, Integer}, {Integer, 1}]; 
 
 
 (*socketAccept[listenSocketId]: clientSocketId*)
-socketAccept = 
+socketAccept =
 LibraryFunctionLoad[$libFile, "socketAccept", {Integer}, Integer]; 
 
 
 (*socketRecv[clientSocketId, bufferSize]: byteArray*)
-socketRecv = 
-LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer}, "ByteArray"];
+socketRecv =
+LibraryFunctionLoad[$libFile, "socketRecv", {Integer, Integer, Integer}, "ByteArray"];
 
 
 (*socketSend[socketId, data, length]: length*)
-socketSend = 
+socketSend =
 LibraryFunctionLoad[$libFile, "socketSend", {Integer, {"ByteArray", "Shared"}, Integer}, Integer]; 
 
 
 (*socketSend[socketId, data, length]: length*)
-socketSendString = 
-LibraryFunctionLoad[$libFile, "socketSendString", {Integer, String, Integer}, Integer]; 
+socketSendString =
+LibraryFunctionLoad[$libFile, "socketSendString", {Integer, String, Integer}, Integer];
 
 
 (*serverCreate[listenSocket, clientsCapacity, bufferSize, selectTimeout]: serverPtr*)
-serverCreate = 
-LibraryFunctionLoad[$libFile, "serverCreate", {Integer, Integer, Integer, Integer}, Integer]; 
+serverCreate =
+LibraryFunctionLoad[$libFile, "serverCreate", {Integer, Integer, Integer, Integer}, Integer];
 
 
 (*serverListen[serverPtr]: taskId*)
-serverListen = 
-LibraryFunctionLoad[$libFile, "serverListen", {Integer}, Integer]; 
+serverListen =
+LibraryFunctionLoad[$libFile, "serverListen", {Integer}, Integer];
 
 
 (* Cross-platform socket constants association *)
@@ -480,42 +490,42 @@ LibraryFunctionLoad[$libFile, "serverListen", {Integer}, Integer];
 
 $socketConstants = <|
     (* Protocol levels *)
-    "IPPROTO_IP"   -> 0,               (* IPv4 protocol - standard value *)
-    "IPPROTO_TCP"  -> 6,               (* TCP protocol - common value *)
-    "IPPROTO_UDP"  -> 17,              (* UDP protocol - standard value *)
-    "IPPROTO_IPV6" -> 16^^0029,        (* IPv6 protocol - POSIX hex value *)
-    "SOL_SOCKET"   -> 16^^FFFF,        (* Socket-level options - standard hex *)
+    "IPPROTO_IP"   :> 0,               (* IPv4 protocol - standard value *)
+    "IPPROTO_TCP"  :> 6,               (* TCP protocol - common value *)
+    "IPPROTO_UDP"  :> 17,              (* UDP protocol - standard value *)
+    "IPPROTO_IPV6" :> 16^^0029,        (* IPv6 protocol - POSIX hex value *)
+    "SOL_SOCKET"   :> 16^^FFFF,        (* Socket-level options - standard hex *)
 
     (* Socket options (SOL_SOCKET level) *)
-    "SO_KEEPALIVE" -> 16^^0008,        (* Enable keep-alive packets *)
-    "SO_RCVBUF"    -> 16^^1002,        (* Receive buffer size *)
-    "SO_SNDBUF"    -> 16^^1001,        (* Send buffer size *)
-    "SO_REUSEADDR" -> 16^^0002,        (* Allow address reuse - POSIX hex *)
-    "SO_EXCLUSIVEADDRUSE" -> -5,       (* Windows-specific address protection *)
-    "SO_LINGER"    -> 16^^0080,        (* Linger on close *)
-    "SO_BROADCAST" -> 16^^0020,        (* Permit broadcast *)
-    "SO_ERROR"     -> 16^^1007,        (* Get error status *)
-    "SOMAXCONN"    -> 16^^7FFFFFFF,    (* Max available sockets for listen *)
+    "SO_KEEPALIVE" :> 16^^0008,        (* Enable keep-alive packets *)
+    "SO_RCVBUF"    :> 16^^1002,        (* Receive buffer size *)
+    "SO_SNDBUF"    :> 16^^1001,        (* Send buffer size *)
+    "SO_REUSEADDR" :> 16^^0002,        (* Allow address reuse - POSIX hex *)
+    "SO_EXCLUSIVEADDRUSE" :> -5,       (* Windows-specific address protection *)
+    "SO_LINGER"    :> 16^^0080,        (* Linger on close *)
+    "SO_BROADCAST" :> 16^^0020,        (* Permit broadcast *)
+    "SO_ERROR"     :> 16^^1007,        (* Get error status *)
+    "SOMAXCONN"    :> 16^^7FFFFFFF,    (* Max available sockets for listen *)
 
     (* TCP-specific options *)
-    "TCP_NODELAY"  -> 16^^0001,        (* Disable Nagle algorithm *)
-    "TCP_KEEPIDLE" -> 16^^0004,        (* Start keepalives after idle period *)
-    "TCP_KEEPINTVL"-> 16^^0005,        (* Interval between keepalives *)
-    "TCP_KEEPCNT"  -> 16^^0006,        (* Number of keepalives before drop *)
+    "TCP_NODELAY"  :> 16^^0001,        (* Disable Nagle algorithm *)
+    "TCP_KEEPIDLE" :> 16^^0004,        (* Start keepalives after idle period *)
+    "TCP_KEEPINTVL":> 16^^0005,        (* Interval between keepalives *)
+    "TCP_KEEPCNT"  :> 16^^0006,        (* Number of keepalives before drop *)
 
     (* IP-level options *)
-    "IP_TTL"       -> 16^^0004,        (* Time-To-Live for packets *)
-    "IP_TOS"       -> 16^^0001,        (* Type Of Service *)
-    "IP_MTU_DISCOVER" -> 16^^000A,     (* Path MTU discovery *)
+    "IP_TTL"       :> 16^^0004,        (* Time-To-Live for packets *)
+    "IP_TOS"       :> 16^^0001,        (* Type Of Service *)
+    "IP_MTU_DISCOVER" :> 16^^000A,     (* Path MTU discovery *)
 
     (* IPv6-specific options *)
-    "IPV6_V6ONLY"  -> 16^^001A,        (* Restrict to IPv6 only *)
+    "IPV6_V6ONLY"  :> 16^^001A,        (* Restrict to IPv6 only *)
 
     (* Address families *)
-    "AF_INET"      -> 16^^0002,        (* IPv4 address family *)
-    "AF_INET6"     -> 16^^000A,        (* IPv6 address family *)
-    "SOCK_STREAM"  -> 16^^0001,        (* Stream socket (TCP) *)
-    "SOCK_DGRAM"   -> 16^^0002         (* Datagram socket (UDP) *)
+    "AF_INET"      :> 16^^0002,        (* IPv4 address family *)
+    "AF_INET6"     :> 16^^000A,        (* IPv6 address family *)
+    "SOCK_STREAM"  :> 16^^0001,        (* Stream socket (TCP) *)
+    "SOCK_DGRAM"   :> 16^^0002         (* Datagram socket (UDP) *)
 |>;
 
 
@@ -523,13 +533,13 @@ $socketConstants = <|
 (* Uncomment if targeting specific OS: *)
 If[$OperatingSystem === "Windows",
     (* Windows uses different values for some constants *)
-    $socketConstants["IPPROTO_IPV6"] = 41;
-    $socketConstants["SO_REUSEADDR"] = 4;
-    $socketConstants["IPV6_V6ONLY"] = 27;
+    $socketConstants["IPPROTO_IPV6"] := 41;
+    $socketConstants["SO_REUSEADDR"] := 4;
+    $socketConstants["IPV6_V6ONLY"] := 27;
 ];
 
 
-End[]; 
+End[];
 
 
-EndPackage[]; 
+EndPackage[];

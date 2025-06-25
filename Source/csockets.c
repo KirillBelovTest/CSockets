@@ -510,21 +510,39 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
     return LIBRARY_NO_ERROR;
 }
 
+DLLEXPORT int socketBufferCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+    mint bufferSize = (mint)MArgument_getInteger(Args[0]);
+    BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
+    uintptr_t bufferPtr = (uintptr_t)buffer;
+    MArgument_setInteger(Res, bufferPtr);
+    return LIBRARY_NO_ERROR;
+}
+
+DLLEXPORT int socketBufferRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+    BYTE * buffer = (BYTE *)MArgument_getInteger(Args[0]);
+    free(buffer);
+    MArgument_setInteger(Res, 0);
+    return LIBRARY_NO_ERROR;
+}
+
 DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
-    uintptr_t addressPtr = (uintptr_t)MArgument_getInteger(Args[0]); // address pointer as integer
-    struct addrinfo *address = (struct addrinfo *)addressPtr; // address pointer
+    int family = (int)MArgument_getInteger(Args[0]); // family
+    int socktype = (int)MArgument_getInteger(Args[1]); // sock type
+    int protocol = (int)MArgument_getInteger(Args[2]); // protocol
 
     #ifdef _DEBUG
-    printf("%s\n%ssocketCreate[%s<%p>%s]%s -> ", 
+    printf("%s\n%ssocketCreate[%s%I64d, %I64d, %I64d%s]%s -> ", 
         getCurrentTime(), 
         BLUE, RESET, 
-        (void *)address, 
+        family, socktype, protocol, 
         BLUE, RESET
     );
     #endif
 
-    SOCKET createdSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+    SOCKET createdSocket = socket(family, socktype, protocol);
     if (createdSocket == INVALID_SOCKET){
         #ifdef _DEBUG
         printf("%sERROR = %d%s\n\n", 
@@ -541,7 +559,6 @@ DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
         GREEN, createdSocket, RESET
     );
     #endif
-
 
     MArgument_setInteger(Res, createdSocket); // return socket id
     return LIBRARY_NO_ERROR;
@@ -1112,23 +1129,6 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
     #endif
 
     MArgument_setInteger(Res, client);
-    return LIBRARY_NO_ERROR;
-}
-
-DLLEXPORT int socketBufferCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
-{
-    mint bufferSize = (mint)MArgument_getInteger(Args[0]);
-    BYTE *buffer = malloc(bufferSize * sizeof(BYTE));
-    uintptr_t bufferPtr = (uintptr_t)buffer;
-    MArgument_setInteger(Res, bufferPtr);
-    return LIBRARY_NO_ERROR;
-}
-
-DLLEXPORT int socketBufferDelete(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
-{
-    BYTE * buffer = (BYTE *)MArgument_getInteger(Args[0]);
-    free(buffer);
-    MArgument_setInteger(Res, 0);
     return LIBRARY_NO_ERROR;
 }
 
