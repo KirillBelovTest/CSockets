@@ -419,6 +419,7 @@ DLLEXPORT void WolframLibrary_uninitialize(WolframLibraryData libData)
     return;
 }
 
+/*socketAddressCreate["host", "port", family, socktype, protocol] -> addressPtr*/
 DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     char *host = MArgument_getUTF8String(Args[0]); // localhost by default
@@ -474,6 +475,7 @@ DLLEXPORT int socketAddressCreate(WolframLibraryData libData, mint Argc, MArgume
     return LIBRARY_NO_ERROR;
 }
 
+/*socketAddressRemove[addressPtr] -> successStatus*/
 DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     uintptr_t addressPtr = (uintptr_t)MArgument_getInteger(Args[0]); // address pointer as integer
@@ -510,6 +512,7 @@ DLLEXPORT int socketAddressRemove(WolframLibraryData libData, mint Argc, MArgume
     return LIBRARY_NO_ERROR;
 }
 
+/*socketBufferCreate[bufferSize] -> bufferPtr*/
 DLLEXPORT int socketBufferCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     mint bufferSize = (mint)MArgument_getInteger(Args[0]);
@@ -519,6 +522,7 @@ DLLEXPORT int socketBufferCreate(WolframLibraryData libData, mint Argc, MArgumen
     return LIBRARY_NO_ERROR;
 }
 
+/*socketBufferRemove[bufferPtr] -> successStatus*/
 DLLEXPORT int socketBufferRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     BYTE * buffer = (BYTE *)MArgument_getInteger(Args[0]);
@@ -527,6 +531,7 @@ DLLEXPORT int socketBufferRemove(WolframLibraryData libData, mint Argc, MArgumen
     return LIBRARY_NO_ERROR;
 }
 
+/*socketCreate[family, socktype, protocol] -> socketId*/
 DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     int family = (int)MArgument_getInteger(Args[0]); // family
@@ -564,6 +569,7 @@ DLLEXPORT int socketCreate(WolframLibraryData libData, mint Argc, MArgument *Arg
     return LIBRARY_NO_ERROR;
 }
 
+/*socketCreate[socketId] -> successStatus*/
 DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
@@ -605,6 +611,7 @@ DLLEXPORT int socketClose(WolframLibraryData libData, mint Argc, MArgument *Args
     return LIBRARY_NO_ERROR;
 }
 
+/*socketBind[socketId, addressPtr] -> successStatus*/
 DLLEXPORT int socketBind(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket for binding
@@ -663,6 +670,7 @@ DLLEXPORT int socketBind(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_NO_ERROR;
 }
 
+/*socketSetOpt[socketId, level, optName, optVal] -> successStatus*/
 DLLEXPORT int socketSetOpt(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket
@@ -700,6 +708,7 @@ DLLEXPORT int socketSetOpt(WolframLibraryData libData, mint Argc, MArgument *Arg
     return LIBRARY_NO_ERROR;
 }
 
+/*socketGetOpt[socketId, level, optName] -> optVal*/
 DLLEXPORT int socketGetOpt(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket id
@@ -739,6 +748,7 @@ DLLEXPORT int socketGetOpt(WolframLibraryData libData, mint Argc, MArgument *Arg
     return LIBRARY_NO_ERROR;
 }
 
+/*socketBlockingMode[socketId, mode] -> successStatus*/
 DLLEXPORT int socketBlockingMode(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]); // socket
@@ -782,6 +792,7 @@ DLLEXPORT int socketBlockingMode(WolframLibraryData libData, mint Argc, MArgumen
     return LIBRARY_NO_ERROR;
 }
 
+/*socketListen[socketId, backlog] -> successStatus*/
 DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
@@ -816,6 +827,7 @@ DLLEXPORT int socketListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     return LIBRARY_NO_ERROR;
 }
 
+/*socketConnect[socketId, addressPtr] -> successStatus*/
 DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
@@ -847,6 +859,7 @@ DLLEXPORT int socketConnect(WolframLibraryData libData, mint Argc, MArgument *Ar
     return LIBRARY_NO_ERROR;
 }
 
+/*socketSelect[{sockets}, length, timeout] -> {readySockets}*/
 DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     MTensor socketIdsList = MArgument_getMTensor(Args[0]); // list of sockets
@@ -925,6 +938,7 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
     }
 }
 
+/*socketListCreate[interrupt, length] -> listPtr*/
 DLLEXPORT int socketListCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET interrupt = (SOCKET)MArgument_getInteger(Args[0]);
@@ -943,6 +957,7 @@ DLLEXPORT int socketListCreate(WolframLibraryData libData, mint Argc, MArgument 
     return LIBRARY_NO_ERROR; 
 }
 
+/*socketListSet[listPtr, {sockets}, length] -> successStatus*/
 DLLEXPORT int socketListSet(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SocketList socketList = (SocketList)MArgument_getInteger(Args[0]);
@@ -965,7 +980,7 @@ DLLEXPORT int socketListSet(WolframLibraryData libData, mint Argc, MArgument *Ar
     return LIBRARY_NO_ERROR;
 }
 
-static void socketSelectAsyncTask(mint taskId, void* vtarg)
+static void socketSelectTask(mint taskId, void* vtarg)
 {
     SocketList socketList = (SocketList)vtarg;
     socketList->taskId = taskId;
@@ -1021,14 +1036,16 @@ static void socketSelectAsyncTask(mint taskId, void* vtarg)
     }
 }
 
+/*socketSelectTaskCreate[socketListPtr] -> taskId*/
 DLLEXPORT int socketSelectTaskCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
-    SocketList socketList = (SocketList)MArgument_getInteger(Args[0]);
-    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketSelectAsyncTask, (void *)socketList);
+    void *socketListPtr = (void *)MArgument_getInteger(Args[0]);
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketSelectTask, socketListPtr);
     MArgument_setInteger(Res, taskId);
     return LIBRARY_NO_ERROR;
 }
 
+/*socketCheck[{sockets}, length] -> validSockets*/
 DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     MTensor socketList = MArgument_getMTensor(Args[0]); // list of sockets
@@ -1101,6 +1118,7 @@ DLLEXPORT int socketCheck(WolframLibraryData libData, mint Argc, MArgument *Args
     return LIBRARY_NO_ERROR;
 }
 
+/*socketAccept[socketId] -> clientId*/
 DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = (SOCKET)MArgument_getInteger(Args[0]);
