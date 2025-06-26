@@ -16,16 +16,46 @@ Append[$ContextPath, "KirillBelov`CSockets`TCP`Private`"];
 
 addr = socketAddressCreate["localhost", "8001", 
 	$socketConstants["AF_INET"], 
-	$socketConstants["SOCK_DGRAM"], 
-	$socketConstants["IPPROTO_UDP"]
+	$socketConstants["SOCK_STREAM"], 
+	$socketConstants["IPPROTO_TCP"]
 ]
 
 
 sock = socketCreate[
 	$socketConstants["AF_INET"], 
-	$socketConstants["SOCK_DGRAM"], 
-	$socketConstants["IPPROTO_UDP"]
+	$socketConstants["SOCK_STREAM"], 
+	$socketConstants["IPPROTO_TCP"]
 ]
+
+
+socketBind[sock, addr]
+
+
+socketListen[sock, 2^32]
+
+
+socketGetOpt[sock, $socketConstants["SOL_SOCKET"], $socketOptNames["SO_ACCEPTCONN"]]
+
+
+$socketConstants["SOL_SOCKET"]
+
+
+socketGetOpt[sock, $socketConstants["SOL_SOCKET"], $socketOptNames["SO_RCVBUF"]]
+
+
+$socketOptNames["SO_TYPE"]
+
+
+$socketConstants["SOL_SOCKET"]
+
+
+socketGetOpt[sock, 65535, 16^^1008]
+
+
+socketGetOpt[sock, $socketConstants["SOL_SOCKET"], $socketOptNames["SO_TYPE"]]
+
+
+socketGetOpt[sock, $socketConstants["SOL_SOCKET"], $socketConstants["SO_ACCEPTCONN"]]
 
 
 socketBind[sock, addr]
