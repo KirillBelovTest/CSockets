@@ -767,10 +767,10 @@ DLLEXPORT int socketBlockingMode(WolframLibraryData libData, mint Argc, MArgumen
     #ifdef _WIN32
     int iResult = ioctlsocket(socketId, FIONBIO, &nonBlocking);
     #else
-    int flags = fcntl(listenSocket, F_GETFL, 0);
+    int flags = fcntl(socketId, F_GETFL, 0);
     flags |= O_NONBLOCK;
     flags |= O_ASYNC;
-    iResult = fcntl(listenSocket, F_SETFL, flags, &nonBlocking);
+    iResult = fcntl(socketId, F_SETFL, flags, &nonBlocking);
     #endif
     if (iResult != NO_ERROR) {
         #ifdef _DEBUG
@@ -1150,6 +1150,7 @@ DLLEXPORT int socketAccept(WolframLibraryData libData, mint Argc, MArgument *Arg
     return LIBRARY_NO_ERROR;
 }
 
+/*socketRecv[socketId, bufferPtr, bufferLength] -> byteArray*/
 DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET client = (SOCKET)MArgument_getInteger(Args[0]);
@@ -1191,6 +1192,7 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_FUNCTION_ERROR;
 }
 
+/*socketSend[socketid, byteArray, length] -> sentLength*/
 DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
@@ -1228,6 +1230,7 @@ DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_FUNCTION_ERROR;
 }
 
+/*socketSendString[socketid, text, length] -> sentLength*/
 DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET socketId = MArgument_getInteger(Args[0]); // positive integer
@@ -1261,6 +1264,7 @@ DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument 
     return LIBRARY_FUNCTION_ERROR;
 }
 
+/*serverCreate[listenSocket, clientsCapacity, bufferSize] -> serverPtr*/
 DLLEXPORT int serverCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     SOCKET listenSocket =    (SOCKET)MArgument_getInteger(Args[0]); // positive integer
@@ -1715,6 +1719,7 @@ static void serverListenerTask(mint taskId, void* vtarg)
     #endif
 }
 
+/*serverListen[serverPtr] -> taskId*/
 DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     Server server = (Server)MArgument_getInteger(Args[0]);

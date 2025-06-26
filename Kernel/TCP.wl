@@ -25,57 +25,15 @@ CSocketObject::usage =
 
 
 CSocketOpen::usage = 
-"CSocketOpen[port] returns a new server socket opened on localhost.
-CSocketOpen[host, port] returns a new server socket opened on specific host.";
-
-
-CSocketCreate::usage = 
-"CSocketCreate[address] create new socket."; 
+"CSocketOpen[host, port, protocol] returns a new server socket opened on specific host basd on protocol.";
 
 
 CSocketConnect::usage = 
-"CSocketConnect[port] returns a new client socket connected to localhost.
-CSocketConnect[host, port] returns a new client socket connected to specific host.";
-
-
-CSocketSelect::usage = 
-"CSocketSelect[{sockets}] returns list of ready sockets.";
-
-
-CSocketAccept::usage = 
-"CSocketAccept[socket] returns new client.";
-
-
-CSocketRecv::usage = 
-"CSocketRecv[socket] returns received data.";
-
-
-CSocketSend::usage = 
-"CSocketSend[socket, data] send data.";
+"CSocketConnect[host, port, protocol] returns a new client socket connected to specific host.";
 
 
 CSocketListener::usage =
 "CSocketListener[assoc] returns a new listener object.";
-
-
-CSocketAddressCreate::usage =
-"CSocketAddressCreate[host, port] creates a socket address structure.";
-
-
-CSocketAddressObject::usage =
-"CSocketAddressObject[addressPtr] represents a socket address structure.";
-
-
-CSocketSetOpt::usage =
-"CSocketSetOpt[socket, level, optname, optvalue] sets socket options.";
-
-
-CSocketBind::usage =
-"CSocketBind[socket, address] binds a socket to a specific address.";
-
-
-CSocketBlockingMode::usage =
-"CSocketBlockingMode[socket, mode] sets the blocking mode of a socket.";
 
 
 Begin["`Private`"];
@@ -106,13 +64,23 @@ With[{
 ];
 
 
-CSocketOpen[host_String: "localhost", port_Integer, OptionsPattern[]] := 
+CSocketOpen[host_String: "localhost", port_Integer, protocol: "TCP" | "UDP": "TCP", OptionsPattern[]] := 
+Module[{
+    family = $socketConstants["AF_INET"],
+    socktype = If[protocol === "TCP", $socketConstants["SOCK_STREAM"], $socketConstants["SOCK_DGRAM"]],
+    protocolNum = If[protocol === "TCP", $socketConstants["IPPROTO_TCP"], $socketConstants["IPPROTO_UDP"]]
+},
+    With[{
+        addr = socketAddressCreate[host, port, family, socktype, protocolNum], 
+        sock = socketCreate[family, socktype, protocolNum]
+    }, 
+        socketBind[sock, addr];
 
-With[{addr = socketAddressCreate[host, port]}, 
-    With[{socketId = socketCreate[addr]}, 
-        socketBind[socketId, addr];
-        socketBlockingMode[socketId, If[OptionValue["NonBlocking"], 1, 0]];
-        CSocketObject[socketId]
+        If[protocol === "TCP", 
+            socketListen[sock, $socketConstants["SOMAXCONN"]]
+        ]; 
+
+        CSocketObject[sock]
     ]
 ];
 
@@ -222,10 +190,8 @@ With[{
 ];
 
 
-CSocketListener /: Close[CSocketListener[assoc_?AssociationQ]] := (
-    Close[assoc["Socket"]];
-    RemoveAsynchronousTask[assoc["Task"]];
-);
+CSocketListener /: Close[CSocketListener[assoc_?AssociationQ]] := 
+RemoveAsynchronousTask[assoc["Task"]];
 
 
 toEvent[encoding_][task_, event_, {serv_, sock_, data_}] := 
@@ -277,84 +243,6 @@ $libFile = FileNameJoin[{
 If[!FileExistsQ[$libFile], 
     Get[FileNameJoin[{$directory, "Build.wls"}]]
 ]; 
-
-
-Options[CSocketAddressCreate] = {
-    "Family" -> "AF_INET", (* AF_INET == 2 *)
-    "SockType" -> "SOCK_STREAM", (* SOCK_STREAM *)
-    "Protocol" -> Automatic (* IPPROTO_TCP *)
-};
-
-
-SyntaxInformation[CSocketAddressCreate] = {
-    "ArgumentsPattern" -> {_, _, OptionsPattern[]},
-    "OptionNames" -> {
-        "\"Family\"",
-        "\"SockType\"",
-        "\"Protocol\""
-    }
-};
-
-
-CSocketAddressCreate[host: _String: "localhost", port_Integer?Positive, OptionsPattern[]] :=
-Module[{family, socktype, protocol, addressPtr},
-    family = Which[
-        # === "AF_UNSPEC", 0, (* AF_UNSPEC *)
-        # === "AF_INET", 2, (* AF_INET *)
-        # === "AF_INET6" && $OperatingSystem === "Windows", 23, (* AF_INET6 win *)
-        # === "AF_INET6", 10, (* AF_INET6 unix *)
-        IntegerQ[#], #, 
-        True, 0
-    ]& @ OptionValue["Family"];
-    
-    socktype = Which[
-        # === "SOCK_STREAM", 1, (* SOCK_STREAM *)
-        # === "SOCK_DGRAM", 2, (* SOCK_DGRAM *)
-        # === "SOCK_RAW", 3, (* SOCK_RAW *)
-        IntegerQ[#], #, 
-        True, 1 (* default SOCK_STREAM *)
-    ]& @ OptionValue["SockType"];
-    
-    protocol = Which[
-        # === "IPPROTO_TCP", 6, (* IPPROTO_TCP *)
-        # === "IPPROTO_UDP", 17, (* IPPROTO_UDP *)
-        # === "IPPROTO_ICMP", 1, (* IPPROTO_ICMP *)
-        IntegerQ[#], #, 
-        True, 0 (* default Automatic basid on socktype *)
-    ]& @ OptionValue["Protocol"];
-    
-    addressPtr = socketAddressCreate[host, ToString[port], family, socktype, protocol];
-    
-    CSocketAddressObject[addressPtr]
-];
-
-
-CSocketAddressObject /: DeleteObject[CSocketAddressObject[addressPtr_Integer]] :=
-Module[{result},
-    result = socketAddressRemove[addressPtr];
-    
-    (*Returns success or not*)
-    result === 0
-];
-
-
-CSocketCreate[CSocketAddressObject[addressPtr_Integer]] :=
-With[{socketId = socketCreate[addressPtr]},
-    (*Returns socket object*)
-    CSocketObject[socketId]
-];
-
-
-CSocketAddressObject /: MakeBoxes[address: CSocketAddressObject[addressPtr_Integer], form: StandardForm | OutputForm] := 
-BoxForm`ArrangeSummaryBox[
-    CSocketAddressObject, 
-    address, 
-    None, 
-    {{ToUpperCase[IntegerString[addressPtr, 16, 16]]}}, 
-    {}, 
-    form, 
-    "Interpretable" -> Automatic
-];
 
 
 CSocketObject /: MakeBoxes[socket: CSocketObject[socketId_Integer], form: StandardForm | OutputForm] := 
@@ -410,11 +298,11 @@ LibraryFunctionLoad[$libFile, "socketSetOpt", {Integer, Integer, Integer, Intege
 
 
 (*socketGetOpt[socketId, level, optname] -> optvalue*)
-socketSetOpt =
+socketGetOpt =
 LibraryFunctionLoad[$libFile, "socketGetOpt", {Integer, Integer, Integer}, Integer];
 
 
-(*socketGetOpt[socketId, level, optname] -> successStatus*)
+(*socketBlockingMode[socketId, level, optname] -> successStatus*)
 socketBlockingMode =
 LibraryFunctionLoad[$libFile, "socketBlockingMode", {Integer, Integer}, Integer];
 
@@ -426,7 +314,7 @@ LibraryFunctionLoad[$libFile, "socketConnect", {Integer, Integer}, Integer];
 
 (*socketListen[socketId] -> successStatus*)
 socketListen =
-LibraryFunctionLoad[$libFile, "socketListen", {Integer}, Integer];
+LibraryFunctionLoad[$libFile, "socketListen", {Integer, Integer}, Integer];
 
 
 (*socketSelect[{listenSocket, client1, ..}, length, timeout] -> {client1, ..}*)
@@ -506,6 +394,8 @@ $socketConstants = <|
     "SO_BROADCAST" :> 16^^0020,        (* Permit broadcast *)
     "SO_ERROR"     :> 16^^1007,        (* Get error status *)
     "SOMAXCONN"    :> 16^^7FFFFFFF,    (* Max available sockets for listen *)
+    "SO_TYPE"      :> 16^^1008,        (* Get socket type *)
+    "SO_ACCEPTCONN" :> 16^^0002,       (* Check if socket is listening *)
 
     (* TCP-specific options *)
     "TCP_NODELAY"  :> 16^^0001,        (* Disable Nagle algorithm *)
@@ -536,7 +426,102 @@ If[$OperatingSystem === "Windows",
     $socketConstants["IPPROTO_IPV6"] := 41;
     $socketConstants["SO_REUSEADDR"] := 4;
     $socketConstants["IPV6_V6ONLY"] := 27;
+    $socketConstants["SO_TYPE"] := 3;
 ];
+
+
+(* ================================================ *)
+(*  Protocol levels for getsockopt / setsockopt     *)
+(*  ($socketOptLevels - only "level", not optname)  *)
+(* ================================================ *)
+
+$socketOptLevels = <|
+    "SOL_SOCKET"    :> 1,           (* Socket-level options - POSIX default *)
+    "IPPROTO_IP"    :> 0,           (* IPv4 protocol level *)
+    "IPPROTO_TCP"   :> 6,           (* TCP protocol level *)
+    "IPPROTO_UDP"   :> 17,          (* UDP protocol level *)
+    "IPPROTO_IPV6"  :> 16^^0029     (* IPv6 protocol level - POSIX hex *)
+|>;
+
+
+(* Platform-specific overrides *)
+If[$OperatingSystem === "Windows",
+    (* Windows uses different values for some levels *)
+    $socketOptLevels["SOL_SOCKET"]   := 16^^FFFF;  (* Winsock socket level *)
+    $socketOptLevels["IPPROTO_IPV6"] := 41;        (* Decimal 0x29 *)
+];
+
+
+(* ================================================= *)
+(*  Socket / protocol option names (optname only)     *)
+(*  Use together with $socketOptLevels for level arg  *)
+(* ================================================= *)
+
+$socketOptNames = <|
+    (* -------- SOL_SOCKET level -------- *)
+    "SO_KEEPALIVE"        :> 16^^0008,     (* Enable keep-alive packets            *)
+    "SO_RCVBUF"           :> 16^^1002,     (* Receive buffer size (bytes)          *)
+    "SO_SNDBUF"           :> 16^^1001,     (* Send buffer size (bytes)             *)
+    "SO_REUSEADDR"        :> 16^^0002,     (* Allow local address reuse            *)
+    "SO_EXCLUSIVEADDRUSE" :> -5,           (* Windows-specific: exclusive bind     *)
+    "SO_LINGER"           :> 16^^0080,     (* Linger on close                      *)
+    "SO_BROADCAST"        :> 16^^0020,     (* Permit datagram broadcasts           *)
+    "SO_ERROR"            :> 16^^1007,     (* Get pending error status             *)
+    "SOMAXCONN"           :> 16^^7FFFFFFF, (* Maximum backlog for listen()       *)
+    "SO_TYPE"             :> 3,            (* Get socket type (STREAM/DGRAM/…)     *)
+    "SO_ACCEPTCONN"       :> 16^^0002,     (* Non-zero if socket is in LISTEN      *)
+
+    (* -------- IPPROTO_TCP level -------- *)
+    "TCP_NODELAY"         :> 16^^0001,     (* Disable Nagle algorithm              *)
+    "TCP_KEEPIDLE"        :> 16^^0004,     (* Idle time before keep-alives (s)     *)
+    "TCP_KEEPINTVL"       :> 16^^0005,     (* Interval between keep-alives (s)     *)
+    "TCP_KEEPCNT"         :> 16^^0006,     (* Keep-alive probe count before drop   *)
+
+    (* -------- IPPROTO_IP level -------- *)
+    "IP_TTL"              :> 16^^0004,     (* Default IPv4 TTL                     *)
+    "IP_TOS"              :> 16^^0001,     (* IPv4 Type-of-Service / DSCP          *)
+    "IP_MTU_DISCOVER"     :> 16^^000A,     (* Path-MTU discovery setting           *)
+
+    (* -------- IPPROTO_IPV6 level -------- *)
+    "IPV6_V6ONLY"         :> 16^^001A      (* Restrict socket to IPv6 only         *)
+|>;
+
+(* ---------- Platform-specific overrides ---------- *)
+If[$OperatingSystem === "Windows",
+    (* Winsock uses different numeric values for some options *)
+    $socketOptNames["SO_REUSEADDR"] := 4;       (* 0x0004 on Windows *)
+    $socketOptNames["SO_TYPE"]      := 16^1108; (* 0x1008 on Windows *)
+];
+
+
+$socketOptLevelMap = <|
+    (* -------- SOL_SOCKET level -------- *)
+    "SO_KEEPALIVE"         -> "SOL_SOCKET",
+    "SO_RCVBUF"            -> "SOL_SOCKET",
+    "SO_SNDBUF"            -> "SOL_SOCKET",
+    "SO_REUSEADDR"         -> "SOL_SOCKET",
+    "SO_EXCLUSIVEADDRUSE"  -> "SOL_SOCKET",   (* Windows-only *)
+    "SO_LINGER"            -> "SOL_SOCKET",
+    "SO_BROADCAST"         -> "SOL_SOCKET",
+    "SO_ERROR"             -> "SOL_SOCKET",
+    "SOMAXCONN"            -> "SOL_SOCKET",
+    "SO_TYPE"              -> "SOL_SOCKET",
+    "SO_ACCEPTCONN"        -> "SOL_SOCKET",
+
+    (* -------- IPPROTO_TCP level -------- *)
+    "TCP_NODELAY"          -> "IPPROTO_TCP",
+    "TCP_KEEPIDLE"         -> "IPPROTO_TCP",
+    "TCP_KEEPINTVL"        -> "IPPROTO_TCP",
+    "TCP_KEEPCNT"          -> "IPPROTO_TCP",
+
+    (* -------- IPPROTO_IP (IPv4) level -------- *)
+    "IP_TTL"               -> "IPPROTO_IP",
+    "IP_TOS"               -> "IPPROTO_IP",
+    "IP_MTU_DISCOVER"      -> "IPPROTO_IP",
+
+    (* -------- IPPROTO_IPV6 level -------- *)
+    "IPV6_V6ONLY"          -> "IPPROTO_IPV6"
+|>;
 
 
 End[];
