@@ -82,6 +82,71 @@ typedef struct Server_st *Server;
 
 #pragma endregion
 
+const char* getCurrentTime()
+{
+    static char time_buffer[64];
+    time_t rawtime;
+    struct tm* timeinfo;
+    
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    
+    strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+    
+    #ifdef _WIN32
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+    snprintf(time_buffer + strlen(time_buffer), 
+             sizeof(time_buffer) - strlen(time_buffer), 
+             ".%03d", st.wMilliseconds);
+    #else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    snprintf(time_buffer + strlen(time_buffer), 
+             sizeof(time_buffer) - strlen(time_buffer), 
+             ".%06ld", tv.tv_usec);
+    #endif
+    
+    return time_buffer;
+}
+
+Mutex mutexCreate()
+{
+    #if defined(_WIN32) || defined(_WIN64)
+        return CreateMutex(NULL, FALSE, NULL);
+    #else
+        pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+        return mutex;
+    #endif
+}
+
+void mutexClose(Mutex mutex)
+{
+    #if defined(_WIN32) || defined(_WIN64)
+        CloseHandle(mutex);
+    #else
+        pthread_mutex_destroy(&mutex);
+    #endif
+}
+
+void mutexLock(Mutex mutex)
+{
+    #if defined(_WIN32) || defined(_WIN64)
+        WaitForSingleObject(mutex, INFINITE);
+    #else
+        pthread_mutex_lock(&mutex);
+    #endif
+}
+
+void mutexUnlock(Mutex mutex)
+{
+    #if defined(_WIN32) || defined(_WIN64)
+        ReleaseMutex(mutex);
+    #else
+        pthread_mutex_unlock(&mutex);
+    #endif
+}
+
 struct SocketList_st
 {
     SOCKET interrupt;
@@ -147,21 +212,21 @@ DLLEXPORT int socketListSet(WolframLibraryData libData, mint Argc, MArgument *Ar
     return LIBRARY_NO_ERROR;
 }
 
-/*socketsRemove[socketsPtr] -> successState*/
-DLLEXPORT int socketsRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+/*socketsRemove[socketListPtr] -> successState*/
+DLLEXPORT int socketListRemove(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
-    Sockets sockets = (Sockets)MArgument_getInteger(Args[0]);
+    SocketList socketList = (SocketList)MArgument_getInteger(Args[0]);
 
-    CLOSESOCKET(sockets->interrupt);
+    CLOSESOCKET(socketList->interrupt);
 
-    for (size_t i = 0; i < sockets->length; i++) {
-        if (ISVALIDSOCKET(sockets->sockets[i])) {
-            CLOSESOCKET(sockets->sockets[i]);
+    for (size_t i = 0; i < socketList->length; i++) {
+        if (ISVALIDSOCKET(socketList->sockets[i])) {
+            CLOSESOCKET(socketList->sockets[i]);
         }
     }
 
-    free(sockets->sockets);
-    free(sockets);
+    free(socketList->sockets);
+    free(socketList);
 
     MArgument_setInteger(Res, 0); // success
     return LIBRARY_NO_ERROR; 
@@ -179,7 +244,6 @@ struct Server_st
     size_t clientsReadSetLength;
     size_t clientsLength;
     BYTE *buffer;
-    mint taskId;
     WolframLibraryData libData;
     mint taskId;
 };
@@ -278,71 +342,6 @@ DLLEXPORT int serverRemove(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     MArgument_setInteger(Res, 0);
     return LIBRARY_NO_ERROR;
-}
-
-Mutex mutexCreate()
-{
-    #if defined(_WIN32) || defined(_WIN64)
-        return CreateMutex(NULL, FALSE, NULL);
-    #else
-        pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-        return mutex;
-    #endif
-}
-
-void mutexClose(Mutex mutex)
-{
-    #if defined(_WIN32) || defined(_WIN64)
-        CloseHandle(mutex);
-    #else
-        pthread_mutex_destroy(&mutex);
-    #endif
-}
-
-void mutexLock(Mutex mutex)
-{
-    #if defined(_WIN32) || defined(_WIN64)
-        WaitForSingleObject(mutex, INFINITE);
-    #else
-        pthread_mutex_lock(&mutex);
-    #endif
-}
-
-void mutexUnlock(Mutex mutex)
-{
-    #if defined(_WIN32) || defined(_WIN64)
-        ReleaseMutex(mutex);
-    #else
-        pthread_mutex_unlock(&mutex);
-    #endif
-}
-
-const char* getCurrentTime()
-{
-    static char time_buffer[64];
-    time_t rawtime;
-    struct tm* timeinfo;
-    
-    time(&rawtime);
-    timeinfo = localtime(&rawtime);
-    
-    strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-    
-    #ifdef _WIN32
-    SYSTEMTIME st;
-    GetSystemTime(&st);
-    snprintf(time_buffer + strlen(time_buffer), 
-             sizeof(time_buffer) - strlen(time_buffer), 
-             ".%03d", st.wMilliseconds);
-    #else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    snprintf(time_buffer + strlen(time_buffer), 
-             sizeof(time_buffer) - strlen(time_buffer), 
-             ".%06ld", tv.tv_usec);
-    #endif
-    
-    return time_buffer;
 }
 
 void acceptErrorMessage(WolframLibraryData libData, int err)
@@ -1397,10 +1396,10 @@ DLLEXPORT int socketSendString(WolframLibraryData libData, mint Argc, MArgument 
 void serverDestroy(Server server)
 {
     #ifdef _DEBUG
-    printf("%s\n%s[serverDestroy->CALL]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
+    printf("%s\n%s[serverDestroy->CALL]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld usec\n\n",
         getCurrentTime(), 
         BLUE, RESET, 
-        server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout.tv_sec, server->timeout.tv_usec
+        server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout
     );
     #endif
 
@@ -1420,21 +1419,14 @@ void serverDestroy(Server server)
     free(server);
 
     #ifdef _DEBUG
-    printf("%s\n%s[serverDestroy->SUCCESS]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld sec and %ld usec\n\n",
+    printf("%s\n%s[serverDestroy->SUCCESS]%s\n\tserver pointer = %p\n\tlisten socket id = %I64d\n\tclients length = %zd\n\tbuffer size = %zd\n\ttimeout = %ld usec\n\n",
         getCurrentTime(), 
         GREEN, RESET, 
-        server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout.tv_sec, server->timeout.tv_usec
+        server, server->listenSocket, server->clientsLength, server->bufferSize, server->timeout
     );
     #endif
 
     server = NULL;
-}
-
-void serverSleep(Server server)
-{
-    if (server->sleeping) {
-        SLEEP(ms * server->sleepTime);
-    }
 }
 
 void serverSelect(Server server)
@@ -1456,8 +1448,8 @@ void serverSelect(Server server)
     printf("%s\n%s[serverSelect->CALL]%s\n\tselect(len = %zd, timeout = %ld) sockets = (%ld",
         getCurrentTime(), 
         BLUE, RESET, 
-        server->clientsLength + 1, server->timeout.tv_sec * 1000000 + server->timeout.tv_usec, server->listenSocket
-    ); 
+        server->clientsLength + 1, server->timeout, server->listenSocket
+    );
     #endif
 
     size_t count = server->clientsLength;
@@ -1789,59 +1781,3 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
     MArgument_setInteger(Res, taskId);
     return LIBRARY_NO_ERROR;
 }
-
-static void socketAcceptTask(mint taskId, void* vtarg)
-{
-    SOCKET listenSocket = (SOCKET)(uintptr_t)vtarg;
-    WolframLibraryData libData = getWolframLibraryData();
-    
-    #ifdef _DEBUG
-    printf("%s\n%s[socketAcceptTask->CALL]%s\n\tlisten socket id = %I64d\n\ttask id = %ld\n\n", 
-        getCurrentTime(),
-        BLUE, RESET, 
-        listenSocket, taskId
-    );
-    #endif
-
-    while (libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId)) {
-        SOCKET client = accept(listenSocket, NULL, NULL);
-        if (client != INVALID_SOCKET) {
-            libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Accepted", client);
-        }
-    }
-
-    #ifdef _DEBUG
-    printf("%s\n%s[socketAcceptTask->END]%s\n\tlisten socket id = %I64d\n\ttask id = %ld\n\n", 
-        getCurrentTime(),
-        YELLOW, RESET, 
-        listenSocket, taskId
-    );
-    #endif
-}
-
-/*socketAcceptTaskCreate*/
-DLLEXPORT int socketAcceptTaskCreate(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
-{
-    SOCKET listenSocket = (SOCKET)MArgument_getInteger(Args[0]);
-    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(socketAcceptTask, (void *)(uintptr_t)listenSocket);
-    
-    #ifdef _DEBUG
-    printf("%s\n%s[socketAcceptTaskCreate->CALL]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
-        getCurrentTime(),
-        BLUE, RESET, 
-        listenSocket, taskId
-    );
-    #endif
-    
-    #ifdef _DEBUG
-    printf("%s\n%s[socketAcceptTaskCreate->SUCCESS]%s\n\tlisten socket id = %I64d\n\ttask id = %I64d\n\n", 
-        getCurrentTime(),
-        GREEN, RESET, 
-        listenSocket, taskId
-    );
-    #endif
-    
-    MArgument_setInteger(Res, taskId);
-    return LIBRARY_NO_ERROR;
-}
-
