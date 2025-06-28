@@ -39,9 +39,13 @@ CSocketListener::usage =
 Begin["`Private`"];
 
 
-CSocketOpen[address_String] := 
-Module[{socketId, family, type, protocol},
-    {}
+CSocketOpen[host_String: "localhost", port_Integer?Positive, protocol: "TCP" | "UDP", OptionsPattern[]] := 
+Module[{socketId, family, type, protocolNum},
+    
+
+
+    (*Return*)
+    CSocketObject[socketId]
 ];
 
 
