@@ -89,9 +89,7 @@ Module[{socketId, family, type, protocolNum, address},
 
     socketId = socketCreate[family, type, protocolNum];
 
-    socketBind[socketId, address];
-
-    If[protocol === "TCP", socketListen[socketId, $socketConstants["SOMAXCONN"]]];
+    socketConnect[socketId, address];
 
     (*Return*)
     CSocketObject[socketId]
