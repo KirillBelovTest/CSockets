@@ -39,10 +39,59 @@ CSocketListener::usage =
 Begin["`Private`"];
 
 
-CSocketOpen[host_String: "localhost", port_Integer?Positive, protocol: "TCP" | "UDP", OptionsPattern[]] := 
-Module[{socketId, family, type, protocolNum},
-    
+Options[CSocketOpen] = {
+    "Family" :> $socketConstants["AF_INET"]
+};
 
+
+CSocketOpen[host_String: "localhost", port_Integer?Positive, protocol: "TCP" | "UDP": "TCP", OptionsPattern[]] := 
+Module[{socketId, family, type, protocolNum, address},
+    family = OptionValue["Family"];
+
+    If[protocol === "TCP", 
+        type = $socketConstants["SOCK_STREAM"];
+        protocolNum = $socketConstants["IPPROTO_TCP"];
+    ];
+
+    If[protocol === "UDP",
+        type = $socketConstants["SOCK_DGRAM"];
+        protocolNum = $socketConstants["IPPROTO_UDP"];
+    ];
+
+    address = socketAddressCreate[host, ToString[port], family, type, protocolNum];
+
+    socketId = socketCreate[family, type, protocolNum];
+
+    socketBind[socketId, address];
+
+    If[protocol === "TCP", socketListen[socketId, $socketConstants["SOMAXCONN"]]];
+
+    (*Return*)
+    CSocketObject[socketId]
+];
+
+
+CSocketConnect[host_String: "localhost", port_Integer?Positive, protocol: "TCP" | "UDP": "TCP", OptionsPattern[]] := 
+Module[{socketId, family, type, protocolNum, address},
+    family = OptionValue["Family"];
+
+    If[protocol === "TCP", 
+        type = $socketConstants["SOCK_STREAM"];
+        protocolNum = $socketConstants["IPPROTO_TCP"];
+    ];
+
+    If[protocol === "UDP",
+        type = $socketConstants["SOCK_DGRAM"];
+        protocolNum = $socketConstants["IPPROTO_UDP"];
+    ];
+
+    address = socketAddressCreate[host, ToString[port], family, type, protocolNum];
+
+    socketId = socketCreate[family, type, protocolNum];
+
+    socketBind[socketId, address];
+
+    If[protocol === "TCP", socketListen[socketId, $socketConstants["SOMAXCONN"]]];
 
     (*Return*)
     CSocketObject[socketId]
