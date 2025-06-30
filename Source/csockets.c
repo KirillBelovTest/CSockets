@@ -1321,6 +1321,50 @@ DLLEXPORT int socketRecv(WolframLibraryData libData, mint Argc, MArgument *Args,
     return LIBRARY_FUNCTION_ERROR;
 }
 
+/*socketRecvFrom[socketId, addressPtr, bufferPtr, bufferLength] -> byteArray (only UDP)*/
+DLLEXPORT int socketRecvFrom(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+    SOCKET client = (SOCKET)MArgument_getInteger(Args[0]);
+    BYTE *buffer = (BYTE *)MArgument_getInteger(Args[1]);
+    mint bufferSize = (mint)MArgument_getInteger(Args[2]);
+    uintptr_t addressPtr = (uintptr_t)MArgument_getInteger(Args[3]); // address pointer as integer
+    struct addrinfo *address = (struct addrinfo*)addressPtr;
+
+    #ifdef _DEBUG
+    printf("%s\n%sserverRecvFrom[%s%I64d%s]%s -> ", getCurrentTime(), BLUE, RESET, client, BLUE, RESET);
+    #endif
+
+    mutexLock(globalMutex);
+    int result = recvfrom(client, buffer, bufferSize, 0, address, sizeof(struct addrinfo));
+    mutexUnlock(globalMutex);
+
+    if (result > 0){
+        mint len = (mint)result;
+        MNumericArray byteArray;
+        libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &len, &byteArray);
+        BYTE *array = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
+        memcpy(array, buffer, result);
+
+        #ifdef _DEBUG
+        printf("%s%d bytes%s\n\n", GREEN, result, RESET);
+        #endif
+
+        free(buffer);
+        MArgument_setMNumericArray(Res, byteArray);
+        return LIBRARY_NO_ERROR;
+    }
+    
+    free(buffer);
+    int err = GETSOCKETERRNO();
+    
+    #ifdef _DEBUG
+    printf("%sERROR = %d%s\n\n", RED, err, RESET);
+    #endif
+
+    recvErrorMessage(libData, err);
+    return LIBRARY_FUNCTION_ERROR;
+}
+
 /*socketSend[socketid, byteArray, length] -> sentLength*/
 DLLEXPORT int socketSend(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {

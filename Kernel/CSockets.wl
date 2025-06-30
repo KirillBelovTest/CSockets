@@ -1,23 +1,9 @@
 (* ::Package:: *)
 
-(* TCP Server
-    address = socketAddressCreate[host, port]
-    socket = socketCreate[address]
-    socketBind[socket, address]
-    socketBlockingMode[socket, 1|0]
-    DeleteObject[address]
-    socketSetOpt[socket, "IPPROTO_TCP", "TCP_NODELAY", 1|0]
-    socketSetOpt[socket, "SOL_SOCKET", "SO_KEEPALIVE", 1|0]
-    socketSetOpt[socket, "SOL_SOCKET", "SO_RCVBUF", bufferSize]
-    socketSetOpt[socket, "SOL_SOCKET", "SO_SNDBUF", bufferSize]
-    socketListen[socket]
-*)
-
-
 BeginPackage["KirillBelov`CSockets`", {
     "CCompilerDriver`", 
     "LibraryLink`"
-}]; 
+}];
 
 
 CSocketObject::usage = 
@@ -71,6 +57,11 @@ Module[{socketId, family, type, protocolNum, address},
 ];
 
 
+Options[CSocketConnect] = {
+    "Family" :> $socketConstants["AF_INET"]
+};
+
+
 CSocketConnect[host_String: "localhost", port_Integer?Positive, protocol: "TCP" | "UDP": "TCP", OptionsPattern[]] := 
 Module[{socketId, family, type, protocolNum, address},
     family = OptionValue["Family"];
@@ -89,7 +80,11 @@ Module[{socketId, family, type, protocolNum, address},
 
     socketId = socketCreate[family, type, protocolNum];
 
+    socketBlockingMode[socketId, 1];
+
     socketConnect[socketId, address];
+
+    socketBlockingMode[socketId, 0];
 
     (*Return*)
     CSocketObject[socketId]
@@ -166,7 +161,7 @@ socketGetOpt =
 LibraryFunctionLoad[$libFile, "socketGetOpt", {Integer, Integer, Integer}, Integer];
 
 
-(*socketBlockingMode[socketId, level, optname] -> successStatus*)
+(*socketBlockingMode[socketId, mode] -> successStatus*)
 socketBlockingMode =
 LibraryFunctionLoad[$libFile, "socketBlockingMode", {Integer, Integer}, Integer];
 
