@@ -1547,6 +1547,8 @@ void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, 
     SOCKET socketId;
 
     #ifdef _DEBUG
+    size_t j;
+
     printf("%s\n%sraiseEventSelect[%s{%I64d", 
         getCurrentTime(), 
         BLUE, RESET, 
@@ -1568,10 +1570,17 @@ void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, 
         socketId = sockets[i];
         if (FD_ISSET(socketId, &readset)) {
             libData->ioLibraryFunctions->DataStore_addInteger(data, socketId);
+            
             #ifdef _DEBUG
-            printf("%I64d", socketId);
+            j++;
+            if (j == 1) printf("%I64d", socketId);
+            printf(", %I64d", socketId);
             #endif
         }
+
+        #ifdef _DEBUG
+        printf("}\n\n");
+        #endif
     }
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Select", data);
 }
@@ -1579,11 +1588,12 @@ void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, 
 void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET acceptedSocket)
 {
     #ifdef _DEBUG
-    printf("%s\n%sraiseEventAccept[%s%I64d -> %I64d%s]%s\n\n", 
+    printf("%s\n%sraiseEventAccept[%s%I64d%s]%s -> %I64d\n\n", 
         getCurrentTime(), 
         BLUE, RESET, 
-        listenSocket, acceptedSocket, 
-        BLUE, RESET
+        listenSocket, 
+        BLUE, RESET, 
+        acceptedSocket
     );
     #endif
 
@@ -1591,6 +1601,53 @@ void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSock
     libData->ioLibraryFunctions->DataStore_addInteger(data, listenSocket);
     libData->ioLibraryFunctions->DataStore_addInteger(data, acceptedSocket);
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Accept", data);
+}
+
+void raiseEventRecv(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET socketId, BYTE *buffer, int bufferLength)
+{
+    #ifdef _DEBUG
+    printf("%s\n%sraiseEventRecv[%s%I64d, %I64d%s]%s -> %I64d bytes\n\n", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        listenSocket, socketId, 
+        BLUE, RESET, 
+        bufferLength
+    );
+    #endif
+
+    MNumericArray byteArray;
+    libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &bufferLength, &byteArray);
+    BYTE *byteArrayData = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
+    memcpy(byteArrayData, buffer, bufferLength);
+
+    DataStore data = libData->ioLibraryFunctions->createDataStore();
+    libData->ioLibraryFunctions->DataStore_addInteger(data, listenSocket);
+    libData->ioLibraryFunctions->DataStore_addInteger(data, socketId);
+    libData->ioLibraryFunctions->DataStore_addMNumericArray(data, byteArray);
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Recv", data);
+}
+
+void raiseEventRecvFrom(WolframLibraryData libData, mint taskId, SOCKET socketId, struct addrinfo *address, BYTE *buffer, int bufferLength)
+{
+    #ifdef _DEBUG
+    printf("%s\n%sraiseEventRecvFrom[%s%I64d, %p%s]%s -> %I64d", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        socketId, address, 
+        BLUE, RESET
+    );
+    #endif
+
+    MNumericArray byteArray;
+    libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &bufferLength, &byteArray);
+    BYTE *byteArrayData = libData->numericarrayLibraryFunctions->MNumericArray_getData(byteArray);
+    memcpy(byteArrayData, buffer, bufferLength);
+
+    DataStore data = libData->ioLibraryFunctions->createDataStore();
+    libData->ioLibraryFunctions->DataStore_addInteger(data, socketId);
+    libData->ioLibraryFunctions->DataStore_addInteger(data, address);
+    libData->ioLibraryFunctions->DataStore_addMNumericArray(data, byteArray);
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Recv", data);
 }
 
 void serverRaiseEvent(Server server, char *eventName, SOCKET client)
