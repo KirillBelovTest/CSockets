@@ -1542,6 +1542,7 @@ void serverSelect(Server server)
     }
 }
 
+/*push list of sockets that ready for read*/
 void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, size_t socketsLength, fd_set *readset)
 {
     SOCKET socketId;
@@ -1585,6 +1586,7 @@ void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, 
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Select", data);
 }
 
+/*push listen socket and new accepted socket*/
 void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET acceptedSocket)
 {
     #ifdef _DEBUG
@@ -1603,6 +1605,7 @@ void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSock
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Accept", data);
 }
 
+/*push listening tcp socket, source socket and received data*/
 void raiseEventRecv(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET socketId, BYTE *buffer, int bufferLength)
 {
     #ifdef _DEBUG
@@ -1627,6 +1630,7 @@ void raiseEventRecv(WolframLibraryData libData, mint taskId, SOCKET listenSocket
     libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Recv", data);
 }
 
+/*push opened udp socket, from address and received data*/
 void raiseEventRecvFrom(WolframLibraryData libData, mint taskId, SOCKET socketId, struct addrinfo *address, BYTE *buffer, int bufferLength)
 {
     #ifdef _DEBUG
@@ -1647,61 +1651,24 @@ void raiseEventRecvFrom(WolframLibraryData libData, mint taskId, SOCKET socketId
     libData->ioLibraryFunctions->DataStore_addInteger(data, socketId);
     libData->ioLibraryFunctions->DataStore_addInteger(data, address);
     libData->ioLibraryFunctions->DataStore_addMNumericArray(data, byteArray);
-    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Recv", data);
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "RecvFrom", data);
 }
 
-void serverRaiseEvent(Server server, char *eventName, SOCKET client)
+/*push closed socket*/
+void raiseEventClose(WolframLibraryData libData, mint taskId, SOCKET socketId)
 {
     #ifdef _DEBUG
-    printf("%s\n%s[serverRaiseEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
+    printf("%s\n%sraiseEventClose[%s%I64d%s]%s\n\n", 
         getCurrentTime(), 
         BLUE, RESET, 
-        server->listenSocket, client
+        socketId, 
+        BLUE, RESET
     );
     #endif
 
-    DataStore data = server->libData->ioLibraryFunctions->createDataStore();
-    server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
-    server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
-    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
-
-    #ifdef _DEBUG
-    printf("%s\n%s[serverRaiseEvent->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\n", 
-        getCurrentTime(), 
-        GREEN, RESET, 
-        server->listenSocket, client
-    );
-    #endif
-}
-
-void serverRaiseDataEvent(Server server, char *eventName, SOCKET client, BYTE *buffer, const mint len)
-{
-    #ifdef _DEBUG
-    printf("%s\n%s[serverRaiseDataEvent->CALL]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %ld\n\n", 
-        getCurrentTime(), 
-        BLUE, RESET, 
-        server->listenSocket, client, len
-    );
-    #endif
-    
-    MNumericArray arr;
-    server->libData->numericarrayLibraryFunctions->MNumericArray_new(MNumericArray_Type_UBit8, 1, &len, &arr);
-    BYTE *arrData = server->libData->numericarrayLibraryFunctions->MNumericArray_getData(arr);
-    memcpy(arrData, server->buffer, len);
-
-    DataStore data = server->libData->ioLibraryFunctions->createDataStore();
-    server->libData->ioLibraryFunctions->DataStore_addInteger(data, server->listenSocket);
-    server->libData->ioLibraryFunctions->DataStore_addInteger(data, client);
-    server->libData->ioLibraryFunctions->DataStore_addMNumericArray(data, arr);
-    server->libData->ioLibraryFunctions->raiseAsyncEvent(server->taskId, eventName, data);
-
-    #ifdef _DEBUG
-    printf("%s\n%s[serverRaiseDataEvent->SUCCESS]%s\n\tlisten socket id = %I64d\n\tclient socket id = %I64d\n\treceived data length = %ld\n\n", 
-        getCurrentTime(), 
-        GREEN, RESET, 
-        server->listenSocket, client, len
-    );
-    #endif
+    DataStore data = libData->ioLibraryFunctions->createDataStore();
+    libData->ioLibraryFunctions->DataStore_addInteger(data, socketId);
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Close", data);
 }
 
 void serverAccept(Server server)
@@ -1732,7 +1699,7 @@ void serverAccept(Server server)
 
             server->clients[server->clientsLength] = client;
             server->clientsLength++;
-            serverRaiseEvent(server, "Accepted", client);
+            raiseEventAccept(server->libData, server->taskId, server->listenSocket, client);
         }
     } else {
         #ifdef _DEBUG
@@ -1772,7 +1739,7 @@ void serverRecv(Server server)
                 int err = GETSOCKETERRNO();
                 mint arrLen = (mint)result;
                 if (result > 0) {
-                    serverRaiseDataEvent(server, "Received", client, server->buffer, result);
+                    raiseEventRecv(server->libData, server->taskId, server->listenSocket, client, server->buffer, result);
                 } else if (result == 0 || (result < 0 && (err == 10038 || err == 10053))) {
                     #ifdef _DEBUG
                     printf("%s\n%s[serverRecv->ERROR]%s\n\tclient = %I64d\n\terror = %d\n\n", 
@@ -1783,7 +1750,7 @@ void serverRecv(Server server)
                     #endif
 
                     server->clients[i] = INVALID_SOCKET;
-                    serverRaiseEvent(server, "Closed", client);
+                    raiseEventClose(server->libData, server->taskId, client);
                 } else {
                     #ifdef _DEBUG
                     printf("%s\n%s[serverRecv->ERROR]%s\n\tclient = %I64d\n\tunexpected error = %d\n\n", 
@@ -1794,7 +1761,7 @@ void serverRecv(Server server)
                     #endif
 
                     server->clients[i] = INVALID_SOCKET;
-                    serverRaiseEvent(server, "Closed", client);
+                    raiseEventClose(server->libData, server->taskId, client);
                 }
             }
 
