@@ -1542,6 +1542,57 @@ void serverSelect(Server server)
     }
 }
 
+void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, size_t socketsLength, fd_set *readset)
+{
+    SOCKET socketId;
+
+    #ifdef _DEBUG
+    printf("%s\n%sraiseEventSelect[%s{%I64d", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        sockets[0]
+    );
+
+    for (size_t i = 1; i < socketsLength; i++){
+        socketId = sockets[i];
+        printf(", %I64d", 
+            socketId
+        );
+    }
+
+    printf("} -> {");
+    #endif
+
+    DataStore data = libData->ioLibraryFunctions->createDataStore();
+    for (size_t i = 0; i < socketsLength; i++) {
+        socketId = sockets[i];
+        if (FD_ISSET(socketId, &readset)) {
+            libData->ioLibraryFunctions->DataStore_addInteger(data, socketId);
+            #ifdef _DEBUG
+            printf("%I64d", socketId);
+            #endif
+        }
+    }
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Select", data);
+}
+
+void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET acceptedSocket)
+{
+    #ifdef _DEBUG
+    printf("%s\n%sraiseEventAccept[%s%I64d -> %I64d%s]%s\n\n", 
+        getCurrentTime(), 
+        BLUE, RESET, 
+        listenSocket, acceptedSocket, 
+        BLUE, RESET
+    );
+    #endif
+
+    DataStore data = libData->ioLibraryFunctions->createDataStore();
+    libData->ioLibraryFunctions->DataStore_addInteger(data, listenSocket);
+    libData->ioLibraryFunctions->DataStore_addInteger(data, acceptedSocket);
+    libData->ioLibraryFunctions->raiseAsyncEvent(taskId, "Accept", data);
+}
+
 void serverRaiseEvent(Server server, char *eventName, SOCKET client)
 {
     #ifdef _DEBUG
