@@ -1112,7 +1112,6 @@ DLLEXPORT int socketSelect(WolframLibraryData libData, mint Argc, MArgument *Arg
 static void socketSelectTask(mint taskId, void* vtarg)
 {
     SocketList socketList = (SocketList)vtarg;
-    socketList->taskId = taskId;
 
     WolframLibraryData libData = socketList->libData;
     struct fd_set readfds;
@@ -1918,9 +1917,10 @@ static void taskSelect(mint taskId, void* vtarg)
     {
         length = (size_t)socketList->length;
         interrupt = socketList->interrupt;
+        maxFd = interrupt;
 
         FD_ZERO(&readfds);
-        FD_SET(socketList->interrupt, &readfds);
+        FD_SET(interrupt, &readfds);
 
         size_t length = (size_t)socketList->length;
         for (size_t i = 0; i < length; i++) {
@@ -1929,13 +1929,13 @@ static void taskSelect(mint taskId, void* vtarg)
             if (socketId > maxFd) maxFd = socketId;
         }
 
-        timeout.tv_sec = 60;
-        timeout.tv_usec = 0;
+        timeout.tv_sec = socketList->timeout / 1000000; // convert microseconds to seconds
+        timeout.tv_usec = socketList->timeout % 1000000; // get remaining microseconds
 
         result = select(maxFd + 1, &readfds, NULL, NULL, &timeout);
         if (result > 0) {
-            if (FD_ISSET(socketList->interrupt, &readfds)) {
-                recv(socketList->interrupt, NULL, 0, 0);
+            if (FD_ISSET(interrupt, &readfds)) {
+                recv(interrupt, NULL, 0, 0);
             } else {
                 pushSelect(libData, taskId, socketList->sockets, length, &readfds);
             }
@@ -1946,12 +1946,30 @@ static void taskSelect(mint taskId, void* vtarg)
 /*createTaskSelect[socketList]*/
 DLLEXPORT int createTaskSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
+    void *socketListPtr = (void *)MArgument_getInteger(Args[0]);
+    SocketList socketList = (SocketList)socketListPtr;
 
+    #ifdef _DEBUG
+    printf("%s\n%screateTaskSelect[%s%p%s]%s -> ", getCurrentTime(), BLUE, RESET, socketList, BLUE, RESET);
+    #endif
+
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(taskSelect, socketList);
+    
+    #ifdef _DEBUG
+    printf("%s%I64d%s\n\n", GREEN, taskId, RESET);
+    #endif
+
+    MArgument_setInteger(Res, taskId);
+    return LIBRARY_NO_ERROR;
 }
 
 static void taskSelectAcceptRecv()
 {
-
+    // This function is a placeholder for the task that would handle select, accept, and recv operations.
+    // It should be implemented to handle the logic of selecting sockets, accepting connections, and receiving data.
+    // The implementation would be similar to the taskSelect function but would also include accept and recv logic.
+    // This function is not yet implemented, but it would typically involve:
+    // 1. Using select to wait for sockets to be ready for reading.
 }
 
 /*createTaskSelectAcceptRecv[server]*/
