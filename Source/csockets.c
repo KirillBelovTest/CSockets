@@ -1905,6 +1905,7 @@ static void taskSelect(mint taskId, void* vtarg)
     SocketList socketList = (SocketList)vtarg;
     WolframLibraryData libData = socketList->libData;
     SOCKET *sockets = socketList->sockets;
+
     size_t length;
     SOCKET interrupt;
     SOCKET maxFd;
@@ -1937,7 +1938,7 @@ static void taskSelect(mint taskId, void* vtarg)
             if (FD_ISSET(interrupt, &readfds)) {
                 recv(interrupt, NULL, 0, 0);
             } else {
-                pushSelect(libData, taskId, socketList->sockets, length, &readfds);
+                pushSelect(libData, taskId, sockets, length, &readfds);
             }
         }
     }
@@ -1947,13 +1948,12 @@ static void taskSelect(mint taskId, void* vtarg)
 DLLEXPORT int createTaskSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
     void *socketListPtr = (void *)MArgument_getInteger(Args[0]);
-    SocketList socketList = (SocketList)socketListPtr;
 
     #ifdef _DEBUG
-    printf("%s\n%screateTaskSelect[%s%p%s]%s -> ", getCurrentTime(), BLUE, RESET, socketList, BLUE, RESET);
+    printf("%s\n%screateTaskSelect[%s%p%s]%s -> ", getCurrentTime(), BLUE, RESET, socketListPtr, BLUE, RESET);
     #endif
 
-    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(taskSelect, socketList);
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(taskSelect, socketListPtr);
     
     #ifdef _DEBUG
     printf("%s%I64d%s\n\n", GREEN, taskId, RESET);
@@ -1963,28 +1963,64 @@ DLLEXPORT int createTaskSelect(WolframLibraryData libData, mint Argc, MArgument 
     return LIBRARY_NO_ERROR;
 }
 
-static void taskSelectAcceptRecv()
+static void taskSelectAcceptRecv(mint taskId, void* vtarg)
 {
-    // This function is a placeholder for the task that would handle select, accept, and recv operations.
-    // It should be implemented to handle the logic of selecting sockets, accepting connections, and receiving data.
-    // The implementation would be similar to the taskSelect function but would also include accept and recv logic.
-    // This function is not yet implemented, but it would typically involve:
-    // 1. Using select to wait for sockets to be ready for reading.
+    Server server = (Server)vtarg;
+    WolframLibraryData libData = server->libData;
+
+    while (libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+    {
+        
+    }
+    
 }
 
 /*createTaskSelectAcceptRecv[server]*/
 DLLEXPORT int createTaskSelectAcceptRecv(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
+    void *serverPtr = (void *)MArgument_getInteger(Args[0]);
 
+    #ifdef _DEBUG
+    printf("%s\n%screateTaskSelectAcceptRecv[%s%p%s]%s -> ", getCurrentTime(), BLUE, RESET, serverPtr, BLUE, RESET);
+    #endif
+
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(taskSelectAcceptRecv, serverPtr);
+    
+    #ifdef _DEBUG
+    printf("%s%I64d%s\n\n", GREEN, taskId, RESET);
+    #endif
+
+    MArgument_setInteger(Res, taskId);
+    return LIBRARY_NO_ERROR;
 }
 
-static void taskSelectRecvFrom()
+static void taskSelectRecvFrom(mint taskId, void *vtarg)
 {
+    SocketList socketList = (SocketList)vtarg;
+    WolframLibraryData libData = socketList->libData;
 
+    while (libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+    {
+        /* code */
+    }
+    
 }
 
-/*createTaskSelectAcceptRecv[udpSocket]*/
+/*createTaskSelectAcceptRecv[{udpSockets}] -> taskId*/
 DLLEXPORT int createTaskSelectRecvFrom(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
 {
+    void *socketListPtr = (void *)MArgument_getInteger(Args[0]);
 
+    #ifdef _DEBUG
+    printf("%s\n%screateTaskSelectRecvFrom[%s%p%s]%s -> ", getCurrentTime(), BLUE, RESET, socketListPtr, BLUE, RESET);
+    #endif
+
+    mint taskId = libData->ioLibraryFunctions->createAsynchronousTaskWithThread(taskSelectRecvFrom, socketListPtr);
+    
+    #ifdef _DEBUG
+    printf("%s%I64d%s\n\n", GREEN, taskId, RESET);
+    #endif
+
+    MArgument_setInteger(Res, taskId);
+    return LIBRARY_NO_ERROR;
 }
