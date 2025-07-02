@@ -2,7 +2,8 @@
 
 BeginPackage["KirillBelov`CSockets`", {
     "CCompilerDriver`", 
-    "LibraryLink`"
+    "LibraryLink`", 
+    "KirillBelov`CSockets`Handler`"
 }];
 
 

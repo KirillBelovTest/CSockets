@@ -2,6 +2,7 @@
 
 #undef UNICODE
 
+#define FD_SETSIZE 4096
 #define SECOND 1000000
 #define MININTERVAL 1000
 #define _DEBUG 1
@@ -13,7 +14,6 @@
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
-    #define FD_SETSIZE 4096
     #include <windows.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
@@ -152,7 +152,7 @@ struct SocketList_st
     SOCKET interrupt;
     SOCKET *sockets;
     size_t length;
-    mint taskId;
+    mint timeout;
     WolframLibraryData libData;
 };
 
@@ -1543,7 +1543,7 @@ void serverSelect(Server server)
 }
 
 /*push list of sockets that ready for read*/
-void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, size_t socketsLength, fd_set *readset)
+void pushSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, size_t socketsLength, fd_set *readset)
 {
     SOCKET socketId;
 
@@ -1587,7 +1587,7 @@ void raiseEventSelect(WolframLibraryData libData, mint taskId, SOCKET *sockets, 
 }
 
 /*push listen socket and new accepted socket*/
-void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET acceptedSocket)
+void pushAccept(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET acceptedSocket)
 {
     #ifdef _DEBUG
     printf("%s\n%sraiseEventAccept[%s%I64d%s]%s -> %I64d\n\n", 
@@ -1606,7 +1606,7 @@ void raiseEventAccept(WolframLibraryData libData, mint taskId, SOCKET listenSock
 }
 
 /*push listening tcp socket, source socket and received data*/
-void raiseEventRecv(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET socketId, BYTE *buffer, int bufferLength)
+void pushRecv(WolframLibraryData libData, mint taskId, SOCKET listenSocket, SOCKET socketId, BYTE *buffer, int bufferLength)
 {
     #ifdef _DEBUG
     printf("%s\n%sraiseEventRecv[%s%I64d, %I64d%s]%s -> %I64d bytes\n\n", 
@@ -1631,7 +1631,7 @@ void raiseEventRecv(WolframLibraryData libData, mint taskId, SOCKET listenSocket
 }
 
 /*push opened udp socket, from address and received data*/
-void raiseEventRecvFrom(WolframLibraryData libData, mint taskId, SOCKET socketId, struct addrinfo *address, BYTE *buffer, int bufferLength)
+void pushRecvFrom(WolframLibraryData libData, mint taskId, SOCKET socketId, struct addrinfo *address, BYTE *buffer, int bufferLength)
 {
     #ifdef _DEBUG
     printf("%s\n%sraiseEventRecvFrom[%s%I64d, %p%s]%s -> %I64d", 
@@ -1655,7 +1655,7 @@ void raiseEventRecvFrom(WolframLibraryData libData, mint taskId, SOCKET socketId
 }
 
 /*push closed socket*/
-void raiseEventClose(WolframLibraryData libData, mint taskId, SOCKET socketId)
+void pushClose(WolframLibraryData libData, mint taskId, SOCKET socketId)
 {
     #ifdef _DEBUG
     printf("%s\n%sraiseEventClose[%s%I64d%s]%s\n\n", 
@@ -1899,4 +1899,74 @@ DLLEXPORT int serverListen(WolframLibraryData libData, mint Argc, MArgument *Arg
 
     MArgument_setInteger(Res, taskId);
     return LIBRARY_NO_ERROR;
+}
+
+static void taskSelect(mint taskId, void* vtarg)
+{
+    SocketList socketList = (SocketList)vtarg;
+    WolframLibraryData libData = socketList->libData;
+    SOCKET *sockets = socketList->sockets;
+    size_t length;
+    SOCKET interrupt;
+    SOCKET maxFd;
+    struct timeval timeout;
+    SOCKET socketId;
+    int result;
+    struct fd_set readfds;
+
+    while (libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
+    {
+        length = (size_t)socketList->length;
+        interrupt = socketList->interrupt;
+
+        FD_ZERO(&readfds);
+        FD_SET(socketList->interrupt, &readfds);
+
+        size_t length = (size_t)socketList->length;
+        for (size_t i = 0; i < length; i++) {
+            socketId = socketList->sockets[i];
+            FD_SET(socketId, &readfds);
+            if (socketId > maxFd) maxFd = socketId;
+        }
+
+        timeout.tv_sec = 60;
+        timeout.tv_usec = 0;
+
+        result = select(maxFd + 1, &readfds, NULL, NULL, &timeout);
+        if (result > 0) {
+            if (FD_ISSET(socketList->interrupt, &readfds)) {
+                recv(socketList->interrupt, NULL, 0, 0);
+            } else {
+                pushSelect(libData, taskId, socketList->sockets, length, &readfds);
+            }
+        }
+    }
+}
+
+/*createTaskSelect[socketList]*/
+DLLEXPORT int createTaskSelect(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+
+}
+
+static void taskSelectAcceptRecv()
+{
+
+}
+
+/*createTaskSelectAcceptRecv[server]*/
+DLLEXPORT int createTaskSelectAcceptRecv(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+
+}
+
+static void taskSelectRecvFrom()
+{
+
+}
+
+/*createTaskSelectAcceptRecv[udpSocket]*/
+DLLEXPORT int createTaskSelectRecvFrom(WolframLibraryData libData, mint Argc, MArgument *Args, MArgument Res)
+{
+
 }
