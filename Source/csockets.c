@@ -1967,10 +1967,32 @@ static void taskSelectAcceptRecv(mint taskId, void* vtarg)
 {
     Server server = (Server)vtarg;
     WolframLibraryData libData = server->libData;
+    SOCKET *clients = server->clients;
+
+    size_t length;
+    SOCKET maxFd;
+    struct timeval timeout;
+    SOCKET socketId;
+    int result;
+    struct fd_set readfds;
 
     while (libData->ioLibraryFunctions->asynchronousTaskAliveQ(taskId))
     {
-        
+        timeout.tv_sec = server->timeout / 1000000; // convert microseconds to seconds
+        timeout.tv_usec = server->timeout % 1000000; // get remaining microseconds
+
+        FD_ZERO(&readfds);
+        FD_SET(server->interrupt, &readfds);
+        FD_SET(server->listenSocket, &readfds);
+
+        maxFd = max(server->interrupt, server->listenSocket);
+
+        size_t length = (size_t)server->clientsLength;
+        for (size_t i = 0; i < length; i++) {
+            socketId = clients[i];
+            FD_SET(socketId, &readfds);
+            if (socketId > maxFd) maxFd = socketId;
+        }
     }
     
 }
